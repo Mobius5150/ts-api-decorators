@@ -60,6 +60,8 @@ If you use a `tsconfig.json` file, you can specify them as follows:
 }
 ```
 
+> TODO: Add instructions about the transformer
+
 These are required to both support the use of decorators in your code, as well as to permit type checking of inputs.
 
 ### Defining an API that takes a query string parameter
