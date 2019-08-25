@@ -16,7 +16,7 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
 		uniqueNames: true,
 	});
 
-	const indexTs = path.join(__dirname, 'decorators/QueryParams');
+	const indexTs = path.join('decorators/QueryParams');
 	const transformers: QueryParamDecoratorTransformer[] = [
 		getTransformer(program, generator, indexTs, ApiQueryParam.name),
 		getTransformer(program, generator, indexTs, ApiQueryParamString.name),
@@ -97,6 +97,16 @@ class QueryParamDecoratorTransformer {
 			internalType = this.getInternalTypeRepresentation(node.type, type);	
 		}
 
+		// Parse argument name
+		let name: string;
+		if (typeof node.name === 'string') {
+			name = node.name;
+		} else if (ts.isIdentifier(node.name)) {
+			name = node.name.text;
+		} else {
+			throw new Error('Unknown node name type');
+		}
+
 		// Parse initializer
 		let initializer: ts.Expression | undefined;
 		if (node.initializer) {
@@ -121,6 +131,7 @@ class QueryParamDecoratorTransformer {
 
 		// Construct param decorator args
 		const args: ParamArgsInitializer = {
+			name,
 			typedef: internalType,
 		};
 
@@ -265,7 +276,7 @@ class QueryParamDecoratorTransformer {
 	private objectToLiteral(val: object): ts.ObjectLiteralExpression {
 		return ts.createObjectLiteral(
 			Object.keys(val).map(
-				k => ts.createPropertyAssignment(k, this.valueToLiteral(val[k]))
+				k => ts.createPropertyAssignment(k, this.valueToLiteral(<any>val[<any>k]))
 				),
 			false)
 	}
@@ -290,8 +301,8 @@ class QueryParamDecoratorTransformer {
 			return false;
 		};
 
-		const sourceFile = path.join(declaration.getSourceFile().fileName).replace(this.transformInfo.indexTs, '');
-		return (sourceFile === '.ts' || sourceFile === '.d.ts');
+		const sourceFile = path.join(declaration.getSourceFile().fileName);
+		return sourceFile.endsWith(this.transformInfo.indexTs + '.ts') || sourceFile.endsWith(this.transformInfo.indexTs + '.d.ts');
 	}
 
 	private isDecoratedParameterExpression(node: ts.Node): node is ts.ParameterDeclaration {

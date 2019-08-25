@@ -14,10 +14,11 @@ export function Api<T extends ClassConstructor>(constructor: T) {
 	ManagedApiInternal.RegisterApi(constructor);
 }
 
-function wrapApiMethod<T extends ApiMethodFunction>(method: ApiMethod, route: string, descriptor: TypedPropertyDescriptor<ApiMethodFunction>): IApiDefinition {
+function wrapApiMethod<T extends ApiMethodFunction>(method: ApiMethod, route: string, handlerKey: string | symbol, descriptor: TypedPropertyDescriptor<ApiMethodFunction>): IApiDefinition {
 	return {
 		method,
 		route,
+		handlerKey,
 		handler: descriptor.value,
 	}
 }
@@ -33,10 +34,9 @@ export function ApiGetMethod<T extends ApiMethodReturnType>(route: string): ApiG
 		propertyKey: string,
 		descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 	) => {
-		Reflect.defineMetadata(
-			'apimethod',
-			wrapApiMethod(ApiMethod.GET, route, descriptor),
-			target);
+		ManagedApiInternal.AddApiMetadataToObject(
+			wrapApiMethod(ApiMethod.GET, route, propertyKey, descriptor),
+			target.constructor);
 	}
 }
 
@@ -51,10 +51,9 @@ export function ApiPostMethod<T extends ApiMethodReturnType>(route: string) {
 		propertyKey: string,
 		descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 	) => {
-		Reflect.defineMetadata(
-			'apimethod',
-			wrapApiMethod(ApiMethod.POST, route, descriptor),
-			target);
+		ManagedApiInternal.AddApiMetadataToObject(
+			wrapApiMethod(ApiMethod.POST, route, propertyKey, descriptor),
+			target.constructor);
 	}
 }
 
@@ -69,10 +68,9 @@ export function ApiPutMethod<T extends ApiMethodReturnType>(route: string) {
 		propertyKey: string,
 		descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 	) => {
-		Reflect.defineMetadata(
-			'apimethod',
-			wrapApiMethod(ApiMethod.PUT, route, descriptor),
-			target);
+		ManagedApiInternal.AddApiMetadataToObject(
+			wrapApiMethod(ApiMethod.PUT, route, propertyKey, descriptor),
+			target.constructor);
 	}
 }
 
@@ -87,9 +85,8 @@ export function ApiDeleteMethod<T extends ApiMethodReturnType>(route: string) {
 		propertyKey: string,
 		descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 	) => {
-		Reflect.defineMetadata(
-			'apimethod',
-			wrapApiMethod(ApiMethod.DELETE, route, descriptor),
-			target);
+		ManagedApiInternal.AddApiMetadataToObject(
+			wrapApiMethod(ApiMethod.DELETE, route, propertyKey, descriptor),
+			target.constructor);
 	}
 }

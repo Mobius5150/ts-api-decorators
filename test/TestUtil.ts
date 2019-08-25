@@ -20,7 +20,7 @@ export async function compileSourcesDir(path: string, options: ts.CompilerOption
 	}
 }
 
-export function compileSourceFile(path: string, options: ts.CompilerOptions, transformers: TransformerFuncType[], program?: ts.Program): ts.TransformationResult<ts.Node> {
+export function compileSourceFile(path: string, options: ts.CompilerOptions, transformers: TransformerFuncType[], program?: ts.Program): ts.TransformationResult<ts.SourceFile> {
 	if (!program) {
 		program = ts.createProgram([path], options);
 	}
@@ -51,8 +51,9 @@ export function getTransformer(): (p: ts.Program) => TransformerType {
 export function getDefaultCompilerOptions(): ts.CompilerOptions {
 	return {
 		noEmitOnError: true,
-		noImplicitAny: true,
+		noImplicitAny: false,
 		experimentalDecorators: true,
 		target: ts.ScriptTarget.ES5,
+		downlevelIteration: true,
 	}
 }

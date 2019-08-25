@@ -1,4 +1,5 @@
 import { QueryParamDecorator } from "./DecoratorUtil";
+import { ManagedApiInternal } from "../apiManagement";
 
 export type ApiQueryParamValidationFunction = (name: string, value: string) => void;
 
@@ -65,7 +66,13 @@ export abstract class QueryParams {
 	public static ApiQueryParam(a?: any): ParameterDecorator {
 		const args = <__ApiQueryParamArgs>a;
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
-
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					args,
+					parameterIndex,
+					propertyKey,
+				},
+				target.constructor);
 		}
 	}
 }
@@ -75,6 +82,7 @@ export const ApiQueryParamString = QueryParams.ApiQueryParamString;
 export const ApiQueryParamNumber = QueryParams.ApiQueryParamNumber;
 
 export interface __ApiQueryParamArgs {
+	name: string;
 	typedef: InternalTypeDefinition;
 	optional?: boolean;
 	initializer?: () => any;

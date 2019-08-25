@@ -1,5 +1,6 @@
 export * from './decorators';
-export * from './apiManagement/ManagedApi';
+export * from './apiManagement';
+export * from './Errors';
 
 /**
  * The magic schema function

@@ -10,7 +10,8 @@
 		"esModuleInterop": false,
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
-		"declaration": true
+		"declaration": true,
+		"downlevelIteration": true,
 	},
 	"exclude": [
 		"node_modules",
