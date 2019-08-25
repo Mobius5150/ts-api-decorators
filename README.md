@@ -122,10 +122,10 @@ class MyApi {
 
 	@ApiGetMethod('/hello')
 	greet(
-		@ApiQueryParam name: string,
-		@ApiQueryParam times: number = 1,
+		@ApiQueryParam() name: string,
+		@ApiQueryParam() times: number = 1,
 	) {
-		for (const i = 0; i < times; ++i) {
+		for (let i = 0; i < times; ++i) {
 			return `Hi ${name}! `;
 		}
 	}

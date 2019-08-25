@@ -20,11 +20,19 @@
     "jsonschema": "^1.2.4",
     "reflect-metadata": "^0.1.13",
     "swagger-ts-client": "^0.9.6",
-    "ts-node": "^8.3.0",
     "typescript-json-schema": "^0.39.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.0",
     "@types/commander": "^2.12.2",
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.7",
+    "@types/reflect-metadata": "^0.1.0",
+    "chai": "^4.2.0",
+    "glob": "^7.1.4",
+    "mocha": "^6.2.0",
+    "ts-node": "^8.3.0",
+    "ttypescript": "^1.5.7",
     "typescript": "^3.5.3"
   },
   "peerDependencies": {

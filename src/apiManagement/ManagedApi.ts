@@ -1,3 +1,11 @@
+import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
+import { IApiDefinition, ApiMethod } from "./ApiDefinition";
+import { stringify } from "querystring";
+
+interface IApiHandlerInstance extends IApiDefinition {
+	parent: object;
+}
+
 export default class ManagedApi {
 	private static apis = [];
 
@@ -8,7 +16,45 @@ export default class ManagedApi {
 	 * Iniitalizes all API factories
 	 */
 	public init() {
+		// Get the list of registered classes
+		const classes = ManagedApiInternal.GetRegisteredApiClasses()
+			// Only get the ones that have handlers defined on them
+			.filter(c => c.handlers.size > 0);
+
+		// Initialize each class and build a master map of all API handlers
+		const handlers = new Map<ApiMethod, Map<string, IApiHandlerInstance>>();
+		for (const handlerClass of classes) {
+			const instance = this.instanstiateHandlerClass(handlerClass);
+			for (const handlerMethod of handlerClass.handlers) {
+				if (!handlers.has(handlerMethod[0])) {
+					handlers.set(handlerMethod[0], new Map<string, IApiHandlerInstance>());
+				}
+
+				const handlerMethodCollection = handlers.get(handlerMethod[0]);
+				for (const handlerRoute of handlerMethod[1]) {
+					if (handlerMethodCollection.has(handlerRoute[0])) {
+						throw new Error(`Multiple APIs defined for '${handlerMethod[0]}' method on '${handlerRoute[0]}'`);
+					}
+
+					handlerMethodCollection.set(handlerRoute[0], {
+						parent: instance, 
+						...handlerRoute[1]
+					});
+				}
+			}
+		}
+		
+		// TODO: Other initialization actions
+
 		throw new Error('Not implemented');
+	}
+	
+	/**
+	 * Instantiates a class instance of a handler, doing any dependency injection if needed
+	 * @param handlerClass 
+	 */
+	private instanstiateHandlerClass(handlerClass: IApiClassDefinition): object {
+		throw new Error("Method not implemented.");
 	}
 
 	/**
