@@ -1,0 +1,1 @@
+export const DefaultExpressPort = Number(process.env.port || 3000);
