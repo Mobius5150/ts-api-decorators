@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi } from "../../../src";
+import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -7,6 +7,48 @@ import * as http from 'http';
 class MyApi {
 	@ApiGetMethod('/hello')
 	greet(
+		@ApiQueryParam() name: string,
+		@ApiQueryParam() times: number = 1,
+		@ApiQueryParam() optional?: string,
+	) {
+		let result = optional ? optional : '';
+		for (let i = 0; i < times; ++i) {
+			result += `Hi ${name}! `;
+		}
+
+		return result;
+	}
+
+	@ApiPostMethod('/hello')
+	greetPost(
+		@ApiQueryParam() name: string,
+		@ApiQueryParam() times: number = 1,
+		@ApiQueryParam() optional?: string,
+	) {
+		let result = optional ? optional : '';
+		for (let i = 0; i < times; ++i) {
+			result += `Hi ${name}! `;
+		}
+
+		return result;
+	}
+
+	@ApiPutMethod('/hello')
+	greetPut(
+		@ApiQueryParam() name: string,
+		@ApiQueryParam() times: number = 1,
+		@ApiQueryParam() optional?: string,
+	) {
+		let result = optional ? optional : '';
+		for (let i = 0; i < times; ++i) {
+			result += `Hi ${name}! `;
+		}
+
+		return result;
+	}
+
+	@ApiDeleteMethod('/hello')
+	greetDelete(
 		@ApiQueryParam() name: string,
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,

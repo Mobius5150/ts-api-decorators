@@ -1,4 +1,4 @@
-import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod } from 'ts-api-decorators';
+import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName } from 'ts-api-decorators';
 import * as Express from 'express';
 
 export interface IExpressManagedApiContext {
@@ -21,6 +21,18 @@ export class ManagedApi {
 					case ApiMethod.GET:
 						router.get(route[0], this.getHandlerWrapper(route[1]));
 						break;
+
+					case ApiMethod.POST:
+						router.post(route[0], this.getHandlerWrapper(route[1]));
+						break;
+
+					case ApiMethod.PUT:
+						router.put(route[0], this.getHandlerWrapper(route[1]));
+						break;
+
+					case ApiMethod.DELETE:
+						router.delete(route[0], this.getHandlerWrapper(route[1]));
+						break;
 				}
 			}
 		}
@@ -30,8 +42,24 @@ export class ManagedApi {
 	
 	private getHandlerWrapper(instance: IApiHandlerInstance<IExpressManagedApiContext>) {
 		return (req: Express.Request, res: Express.Response, next: Function) => {
+			const contentType = req.header(ApiStdHeaderName.ContentType);
+			const contentLength = req.header(ApiStdHeaderName.ContentLength);
+			// TODO: Need to properly parse the body based on the content length
+			
 			instance.wrappedHandler({
 				queryParams: this.getRequestQueryParams(req),
+				bodyContents: (
+				!!req.body
+					? {
+						contentsStream: req,
+						// TODO: Add text encoding?
+						readStreamToStringAsync: readStreamToStringUtil(req),
+						readStreamToStringCb: readStreamToStringUtilCb(req),
+						streamContentsMimeRaw: contentType,
+						streamContentsMimeType: parseApiMimeType(contentType),
+						}
+					: undefined
+				),
 				transportParams: {
 					req,
 					res,

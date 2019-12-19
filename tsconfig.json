@@ -10,7 +10,7 @@
 		"esModuleInterop": false,
 		"experimentalDecorators": true,
 		"declaration": true,
-		"downlevelIteration": true,
+		"downlevelIteration": true
 	},
 	"exclude": [
 		"node_modules",
