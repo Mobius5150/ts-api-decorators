@@ -1,14 +1,28 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
-import { IApiDefinition, ApiMethod, IApiParamDefinition } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError } from "../Errors";
+import { Readable } from "stream";
+import { ApiMimeType } from "./MimeTypes";
+import { __ApiParamArgs } from "./InternalTypes";
+import { Validator as JsonSchemaValidator } from 'jsonschema';
 
 export type ApiQueryParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [param: string]: string };
 
+export interface IApiBodyContents {
+	contentsStream: Readable;
+	streamContentsMimeType: ApiMimeType;
+	streamContentsMimeRaw: string;
+	readStreamToStringAsync: () => Promise<string>;
+	readStreamToStringCb: (cb: (err: any, contents?: string) => void) => void;
+	parsedBody?: any;
+}
+
 export interface IApiInvocationParams<TransportParamsType extends object> {
 	queryParams: ApiQueryParamsDict;
-	transportParams: TransportParamsType
+	bodyContents?: IApiBodyContents;
+	transportParams: TransportParamsType;
 }
 
 export interface IApiInvocationResult {
@@ -31,6 +45,8 @@ export class ManagedApi<TransportParamsType extends object> {
 	private static apis = [];
 	private static namespace: Namespace;
 
+	private readonly jsonValidator: JsonSchemaValidator;
+
 	public constructor() {
 		if (!ManagedApi.namespace) {
 			ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
@@ -39,6 +55,8 @@ export class ManagedApi<TransportParamsType extends object> {
 				ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
 			}
 		}
+
+		this.jsonValidator = new JsonSchemaValidator();
 	}
 
 	/**
@@ -118,66 +136,142 @@ export class ManagedApi<TransportParamsType extends object> {
 		return ManagedApi.namespace.get('invocationparams');
 	}
 
-	private invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
+	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
 		// Resolve handler arguments
-		const args = handlerArgs.map(({args}) => {
-			const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
-			if (!isDefined && args.typedef.type !== 'boolean') {
-				// Query param not defined
-				if (args.initializer) {
-					return args.initializer();
-				} else if (args.optional) {
-					// This arg was optional
-					return undefined;
-				} else {
-					// Arg was required, throw
-					throw new HttpRequiredQueryParamMissingError(args.name);
-				}
-			}
-
-			// Arg was defined, process it
-			const strVal = invocationParams.queryParams[args.name];
-			switch (args.typedef.type) {
-				case 'any':
-				case 'string':
-					return strVal;
-
-				case 'number':
-					{
-						const parsed = Number(strVal);
-						if (isNaN(parsed)) {
-							throw new HttpQueryParamInvalidTypeError(args.name, 'number');
-						}
-
-						return parsed;
+		const args = await Promise.all(handlerArgs.map(async ({args, type}) => {
+			if (type === ApiParamType.Query) {
+				const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
+				if (!isDefined && args.typedef.type !== 'boolean') {
+					// Query param not defined
+					if (args.initializer) {
+						return args.initializer();
+					} else if (args.optional) {
+						// This arg was optional
+						return undefined;
+					} else {
+						// Arg was required, throw
+						throw new HttpRequiredQueryParamMissingError(args.name);
 					}
-					break;
+				}
 
-				case 'boolean':
-					{
-						if (isDefined) {
-							switch (strVal.toLowerCase()) {
-								case '0':
-								case 'false':
-									return false;
-							}
+				// Arg was defined, process it
+				return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
+			} else if (type === ApiParamType.Body) {
+				const {bodyContents} = invocationParams;
+				if (!bodyContents) {
+					if (args.initializer) {
+						return args.initializer();
+					}
 
-							return true;
-						} else if (args.initializer) {
-							return args.initializer();
-						} else {
-							return false;
-						}
-					};
+					throw new HttpRequiredBodyParamMissingError();
+				}
 
-				default:
-					throw new Error('Not implemented');
+				let contents = null;
+				if (typeof bodyContents.parsedBody !== 'undefined') {
+					contents = bodyContents.parsedBody;
+					if (contents instanceof Buffer) {
+						throw new Error('ParsedBody may not be a buffer');
+					}
+				} else {
+					switch (args.typedef.type) {
+						case 'any':
+						case 'string':
+						case 'number':
+						case 'boolean':
+							contents = this.getApiParam(args, true, contents);
+							break;
+
+						case 'object':
+						case 'array':
+							contents = await this.parseRawRequestBody(bodyContents);
+							break;
+
+						default:
+							throw new Error('Not implemented');
+					}
+				}
+				
+				this.validateBodyContents(args, contents);
+				return contents;
 			}
 
 			// TODO: How to specify callback arg for callback model?
-		});
+		}));
 
 		return def.handler.apply(instance, args);
+	}
+
+	private async parseRawRequestBody(bodyContents: IApiBodyContents) {
+		switch (bodyContents.streamContentsMimeType) {
+			case ApiMimeType.ApplicationJson:
+				return JSON.parse(await bodyContents.readStreamToStringAsync());
+			
+			// TODO: Add a way to register mime type parsers so that you can BYO xml
+
+			default:
+				throw new Error('Body contents parser not defined for tyoe: ' + bodyContents.streamContentsMimeRaw);
+		}
+	}
+
+	private validateBodyContents(args: __ApiParamArgs, contents: any) {
+		const contentsType = typeof contents;
+		if (args.typedef.type !== 'any' && contentsType !== args.typedef.type) {
+			throw new HttpBodyParamInvalidTypeError(args.typedef.type);
+		}
+
+		if (args.typedef.type === 'object') {
+			const result = this.jsonValidator.validate(contents, args.typedef.schema);
+			if (!result.valid) {
+				if (result.errors.length === 0) {
+					throw new HttpBodyParamInvalidTypeError(args.typedef.type);
+				} else {
+					// TODO: Create a multiple error format
+					throw new HttpBodyParamValidationError(result.errors[0]);
+				}
+			}
+		}
+
+		if (args.validationFunction) {
+			args.validationFunction(args.name, contents);
+		}
+	}
+
+	private getApiParam(args: __ApiParamArgs, isDefined: boolean, strVal: string | Buffer, contentsMime?: string) {
+		switch (args.typedef.type) {
+			case 'any':
+			case 'string':
+				return strVal;
+
+			case 'number':
+				{
+					const parsed = Number(strVal);
+					if (isNaN(parsed)) {
+						throw new HttpQueryParamInvalidTypeError(args.name, 'number');
+					}
+
+					return parsed;
+				};
+
+			case 'boolean':
+				{
+					if (isDefined) {
+						switch ((typeof strVal === 'string' ? strVal : strVal.toString()).toLowerCase()) {
+							case '0':
+							case 'false':
+								return false;
+						}
+
+						return true;
+					} else if (args.initializer) {
+						return args.initializer();
+					}
+					
+					return false;
+				};
+
+			default:
+				throw new Error('Not implemented');
+		}
 	}
 
 	/**
@@ -236,7 +330,7 @@ export class ManagedApi<TransportParamsType extends object> {
 		throw new Error('Not implemented');
 	}
 
-	private getRequestForCurrentExecutionContext() {
+	private getRequestForCurrentExecutionContext(): TransportParamsType {
 		throw new Error('Not implemented');
 	}
 }

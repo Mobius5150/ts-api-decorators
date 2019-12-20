@@ -1,3 +1,5 @@
+import { ValidationError } from "jsonschema";
+
 export class HttpError<T extends object = {}> extends Error {
     public responseBody: { message: string } & T;
 
@@ -40,11 +42,38 @@ export class HttpRequiredQueryParamMissingError extends HttpBadRequestError {
     }
 }
 
+export class HttpRequiredBodyParamMissingError extends HttpBadRequestError {
+    constructor() {
+        super(`Missing request body`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpRequiredBodyParamMissingError.prototype);
+    }
+}
+
 export class HttpQueryParamInvalidTypeError extends HttpBadRequestError {
     constructor(queryParamName: string, expectedType: string) {
         super(`Invalid value for query parameter '${queryParamName}'. Must be a valid ${expectedType}.`);
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, HttpQueryParamInvalidTypeError.prototype);
+    }
+}
+
+export class HttpBodyParamInvalidTypeError extends HttpBadRequestError {
+    constructor(expectedType: string) {
+        super(`Invalid value for body. Must be a valid ${expectedType}.`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpBodyParamInvalidTypeError.prototype);
+    }
+}
+
+export class HttpBodyParamValidationError extends HttpBadRequestError {
+    constructor(validationError: ValidationError) {
+        super(`Error request validating body: ` + validationError.toString());
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpBodyParamValidationError.prototype);
     }
 }

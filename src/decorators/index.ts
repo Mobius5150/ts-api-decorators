@@ -4,3 +4,8 @@ export {
 	ApiQueryParamNumber,
 	ApiQueryParamString,
 } from './QueryParams';
+export {
+	ApiBodyParam,
+	ApiBodyParamNumber,
+	ApiBodyParamString,
+} from './BodyParams';

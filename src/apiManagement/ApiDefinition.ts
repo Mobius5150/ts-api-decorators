@@ -1,4 +1,4 @@
-import { __ApiQueryParamArgs } from "../decorators/QueryParams";
+import { __ApiParamArgs } from "./InternalTypes";
 
 export const enum ApiMethod {
 	GET = 'GET',
@@ -6,6 +6,11 @@ export const enum ApiMethod {
 	PUT = 'PUT',
 	DELETE = 'DELETE',
 	// TODO: Other methods
+}
+
+export const enum ApiParamType {
+	Body,
+	Query,
 }
 
 export type ApiMethodReturnTypePrimitives = void | string | object;
@@ -24,7 +29,8 @@ export interface IApiDefinition {
 }
 
 export interface IApiParamDefinition {
-	args: __ApiQueryParamArgs;
+	args: __ApiParamArgs;
 	propertyKey: string | symbol;
 	parameterIndex: number;
+	type: ApiParamType;
 }

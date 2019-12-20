@@ -1,11 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
-import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
-import { IQueryParamDecoratorDefinition } from "./DecoratorUtil";
+import { __ApiParamArgs, ApiParamValidationFunction } from '../apiManagement/InternalTypes';
+import { IBodyParamDecoratorDefinition } from "./DecoratorUtil";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
 
-export const queryParamDecoratorKey = 'queryParamDecorator';
+export const bodyParamDecoratorKey = 'bodyParamDecorator';
 
-export function QueryParamDecorator(d: IQueryParamDecoratorDefinition) {
+export function BodyParamDecorator(d: IBodyParamDecoratorDefinition) {
 	return (
 		target: object,
 		propertyKey: string,
@@ -13,20 +13,20 @@ export function QueryParamDecorator(d: IQueryParamDecoratorDefinition) {
 	) => {
 		descriptor.writable = false;
 		descriptor.configurable = false;
-		Reflect.defineMetadata(queryParamDecoratorKey, d, target, propertyKey);
+		Reflect.defineMetadata(bodyParamDecoratorKey, d, target, propertyKey);
 	}
 }
 
-export function GetQueryParamDecorator(param: string): IQueryParamDecoratorDefinition {
-	return <IQueryParamDecoratorDefinition>Reflect.getMetadata(queryParamDecoratorKey, QueryParams, param);
+export function GetBodyParamDecorator(param: string): IBodyParamDecoratorDefinition {
+	return <IBodyParamDecoratorDefinition>Reflect.getMetadata(bodyParamDecoratorKey, BodyParams, param);
 }
 
-export abstract class QueryParams {
+export abstract class BodyParams {
 	/**
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
-	@QueryParamDecorator({
+	@BodyParamDecorator({
 		allowableTypes: ['string'],
 		arguments: [
 			{
@@ -35,8 +35,8 @@ export abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParamString(stringValidationRegex?: RegExp) {
-		return QueryParams.ApiQueryParam((name, value) => {
+	public static ApiBodyParamString(stringValidationRegex?: RegExp) {
+		return BodyParams.ApiBodyParam((name, value) => {
 			throw new Error('Not implemented');
 		});
 	}
@@ -47,7 +47,7 @@ export abstract class QueryParams {
 	 * @param numberMax The maximum value, undefined for no maximum.
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
-	@QueryParamDecorator({
+	@BodyParamDecorator({
 		allowableTypes: ['number'],
 		arguments: [
 			{
@@ -60,8 +60,8 @@ export abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParamNumber(numberMin?: number, numberMax?: number) {
-		return QueryParams.ApiQueryParam((name, value) => {
+	public static ApiBodyParamNumber(numberMin?: number, numberMax?: number) {
+		return BodyParams.ApiBodyParam((name, value) => {
 			throw new Error('Not implemented');
 		});
 	}
@@ -70,10 +70,10 @@ export abstract class QueryParams {
 	 * A query parameter.
 	 * @param validator 
 	 */
-	public static ApiQueryParam(): ParameterDecorator;
-	public static ApiQueryParam(validator?: ApiParamValidationFunction): ParameterDecorator;
-	@QueryParamDecorator({
-		allowableTypes: ['string', 'number', 'date'],
+	public static ApiBodyParam(): ParameterDecorator;
+	public static ApiBodyParam(validator?: ApiParamValidationFunction): ParameterDecorator;
+	@BodyParamDecorator({
+		allowableTypes: ['object', 'string', 'number', 'date'],
 		arguments: [
 			{
 				type: "validationFunc",
@@ -81,7 +81,7 @@ export abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParam(a?: any): ParameterDecorator {
+	public static ApiBodyParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
 			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
@@ -89,13 +89,13 @@ export abstract class QueryParams {
 					args,
 					parameterIndex,
 					propertyKey,
-					type: ApiParamType.Query
+					type: ApiParamType.Body,
 				},
 				target.constructor);
 		}
 	}
 }
 
-export const ApiQueryParam = QueryParams.ApiQueryParam;
-export const ApiQueryParamString = QueryParams.ApiQueryParamString;
-export const ApiQueryParamNumber = QueryParams.ApiQueryParamNumber;
+export const ApiBodyParam = BodyParams.ApiBodyParam;
+export const ApiBodyParamString = BodyParams.ApiBodyParamString;
+export const ApiBodyParamNumber = BodyParams.ApiBodyParamNumber;

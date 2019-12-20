@@ -1,6 +1,8 @@
 import { Api, ApiGetMethod } from "../../../src";
 import { ApiQueryParam } from "../../../src/decorators/QueryParams";
 
+const validator = (name: string, value: string) => {};
+
 @Api
 class MyApi {
 

@@ -2,25 +2,35 @@ import * as ts from 'typescript';
 import * as path from 'path';
 import * as tjs from "typescript-json-schema";
 import {
-	InternalTypeDefinition,
-	__ApiQueryParamArgs,
 	ApiQueryParam,
-	IntrinsicTypeDefinitionNumber,
 	ApiQueryParamString,
-	ApiQueryParamNumber
+	ApiQueryParamNumber,
+	GetQueryParamDecorator
 } from './decorators/QueryParams';
-import { IQueryParamDecoratorDefinition, GetQueryParamDecorator } from './decorators/DecoratorUtil';
+import {
+	InternalTypeDefinition,
+	__ApiParamArgs,
+	IntrinsicTypeDefinitionNumber,
+} from './apiManagement/InternalTypes';
+import { IBodyParamDecoratorDefinition } from './decorators/DecoratorUtil';
+import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator } from './decorators/BodyParams';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, {
 		uniqueNames: true,
+		required: true,
 	});
 
-	const indexTs = path.join('decorators/QueryParams');
-	const transformers: QueryParamDecoratorTransformer[] = [
-		getTransformer(program, generator, indexTs, ApiQueryParam.name),
-		getTransformer(program, generator, indexTs, ApiQueryParamString.name),
-		getTransformer(program, generator, indexTs, ApiQueryParamNumber.name),
+	const queryParamIndexTs = path.join('decorators/QueryParams');
+	const bodyParamIndexTs = path.join('decorators/BodyParams');
+	const transformers: ParamDecoratorTransformer[] = [
+		getQueryParamTransformer(program, generator, queryParamIndexTs, ApiQueryParam.name),
+		getQueryParamTransformer(program, generator, queryParamIndexTs, ApiQueryParamString.name),
+		getQueryParamTransformer(program, generator, queryParamIndexTs, ApiQueryParamNumber.name),
+
+		getBodyParamTransformer(program, generator, bodyParamIndexTs, ApiBodyParam.name),
+		getBodyParamTransformer(program, generator, bodyParamIndexTs, ApiBodyParamString.name),
+		getBodyParamTransformer(program, generator, bodyParamIndexTs, ApiBodyParamNumber.name),
 	];
 
 	return (context: ts.TransformationContext) => (file: ts.SourceFile) =>  {
@@ -32,13 +42,26 @@ export default function transformer(program: ts.Program): ts.TransformerFactory<
 	};
 }
 
-function getTransformer(program: ts.Program, generator: tjs.JsonSchemaGenerator, indexTs: string, name: string) {
+function getQueryParamTransformer(program: ts.Program, generator: tjs.JsonSchemaGenerator, indexTs: string, name: string) {
 	const d = GetQueryParamDecorator(name);
 	if (!d) {
 		throw new Error('QueryParamDecorator not defined for: ' + name);
 	}
 
-	return new QueryParamDecoratorTransformer(program, generator, {
+	return new ParamDecoratorTransformer(program, generator, {
+		indexTs,
+		magicFunctionName: name,
+		...d,
+	});
+}
+
+function getBodyParamTransformer(program: ts.Program, generator: tjs.JsonSchemaGenerator, indexTs: string, name: string) {
+	const d = GetBodyParamDecorator(name);
+	if (!d) {
+		throw new Error('BodyParamDecorator not defined for: ' + name);
+	}
+
+	return new ParamDecoratorTransformer(program, generator, {
 		indexTs,
 		magicFunctionName: name,
 		...d,
@@ -49,16 +72,16 @@ class ExpressionWrapper {
 	constructor(public node: ts.Expression) {}
 }
 
-interface IDecoratorFunctionTransformInfo extends IQueryParamDecoratorDefinition {
+interface IDecoratorFunctionTransformInfo extends IBodyParamDecoratorDefinition {
 	magicFunctionName: string;
 	indexTs: string;
 }
 
 type ParamArgsInitializer = {
-	[P in keyof __ApiQueryParamArgs]?: __ApiQueryParamArgs[P] | ExpressionWrapper;
+	[P in keyof __ApiParamArgs]?: __ApiParamArgs[P] | ExpressionWrapper;
 }
 
-class QueryParamDecoratorTransformer {
+class ParamDecoratorTransformer {
 	private typeChecker: ts.TypeChecker;
 
 	constructor(
@@ -199,22 +222,32 @@ class QueryParamDecoratorTransformer {
 	}
 
 	private getInternalTypeRepresentation(node: ts.TypeNode, type: ts.Type): InternalTypeDefinition {
+		const base = {
+			...(ts.isPropertySignature(node)
+				? { optional: !!node.questionToken }
+				: {})
+		};
+		
 		if (isIntrinsicType(type)) {
 			return {
+				...base,
 				type: <any>type.intrinsicName,
 			}
 		} else if (ts.isUnionTypeNode(node) && isUnionType(node, type)) {
 			return {
+				...base,
 				type: 'union',
 				types: type.types.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t)),
 			}
 		} else if (ts.isIntersectionTypeNode(node) && isIntersectionType(node, type)) {
 			return {
+				...base,
 				type: 'intersection',
 				types: type.types.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t)),
 			}
 		} else if (node && ts.isArrayTypeNode(node)) {
 			return {
+				...base,
 				type: 'array',
 				elementType: this.getInternalTypeRepresentation(node.elementType, this.typeChecker.getTypeFromTypeNode(node.elementType)),
 			};
@@ -223,6 +256,7 @@ class QueryParamDecoratorTransformer {
 			for (const symbol of this.generator.getSymbols(name)) {
 				if (isSymbolWithId(symbol.symbol) && symbol.symbol.id === type.symbol.id) {
 					return {
+						...base,
 						type: 'object',
 						schema: this.generator.getSchemaForSymbol(symbol.name),
 					}
