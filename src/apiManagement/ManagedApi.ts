@@ -45,18 +45,18 @@ export class ManagedApi {
 			const contentType = req.header(ApiStdHeaderName.ContentType);
 			const contentLength = req.header(ApiStdHeaderName.ContentLength);
 			// TODO: Need to properly parse the body based on the content length
-			
 			instance.wrappedHandler({
 				queryParams: this.getRequestQueryParams(req),
 				bodyContents: (
-				!!req.body
-					? {
-						contentsStream: req,
-						// TODO: Add text encoding?
-						readStreamToStringAsync: readStreamToStringUtil(req),
-						readStreamToStringCb: readStreamToStringUtilCb(req),
-						streamContentsMimeRaw: contentType,
-						streamContentsMimeType: parseApiMimeType(contentType),
+				(typeof contentType !== 'undefined' && Number(contentLength) > 0)
+					?
+						{
+							contentsStream: req,
+							// TODO: Add text encoding?
+							readStreamToStringAsync: readStreamToStringUtil(req),
+							readStreamToStringCb: readStreamToStringUtilCb(req),
+							streamContentsMimeRaw: contentType,
+							streamContentsMimeType: parseApiMimeType(contentType),
 						}
 					: undefined
 				),
@@ -68,7 +68,9 @@ export class ManagedApi {
 				.then(result => {
 					res.status(result.statusCode).send(result.body);
 				})
-				.catch(e => next(e));
+				.catch(e => {
+					next(e)
+				});
 		};
 	}
 

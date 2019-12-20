@@ -9,11 +9,12 @@ export interface ITestServer {
 
 export class TestServer {
 	private module: ITestServer;
+	private readonly jsModuleName: string;
 
 	constructor(
-		private moduleName: string
+		private readonly moduleName: string,
 	) {
-
+		this.jsModuleName = this.moduleName.replace(/\.ts$/, '.js');
 	}
 
 	public async start(portNo: number): Promise<http.Server> {
@@ -23,7 +24,7 @@ export class TestServer {
 		program.emit(program.getSourceFile(this.moduleName), undefined, undefined, false, {
 			before: [getTransformer()(program)]
 		});
-		this.module = require(this.moduleName.replace('.ts', '.js')).default;
+		this.module = require(this.jsModuleName).default;
 		return new Promise((resolve, reject) => {
 			this.module.start(portNo, (err, server) => {
 				if (err) {
@@ -38,7 +39,7 @@ export class TestServer {
 	public async stop() {
 		this.module.stop();
 		delete this.module;
-		const name = require.resolve(this.moduleName);
+		const name = require.resolve(this.jsModuleName);
 		delete require.cache[name];
 	}
 }

@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as request from 'supertest';
 import * as http from 'http';
 
-describe('Query strings', () => {
+describe('Query Params', () => {
 	let testServer: TestServer;
 	let httpServer: http.Server;
 

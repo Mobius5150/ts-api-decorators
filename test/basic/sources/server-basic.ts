@@ -1,22 +1,37 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from "../../../src";
+import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiBodyParam } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
 
+interface IGreetArgs {
+	name: string;
+	times: number;
+
+	/**
+	 * @defaultValue 1
+	 */
+	optional?: string;
+}
+
 @Api
 class MyApi {
+
+	private getResult(args: IGreetArgs) {
+		let result = args.optional ? args.optional : '';
+		for (let i = 0; i < args.times; ++i) {
+			result += `Hi ${args.name}! `;
+		}
+
+		return result;
+	}
+
 	@ApiGetMethod('/hello')
 	greet(
 		@ApiQueryParam() name: string,
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
 	) {
-		let result = optional ? optional : '';
-		for (let i = 0; i < times; ++i) {
-			result += `Hi ${name}! `;
-		}
-
-		return result;
+		return this.getResult({name, times, optional});
 	}
 
 	@ApiPostMethod('/hello')
@@ -25,12 +40,14 @@ class MyApi {
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
 	) {
-		let result = optional ? optional : '';
-		for (let i = 0; i < times; ++i) {
-			result += `Hi ${name}! `;
-		}
+		return this.getResult({name, times, optional});
+	}
 
-		return result;
+	@ApiPostMethod('/helloBody')
+	greetPostBody(
+		@ApiBodyParam() body: IGreetArgs,
+	) {
+		return this.getResult({ times: 1, ...body });
 	}
 
 	@ApiPutMethod('/hello')
@@ -39,12 +56,14 @@ class MyApi {
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
 	) {
-		let result = optional ? optional : '';
-		for (let i = 0; i < times; ++i) {
-			result += `Hi ${name}! `;
-		}
+		return this.getResult({name, times, optional});
+	}
 
-		return result;
+	@ApiPutMethod('/helloBody')
+	greetPutBody(
+		@ApiBodyParam() body: IGreetArgs,
+	) {
+		return this.getResult({ times: 1, ...body });
 	}
 
 	@ApiDeleteMethod('/hello')
@@ -53,12 +72,7 @@ class MyApi {
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
 	) {
-		let result = optional ? optional : '';
-		for (let i = 0; i < times; ++i) {
-			result += `Hi ${name}! `;
-		}
-
-		return result;
+		return this.getResult({name, times, optional});
 	}
 }
 
