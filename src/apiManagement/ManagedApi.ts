@@ -209,7 +209,7 @@ export class ManagedApi<TransportParamsType extends object> {
 			// TODO: Add a way to register mime type parsers so that you can BYO xml
 
 			default:
-				throw new Error('Body contents parser not defined for tyoe: ' + bodyContents.streamContentsMimeRaw);
+				throw new Error('Body contents parser not defined for type: ' + bodyContents.streamContentsMimeRaw);
 		}
 	}
 

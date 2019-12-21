@@ -21,11 +21,14 @@ export type ApiMethodFunction = (...args: any[]) => ApiMethodReturnType;
 
 export type ApiMethodCallbackFunction<T> = (err: any, result: T) => void;
 
-export interface IApiDefinition {
+export interface IApiDefinitionBase {
 	method: ApiMethod;
 	route: string;
-	handler: ApiMethodFunction;
 	handlerKey: string | symbol;
+}
+
+export interface IApiDefinition extends IApiDefinitionBase {
+	handler: ApiMethodFunction;
 }
 
 export interface IApiParamDefinition {

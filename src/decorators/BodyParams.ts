@@ -1,7 +1,7 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { __ApiParamArgs, ApiParamValidationFunction } from '../apiManagement/InternalTypes';
-import { IBodyParamDecoratorDefinition } from "./DecoratorUtil";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
+import { IBodyParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
 
 export const bodyParamDecoratorKey = 'bodyParamDecorator';
 

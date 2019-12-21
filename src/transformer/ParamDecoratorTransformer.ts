@@ -1,0 +1,136 @@
+import * as ts from 'typescript';
+import * as tjs from "typescript-json-schema";
+import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
+import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
+
+export interface IQueryParamDecoratorDefinition {
+	allowableTypes: ('string' | 'number' | 'date' | 'any')[];
+	arguments: IParamDecoratorFunctionArg[];
+}
+
+export interface IBodyParamDecoratorDefinition {
+	allowableTypes: ('object' | 'string' | 'number' | 'date' | 'any')[];
+	arguments: IParamDecoratorFunctionArg[];
+}
+
+export type ParamDecoratorTransformerInfo = IBodyParamDecoratorDefinition & IDecorationFunctionTransformInfoBase;
+
+export interface IParamDecoratorFunctionArg {
+	type: 'validationFunc' | 'numberMin' | 'numberMax' | 'regexp';
+	optional: boolean;
+}
+
+export class ParamDecoratorTransformer extends DecoratorTransformer<ts.ParameterDeclaration, ParamDecoratorTransformerInfo> {
+    constructor(
+        program: ts.Program,
+        generator: tjs.JsonSchemaGenerator,
+        transformInfo: ParamDecoratorTransformerInfo
+    ) {
+		super(program, generator, {
+            ...transformInfo,
+            nodeCheckFunction: <TypePredicateFunc<ts.Node, ts.ParameterDeclaration>>(node => this.isDecoratedParameterExpression(node)),
+        })
+    }
+
+	public visitNode(node: ts.ParameterDeclaration): ts.Node{
+		// TODO: Validate the type of the parameter this decorator was used on matches the allowable types
+        // defined on: this.transformInfo.allowableTypes
+        
+		// Parse type
+		let internalType: InternalTypeDefinition = {
+			type: 'any',
+        };
+        
+		if (node.type) {
+			const type = this.typeChecker.getTypeFromTypeNode(node.type);
+			internalType = this.getInternalTypeRepresentation(node.type, type);
+        }
+        
+		// Parse argument name
+		let name: string;
+		if (typeof node.name === 'string') {
+			name = node.name;
+		} else if (ts.isIdentifier(node.name)) {
+			name = node.name.text;
+		} else {
+			throw new Error('Unknown node name type');
+        }
+        
+		// Parse initializer
+		let initializer: ts.Expression | undefined;
+		if (node.initializer) {
+			// Only wrap the expression if it's not already parenthesized
+			let parenExpr = this.parenthesizeExpression(node.initializer);
+			initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr);
+			// Remove the initializer from the definition
+			node.initializer = undefined;
+        }
+        
+		// Parse optional
+        let optional: boolean = !!node.questionToken;
+        
+		// Construct param decorator args
+		const args: ParamArgsInitializer = {
+			name,
+			typedef: internalType,
+        };
+        
+		if (optional) {
+			args.optional = optional;
+        }
+        
+		const decoratorArg = {
+			...args,
+			...(initializer
+				? { initializer: new ExpressionWrapper(initializer) }
+				: {}),
+        };
+        
+		// Replace decorator definitions
+		for (const decorator of node.decorators) {
+			if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
+				// Replace decorator invocation
+				const thisArgs = this.getDecoratorArguments(decoratorArg, decorator.expression)
+				if (thisArgs) {
+					// Change decorator arguments
+					decorator.expression.arguments = ts.createNodeArray([this.objectToLiteral(thisArgs)]);
+				}
+			}
+        }
+        
+		return node;
+	}
+	
+	protected getDecoratorArguments(decoratorArg: ParamArgsInitializer, expression: ts.CallExpression): ParamArgsInitializer | undefined {
+		const thisArgs = { ...decoratorArg };
+		for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
+			const argDef = this.transformInfo.arguments[i];
+			const arg = expression.arguments[i];
+			if (typeof arg === 'undefined') {
+				if (!argDef.optional) {
+					throw new Error('Expected argument');
+				}
+				break;
+			}
+			
+			if (argDef.type === 'validationFunc') {
+			}
+			
+			switch (argDef.type) {
+				case 'validationFunc':
+					thisArgs.validationFunction = new ExpressionWrapper(this.parenthesizeExpression(arg));
+					break;
+				case 'numberMax':
+					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).maxVal = this.compileExpressionToNumericConstant(arg);
+					break;
+				case 'numberMin':
+					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).minVal = this.compileExpressionToNumericConstant(arg);
+					break;
+				default:
+					throw new Error('Unknown argdef type');
+			}
+		}
+
+		return thisArgs;
+	}
+}

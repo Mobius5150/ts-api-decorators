@@ -11,7 +11,7 @@
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true,
 		"declaration": true,
-		"downlevelIteration": true,
+		"downlevelIteration": true
 	},
 	"exclude": [
 		"node_modules",

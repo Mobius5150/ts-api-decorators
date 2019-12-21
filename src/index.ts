@@ -5,4 +5,4 @@ export * from './Errors';
 /**
  * The magic schema function
  */
-export declare function magicSchema<T>(): object;
+// export declare function magicSchema<T>(): object;

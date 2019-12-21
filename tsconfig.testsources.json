@@ -3,7 +3,7 @@
 		"module": "commonjs",
 		"target": "es6",
 		"outDir": "dist",
-		"rootDir": "test",
+		"rootDirs": ["src", "test"],
 		"sourceMap": true,
 		"strict": false,
 		"esModuleInterop": true,
@@ -14,6 +14,7 @@
 	"exclude": [
 		"node_modules",
 		"dist",
-		"src"
+		"src",
+		"**/*.test.ts"
 	]
 }

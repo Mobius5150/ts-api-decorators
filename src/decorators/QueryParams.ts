@@ -1,7 +1,7 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
-import { IQueryParamDecoratorDefinition } from "./DecoratorUtil";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
+import { IQueryParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
 
 export const queryParamDecoratorKey = 'queryParamDecorator';
 
