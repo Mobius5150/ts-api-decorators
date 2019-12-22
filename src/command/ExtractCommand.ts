@@ -56,7 +56,6 @@ export class ExtractCommand {
                 this.disableConsoleOutput();
                 await compileSourcesFromTsConfigFile(resolvedRootDir, tsconfigPath, transformers);
                 this.enableConsoleOutput();
-                // console.log('Extraction Complete', {extractedApis: this.extractedApis});
                 this.printExtractionSummary();
             } else {
                 console.log('tsconfig not found');

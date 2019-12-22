@@ -47,7 +47,7 @@ export abstract class DecoratorTransformer<T extends ts.Node, I extends IDecorat
 			return node;
         }
         
-        this.visitNode(node);
+        return this.visitNode(node);
     }
 
     protected isArgumentDecoratorCallExpression(decorator: ts.Decorator['expression']): decorator is ts.CallExpression {
