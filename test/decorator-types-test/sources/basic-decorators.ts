@@ -6,6 +6,14 @@ const validator = (name: string, value: string) => {};
 @Api
 class MyApi {
 
+	/**
+	 * Greets the caller
+	 * @param name The name of the caller
+	 * @param times The number of times to repeat the greeting
+	 * @param optional An optional preamble
+	 * @tags greeters A group of methods for greeting
+	 * @returns The greeting
+	 */
 	@ApiGetMethod<string>('/hello')
 	greet(
 		@ApiQueryParam(validator) name: string,

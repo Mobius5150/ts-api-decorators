@@ -1,7 +1,11 @@
 import * as fs from 'fs';
 
-interface PackageJson {
+export interface PackageJson {
     version: string;
+    name?: string;
+    description?: string;
+    author?: string;
+    license?: string;
 }
 
 let packageJson: PackageJson = null;

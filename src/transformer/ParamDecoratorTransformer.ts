@@ -63,21 +63,22 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 		let internalType: InternalTypeDefinition = {
 			type: 'any',
 		};
+		
 		if (node.type) {
 			const type = this.typeChecker.getTypeFromTypeNode(node.type);
 			internalType = this.getInternalTypeRepresentation(node.type, type);
 		}
+
 		// Parse argument name
 		let name: string;
 		if (typeof node.name === 'string') {
 			name = node.name;
-		}
-		else if (ts.isIdentifier(node.name)) {
+		} else if (ts.isIdentifier(node.name)) {
 			name = node.name.text;
-		}
-		else {
+		} else {
 			throw new Error('Unknown node name type');
 		}
+
 		// Parse initializer
 		let initializer: ts.Expression | undefined;
 		if (node.initializer) {
@@ -87,23 +88,38 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			// Remove the initializer from the definition
 			node.initializer = undefined;
 		}
+
 		// Parse optional
 		let optional: boolean = !!node.questionToken;
+
 		// Construct param decorator args
 		const args: ParamArgsInitializer = {
 			name,
 			typedef: internalType,
+			description: this.getParamDescription(node),
 		};
+
 		if (optional) {
 			args.optional = optional;
 		}
+
 		const decoratorArg = {
 			...args,
 			...(initializer
 				? { initializer: new ExpressionWrapper(initializer) }
 				: {}),
 		};
+
 		return decoratorArg;
+	}
+
+	private getParamDescription(param: ts.ParameterDeclaration): string | undefined {
+		const paramTags = ts.getJSDocParameterTags(param);
+		if (paramTags.length) {
+			return paramTags[0].comment;
+		}
+
+		return undefined;
 	}
 
 	public getDecoratorArguments(decoratorArg: ParamArgsInitializer, expression: ts.CallExpression, transformInfo: ParamDecoratorTransformerInfo = this.transformInfo): ParamArgsInitializer | undefined {

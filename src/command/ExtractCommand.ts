@@ -6,6 +6,10 @@ import { TransformerFuncType, compileSourcesFromTsConfigFile, getDefaultCompiler
 import { IApiDefinitionBase, ApiMethod } from '../apiManagement/ApiDefinition';
 import { resolve } from 'dns';
 import { ParsedCommandLine } from 'typescript';
+import {OpenAPIV3} from 'openapi-types';
+import { PackageJson } from './CommandUtil';
+import { IExtractedApiDefinition } from '../transformer/ExtractionTransformer';
+import { Swagger2Extractor } from './Swagger2Extractor';
 
 export interface ProgramOptions {
     tsconfig: string;
@@ -14,12 +18,13 @@ export interface ProgramOptions {
     rootDir: string;
     isDir?: boolean;
     silent: boolean;
+    apiInfo: string;
 }
 
 export class ExtractCommand {
     private static readonly DEFAULT_TSCONFIG = 'tsconfig.json';
     private console: typeof console = console;
-    private extractedApis: IApiDefinitionBase[] = [];
+    private extractedApis: IExtractedApiDefinition[] = [];
     private options: ProgramOptions;
 
     constructor(
@@ -34,9 +39,10 @@ export class ExtractCommand {
                 }
             )
             .option('--tsconfig <file>', 'The tsconfig.json file to use when compiling')
-            .option('--type', 'The type of output to generate', value => this.validateProgramOutputType(value), 'json')
+            .option('--type <type>', 'The type of output to generate', (d,v) => this.validateProgramOutputType(d, v), 'json')
             .option('--outFile', 'The file to write output to')
             .option('--silent', 'Don\'t output information', false)
+            .option('--apiInfo <file>', 'File containing information for the API', 'package.json')
             .action((rootDir: string, options: ProgramOptions) => this.runCommand({
                 ...options,
                 rootDir,
@@ -82,7 +88,29 @@ export class ExtractCommand {
         }
         // this.enableConsoleOutput();
 
-        this.printExtractionSummary();
+        switch (options.type) {
+            case 'summary':
+                this.printExtractionSummary();
+                break;
+
+            case 'swagger2':
+                this.printSwaggerSummary();
+                break;
+
+            case 'json':
+                this.printJsonSummary();
+                break;
+        }
+        
+    }
+
+    private printJsonSummary() {
+        throw new Error("Method not implemented.");
+    }
+    
+    private printSwaggerSummary() {
+        const extractor = new Swagger2Extractor(this.extractedApis, this.loadApiInfo())
+        console.log(extractor.toString());
     }
 
     private loadTsConfig(resolvedRootDir: string): ParsedCommandLine {
@@ -109,6 +137,22 @@ export class ExtractCommand {
         return parseTsConfig(resolvedRootDir, tsconfigPath);
     }
 
+    private loadApiInfo(): OpenAPIV3.InfoObject {
+        const file = path.resolve(process.cwd(), this.options.apiInfo);
+        const infoBase: PackageJson = require(file);
+        return {
+            version: infoBase.version,
+            title: infoBase.name,
+            description: infoBase.description,
+            contact: {
+                name: infoBase.author,
+            },
+            license: {
+                name: infoBase.license,
+            }
+        };
+    }
+
     private disableConsoleOutput() {
         this.console = {...console};
         for (const key of Object.keys(console)) {
@@ -126,7 +170,7 @@ export class ExtractCommand {
         }
     }
 
-    protected onApiMethodExtracted(method: IApiDefinitionBase) {
+    protected onApiMethodExtracted(method: IExtractedApiDefinition) {
         this.extractedApis.push(method);
     }
 
@@ -156,11 +200,16 @@ export class ExtractCommand {
         this.console.log(table.toString());
     }
 
-    protected validateProgramOutputType(value) {
+    protected validateProgramOutputType(value: string, defaultValue: string) {
         switch (value) {
+            case 'summary':
             case 'json':
+            case 'swagger2':
                 return value;
-    
+
+            case undefined:
+                return defaultValue;
+
             default:
                 throw new Error('Invalid value for `type`: ' + value);
         }

@@ -11,6 +11,7 @@ export const enum ApiMethod {
 export const enum ApiParamType {
 	Body,
 	Query,
+	Path,
 }
 
 export type ApiMethodReturnTypePrimitives = void | string | object;

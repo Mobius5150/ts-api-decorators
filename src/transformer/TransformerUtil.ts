@@ -21,6 +21,10 @@ export interface ArrayType extends ts.Type {
     elementType: ts.Type;
 }
 
+export interface WithJsDoc extends ts.Node {
+   jsDoc: ts.JSDoc[];
+}
+
 export function isSymbolWithId(s: ts.Symbol & Partial<SymbolWithId>): s is SymbolWithId {
     return typeof s.id === 'number';
 }
@@ -43,4 +47,8 @@ export function isIntersectionType(n: ts.TypeNode, s: ts.Type & Partial<Intersec
     }
 
     return Array.isArray(s.types);
+}
+
+export function isNodeWithJsDoc(n: ts.Node): n is WithJsDoc {
+    return Array.isArray((<WithJsDoc>n).jsDoc);
 }

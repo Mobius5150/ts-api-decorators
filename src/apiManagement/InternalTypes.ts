@@ -4,6 +4,7 @@ export interface __ApiParamArgsBase {
 	name: string;
 	typedef: InternalTypeDefinition;
 	optional?: boolean;
+	description?: string;
 }
 
 export interface __ApiParamArgsFuncs {

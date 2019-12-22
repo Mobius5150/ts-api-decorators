@@ -4,10 +4,20 @@ import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber, 
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
 import { IApiDefinition, ApiMethod, IApiDefinitionBase, IApiParamDefinition, ApiParamType } from '../apiManagement/ApiDefinition';
+import { isNodeWithJsDoc, WithJsDoc } from './TransformerUtil';
 
 export interface IExtractedApiDefinition extends IApiDefinitionBase {
 	file: string;
 	parameters: IApiParamDefinition[];
+	description?: string;
+	summary?: string;
+	returnDescription?: string;
+	tags?: IExtractedTag[];
+}
+
+export interface IExtractedTag {
+	name: string;
+	description?: string;
 }
 
 export type OnApiMethodExtractedHandler = (method: IExtractedApiDefinition) => void;
@@ -24,6 +34,8 @@ export interface IExtractionTransformArgument {
 }
 
 export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclaration, IExtractionTransformInfoBase> {
+	public static readonly JsDocTagTag = 'tags';
+
 	private paramTransformers = new Map<ParamDecoratorTransformerInfo, ParamDecoratorTransformer>();
     constructor(
         program: ts.Program,
@@ -57,8 +69,14 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 			name = node.name.text;
 		} else {
 			throw new Error('Unknown node name type');
-        }
-        
+		}
+
+		const jsDoc = this.getJsDoc(node);
+		const description = {
+			...(jsDoc || {}),
+			returnDescription: this.jsdocTagString(ts.getJSDocReturnTag(node)),
+		};
+
 		// Replace decorator definitions
 		for (const decorator of node.decorators) {
 			if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
@@ -87,6 +105,7 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 
 				if (route) {
 					this.onApiMethodExtracted({
+						...description,
 						handlerKey: name,
 						method: this.transformInfo.apiDecoratorMethod,
 						route,
@@ -98,6 +117,45 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
         }
 
 		return node;
+	}
+	
+	private getJsDocTags(node: ts.JSDoc): IExtractedTag[] {
+		if (node.tags) {
+			return (
+				node.tags
+					.filter(t => t.tagName.text === ExtractionTransformer.JsDocTagTag)
+					.map(t => {
+						const parts = t.comment.split(/\s+/);
+						return {
+							name: parts.shift(),
+							description: parts.join(' '),
+						};
+					})
+			);
+		}
+
+		return undefined;
+	}
+	
+	private getJsDoc(node: ts.MethodDeclaration): { summary?: string, description?: string, tags: IExtractedTag[] } | undefined {
+		if (isNodeWithJsDoc(node) && node.jsDoc.length > 0) {
+			const firstLine = node.jsDoc.find(n => n.comment.length > 0);
+			return {
+				summary: firstLine ? firstLine.comment : undefined,
+				tags: firstLine ? this.getJsDocTags(firstLine) : undefined,
+				description: node.jsDoc.reduce((prev, current) => prev + current.comment, ''),
+			}
+		}
+
+		return undefined;
+	}
+
+	private jsdocTagString(tag: ts.JSDocTag | undefined): string {
+		if (tag) {
+			return tag.comment;
+		}
+
+		return undefined;
 	}
 
 	private parseApiMethodCallParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>): IApiParamDefinition[] {
