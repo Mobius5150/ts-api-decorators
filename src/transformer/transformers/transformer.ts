@@ -10,6 +10,7 @@ import {
 import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator } from '../../decorators/BodyParams';
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
 import { ITreeTransformer } from '../ITreeTransformer';
+import { ApiParamType } from '../../apiManagement/ApiDefinition';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, {
@@ -47,6 +48,7 @@ export function getQueryParamDecoratorInfo(name: string, indexTs: string): Param
 	return {
 		indexTs,
 		magicFunctionName: name,
+		type: ApiParamType.Query,
 		...d,
 	};
 }
@@ -64,6 +66,7 @@ export function getBodyParamDecoratorInfo(name: string, indexTs: string): ParamD
 	return {
 		indexTs,
 		magicFunctionName: name,
+		type: ApiParamType.Body,
 		...d,
 	};
 }

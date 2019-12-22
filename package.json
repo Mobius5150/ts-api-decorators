@@ -25,6 +25,7 @@
     "fast-deep-equal": "^2.0.1",
     "jsonschema": "^1.2.4",
     "reflect-metadata": "^0.1.13",
+    "swagger-parser": "^8.0.3",
     "swagger-ts-client": "^0.9.6",
     "typescript-json-schema": "^0.39.0"
   },

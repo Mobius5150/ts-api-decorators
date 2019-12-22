@@ -1,12 +1,13 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
-import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
+import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber, __ApiParamArgsBase } from '../apiManagement/InternalTypes';
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
-import { IApiDefinition, ApiMethod, IApiDefinitionBase } from '../apiManagement/ApiDefinition';
+import { IApiDefinition, ApiMethod, IApiDefinitionBase, IApiParamDefinition, ApiParamType } from '../apiManagement/ApiDefinition';
 
 export interface IExtractedApiDefinition extends IApiDefinitionBase {
 	file: string;
+	parameters: IApiParamDefinition[];
 }
 
 export type OnApiMethodExtractedHandler = (method: IExtractedApiDefinition) => void;
@@ -23,6 +24,7 @@ export interface IExtractionTransformArgument {
 }
 
 export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclaration, IExtractionTransformInfoBase> {
+	private paramTransformers = new Map<ParamDecoratorTransformerInfo, ParamDecoratorTransformer>();
     constructor(
         program: ts.Program,
         generator: tjs.JsonSchemaGenerator,
@@ -32,7 +34,15 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		super(program, generator, {
             ...transformInfo,
             nodeCheckFunction: <TypePredicateFunc<ts.Node, ts.MethodDeclaration>>(node => this.isDecoratedMethodDeclaration(node)),
-        })
+		});
+		
+		this.transformInfo.parameterTypes.forEach(p => {
+			this.paramTransformers.set(p,
+				new ParamDecoratorTransformer(
+					this.program,
+					this.generator,
+					p));
+		});
     }
 
 	public visitNode(node: ts.MethodDeclaration): ts.Node{
@@ -81,12 +91,37 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 						method: this.transformInfo.apiDecoratorMethod,
 						route,
 						file: node.getSourceFile().fileName,
+						parameters: this.parseApiMethodCallParameters(node.parameters),
 					});
 				}
 			}
         }
-        
+
 		return node;
+	}
+
+	private parseApiMethodCallParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>): IApiParamDefinition[] {
+		const parsedParams: IApiParamDefinition[] = [];
+		for (let i = 0; i < parameters.length; ++i) {
+			const param = parameters[i];
+			for (const decorator of param.decorators) {
+				for (const decoratorType of this.transformInfo.parameterTypes) {
+					if (this.isArgumentDecoratorCallExpression(decorator.expression, decoratorType)) {
+						const transformer = this.paramTransformers.get(decoratorType);
+						const paramArgs = transformer.getParamArgs(param);
+						parsedParams.push(
+							{
+								args: transformer.getDecoratorArguments(paramArgs, decorator.expression, decoratorType),
+								parameterIndex: i,
+								propertyKey: paramArgs.name,
+								type: decoratorType.type,
+							});
+					}
+				}
+			}
+		}
+
+		return parsedParams;
 	}
 	
 	protected isDecoratedMethodDeclaration(node: ts.Node): node is ts.MethodDeclaration {

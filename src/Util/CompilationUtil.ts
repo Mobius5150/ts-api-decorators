@@ -66,7 +66,7 @@ export class TsConfigParserHost implements ts.ParseConfigHost {
 	}
 }
 
-function parseTsConfig(basePath: string, tsconfigPath: string): ts.ParsedCommandLine {
+export function parseTsConfig(basePath: string, tsconfigPath: string): ts.ParsedCommandLine {
 	const sourcefile = ts.readJsonConfigFile(tsconfigPath, (path) => readFileSync(path, {encoding: 'utf8'}))
 	return ts.parseJsonSourceFileConfigFileContent(sourcefile, new TsConfigParserHost(), basePath);	
 }

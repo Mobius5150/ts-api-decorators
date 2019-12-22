@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import * as path from 'path';
 import { ITreeTransformer } from "./ITreeTransformer";
-import { __ApiParamArgs, InternalTypeDefinition, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
+import { __ApiParamArgs, InternalTypeDefinition, IntrinsicTypeDefinitionNumber, __ApiParamArgsFuncs, __ApiParamArgsBase } from '../apiManagement/InternalTypes';
 import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId } from './TransformerUtil';
 
 export interface IDecorationFunctionTransformInfoBase {
@@ -20,9 +20,11 @@ export class ExpressionWrapper {
 	constructor(public node: ts.Expression) { }
 }
 
-export type ParamArgsInitializer = {
-	[P in keyof __ApiParamArgs]?: __ApiParamArgs[P] | ExpressionWrapper;
-};
+export type ExpressionWrappedType<T extends object> = {
+	[P in keyof T]?: T[P] | ExpressionWrapper;
+}
+
+export type ParamArgsInitializer = __ApiParamArgsBase & ExpressionWrappedType<__ApiParamArgsFuncs>;
 
 export abstract class DecoratorTransformer<T extends ts.Node, I extends IDecorationFunctionTransformInfoBase = IDecorationFunctionTransformInfoBase> implements ITreeTransformer {
 	protected readonly typeChecker: ts.TypeChecker;
@@ -50,7 +52,7 @@ export abstract class DecoratorTransformer<T extends ts.Node, I extends IDecorat
         return this.visitNode(node);
     }
 
-    protected isArgumentDecoratorCallExpression(decorator: ts.Decorator['expression']): decorator is ts.CallExpression {
+    protected isArgumentDecoratorCallExpression(decorator: ts.Decorator['expression'], transformInfo: IDecorationFunctionTransformInfoBase = this.transformInfo): decorator is ts.CallExpression {
 		if (!ts.isCallExpression(decorator)) {
 			return false;
         }
@@ -64,15 +66,15 @@ export abstract class DecoratorTransformer<T extends ts.Node, I extends IDecorat
 		if (!(!!declaration
 			&& !ts.isJSDocSignature(declaration)
 			&& !!declaration.name
-			&& declaration.name.getText() === this.transformInfo.magicFunctionName)) {
+			&& declaration.name.getText() === transformInfo.magicFunctionName)) {
 			return false;
 		}
 		
 		const sourceFile = path.join(declaration.getSourceFile().fileName);
-		return sourceFile.endsWith(this.transformInfo.indexTs + '.ts') || sourceFile.endsWith(this.transformInfo.indexTs + '.d.ts');
+		return sourceFile.endsWith(transformInfo.indexTs + '.ts') || sourceFile.endsWith(transformInfo.indexTs + '.d.ts');
 	}
 	
-	protected isDecoratedParameterExpression(node: ts.Node): node is ts.ParameterDeclaration {
+	protected isDecoratedParameterExpression(node: ts.Node, transformInfo: IDecorationFunctionTransformInfoBase = this.transformInfo): node is ts.ParameterDeclaration {
 		if (!ts.isParameter(node)) {
 			return false;
         }

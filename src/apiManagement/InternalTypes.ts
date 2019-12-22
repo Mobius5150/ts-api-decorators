@@ -1,11 +1,17 @@
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
-export interface __ApiParamArgs {
+export interface __ApiParamArgsBase {
 	name: string;
 	typedef: InternalTypeDefinition;
 	optional?: boolean;
+}
+
+export interface __ApiParamArgsFuncs {
 	initializer?: () => any;
 	validationFunction?: ApiParamValidationFunction;
+}
+
+export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
 }
 
 export interface IntrinsicTypeDefinition {

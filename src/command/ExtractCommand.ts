@@ -2,8 +2,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
 import transformer from '../transformer/transformers/extractionTransformer';
-import { TransformerFuncType, compileSourcesFromTsConfigFile } from '../Util/CompilationUtil';
+import { TransformerFuncType, compileSourcesFromTsConfigFile, getDefaultCompilerOptions, parseTsConfig, compileSources } from '../Util/CompilationUtil';
 import { IApiDefinitionBase, ApiMethod } from '../apiManagement/ApiDefinition';
+import { resolve } from 'dns';
+import { ParsedCommandLine } from 'typescript';
 
 export interface ProgramOptions {
     tsconfig: string;
@@ -11,38 +13,43 @@ export interface ProgramOptions {
     outFile: string;
     rootDir: string;
     isDir?: boolean;
+    silent: boolean;
 }
 
 export class ExtractCommand {
+    private static readonly DEFAULT_TSCONFIG = 'tsconfig.json';
     private console: typeof console = console;
     private extractedApis: IApiDefinitionBase[] = [];
+    private options: ProgramOptions;
 
     constructor(
         private readonly program: Command
     ) {
         program
-        .command('extract <rootDir>')
-        .description(
-            'Extract api information from the program at rootDir.',
-            {
-                'rootDir': 'The root directory or file of the program to extract. If directory, should be the directory that contains tsConfig',
-            }
-        )
-        .option('--tsconfig <file>', 'The tsconfig.json file to use when compiling', 'tsconfig.json')
-        .option('--type', 'The type of output to generate', value => this.validateProgramOutputType(value), 'json')
-        .option('--outFile', 'The file to write output to')
-        .action((rootDir: string, options: ProgramOptions) => this.runCommand({
-            ...options,
-            rootDir,
-        }));
+            .command('extract <rootDir>')
+            .description(
+                'Extract api information from the program at rootDir.',
+                {
+                    'rootDir': 'The root directory or file of the program to extract. If directory, should be the directory that contains tsConfig',
+                }
+            )
+            .option('--tsconfig <file>', 'The tsconfig.json file to use when compiling')
+            .option('--type', 'The type of output to generate', value => this.validateProgramOutputType(value), 'json')
+            .option('--outFile', 'The file to write output to')
+            .option('--silent', 'Don\'t output information', false)
+            .action((rootDir: string, options: ProgramOptions) => this.runCommand({
+                ...options,
+                rootDir,
+            }));
     }
 
     protected async runCommand(options: ProgramOptions) {
+        this.options = options;
         if (!fs.existsSync(options.rootDir)) {
             throw new Error(`File does not exist: ${options.rootDir}`);
         }
 
-        const resolvedRootDir = path.resolve(options.rootDir, process.cwd());
+        const resolvedRootDir = path.resolve(process.cwd(), options.rootDir);
         const rootDirStat = fs.lstatSync(resolvedRootDir);
         options.isDir = rootDirStat.isDirectory();
 
@@ -50,19 +57,56 @@ export class ExtractCommand {
             program => transformer(program, apiMethod => this.onApiMethodExtracted(apiMethod)),
         ]
         
-        if (options.isDir) {
-            const tsconfigPath = path.join(resolvedRootDir, options.tsconfig);
-            if (fs.existsSync(tsconfigPath)) {
-                this.disableConsoleOutput();
-                await compileSourcesFromTsConfigFile(resolvedRootDir, tsconfigPath, transformers);
-                this.enableConsoleOutput();
-                this.printExtractionSummary();
-            } else {
-                console.log('tsconfig not found');
-            }
-            
-            // compileSourcesDir(options.rootDir,)
+        const hasTsConfig = !!options.tsconfig;
+        if (!hasTsConfig) {
+            options.tsconfig = ExtractCommand.DEFAULT_TSCONFIG;
         }
+
+        // this.disableConsoleOutput();
+        if (options.isDir) {
+            const tsConfig = this.loadTsConfig(resolvedRootDir);
+            compileSources(
+                tsConfig.fileNames, 
+                {
+                    ...tsConfig.options,
+                    noEmit: true,
+                }, transformers);
+        } else {
+            const tsConfig = this.loadTsConfig(path.dirname(resolvedRootDir));
+            compileSources(
+                [options.rootDir],
+                {
+                    ...tsConfig.options,
+                    noEmit: true,
+                }, transformers);
+        }
+        // this.enableConsoleOutput();
+
+        this.printExtractionSummary();
+    }
+
+    private loadTsConfig(resolvedRootDir: string): ParsedCommandLine {
+        let config: string;
+        if (this.options.tsconfig) {
+            config = this.options.tsconfig;
+        } else {
+            config = ExtractCommand.DEFAULT_TSCONFIG;
+        }
+
+        const tsconfigPath = path.resolve(process.cwd(), config);
+        if (!fs.existsSync(tsconfigPath)) {
+            if (this.options.tsconfig) {
+                throw new Error(`tsconfig does not exist: ${tsconfigPath}`);
+            }
+
+            return {
+                options: getDefaultCompilerOptions(),
+                errors: [],
+                fileNames: []
+            }
+        }
+
+        return parseTsConfig(resolvedRootDir, tsconfigPath);
     }
 
     private disableConsoleOutput() {
@@ -87,6 +131,10 @@ export class ExtractCommand {
     }
 
     protected printExtractionSummary() {
+        if (this.options.silent) {
+            return;
+        }
+
         const Table = require('cli-table');
         const table = new Table({
             head: ['Method', 'Route'],
