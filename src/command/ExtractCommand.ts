@@ -6,9 +6,9 @@ import { TransformerFuncType, compileSourcesFromTsConfigFile, getDefaultCompiler
 import { IApiDefinitionBase, ApiMethod } from '../apiManagement/ApiDefinition';
 import { resolve } from 'dns';
 import { ParsedCommandLine } from 'typescript';
-import {OpenAPIV3} from 'openapi-types';
-import { PackageJson } from './CommandUtil';
-import { IExtractedApiDefinition } from '../transformer/ExtractionTransformer';
+import {OpenAPIV3, OpenAPIV2} from 'openapi-types';
+import { PackageJson, getPackageJsonAuthor } from './CommandUtil';
+import { IExtractedApiDefinitionWithMetadata } from '../transformer/ExtractionTransformer';
 import { Swagger2Extractor } from './Swagger2Extractor';
 
 export interface ProgramOptions {
@@ -21,10 +21,73 @@ export interface ProgramOptions {
     apiInfo: string;
 }
 
+export interface ContactObject {
+    name?: string;
+    url?: string;
+    email?: string;
+}
+
+export interface LicenseObject {
+    name: string;
+    url?: string;
+}
+
+export interface ProgramApiInfo {
+    /**
+     * The title of the API
+     */
+    title: string;
+
+    /**
+     * The main homepage for the API
+     */
+    homepage?: string;
+
+    /**
+     * A description of the API
+     */
+    description?: string;
+
+    /**
+     * A link to the terms of service for the API
+     */
+    termsOfService?: string;
+
+    /**
+     * Contact information for questions regarding the API
+     */
+    contact?: ContactObject;
+
+    /**
+     * One or more licenses that apply to the API and SDK
+     */
+    license?: LicenseObject[];
+
+    /**
+     * The version of the API
+     */
+    version: string;
+
+    /**
+     * The host the API can be found at
+     */
+    host?: string;
+
+    /**
+     * The base path for all api methods
+     */
+    basePath?: string;
+
+    /**
+     * Http schemes for accessing the api
+     */
+    schemes?: string[];
+}
+
 export class ExtractCommand {
     private static readonly DEFAULT_TSCONFIG = 'tsconfig.json';
     private console: typeof console = console;
-    private extractedApis: IExtractedApiDefinition[] = [];
+    private extractedApis: IExtractedApiDefinitionWithMetadata[] = [];
     private options: ProgramOptions;
 
     constructor(
@@ -60,7 +123,9 @@ export class ExtractCommand {
         options.isDir = rootDirStat.isDirectory();
 
         const transformers: TransformerFuncType[] = [
-            program => transformer(program, apiMethod => this.onApiMethodExtracted(apiMethod)),
+            program => transformer(program, {
+                onApiMethodExtracted: apiMethod => this.onApiMethodExtracted(apiMethod)
+            }),
         ]
         
         const hasTsConfig = !!options.tsconfig;
@@ -68,7 +133,7 @@ export class ExtractCommand {
             options.tsconfig = ExtractCommand.DEFAULT_TSCONFIG;
         }
 
-        // this.disableConsoleOutput();
+        this.disableConsoleOutput();
         if (options.isDir) {
             const tsConfig = this.loadTsConfig(resolvedRootDir);
             compileSources(
@@ -86,31 +151,40 @@ export class ExtractCommand {
                     noEmit: true,
                 }, transformers);
         }
-        // this.enableConsoleOutput();
+        this.enableConsoleOutput();
 
+        let summary: string | Buffer;
         switch (options.type) {
             case 'summary':
-                this.printExtractionSummary();
+                summary = this.printExtractionSummary();
                 break;
 
             case 'swagger2':
-                this.printSwaggerSummary();
+                summary = this.getSwaggerSummary();
                 break;
 
             case 'json':
-                this.printJsonSummary();
+                summary = this.printJsonSummary();
                 break;
+
+            default:
+                throw new Error('Unknown output type: ' + options.type);
         }
         
+        this.printSummary(summary);
     }
 
-    private printJsonSummary() {
+    private printSummary(summary: string | Buffer) {
+        console.log(summary instanceof Buffer ? summary.toString('utf8') : summary);
+    }
+
+    private printJsonSummary(): string {
         throw new Error("Method not implemented.");
     }
     
-    private printSwaggerSummary() {
-        const extractor = new Swagger2Extractor(this.extractedApis, this.loadApiInfo())
-        console.log(extractor.toString());
+    private getSwaggerSummary() {
+        const extractor = new Swagger2Extractor(this.extractedApis, this.loadApiInfo(), {});
+        return extractor.toString();
     }
 
     private loadTsConfig(resolvedRootDir: string): ParsedCommandLine {
@@ -137,19 +211,22 @@ export class ExtractCommand {
         return parseTsConfig(resolvedRootDir, tsconfigPath);
     }
 
-    private loadApiInfo(): OpenAPIV3.InfoObject {
+    private loadApiInfo(): ProgramApiInfo {
         const file = path.resolve(process.cwd(), this.options.apiInfo);
         const infoBase: PackageJson = require(file);
         return {
             version: infoBase.version,
             title: infoBase.name,
             description: infoBase.description,
-            contact: {
-                name: infoBase.author,
-            },
-            license: {
-                name: infoBase.license,
-            }
+            contact: getPackageJsonAuthor(infoBase),
+            license: [
+                {
+                    name: infoBase.license,
+                }
+            ],
+            homepage: infoBase.homepage,
+            basePath: infoBase.basePath,
+            host: infoBase.host,
         };
     }
 
@@ -170,11 +247,11 @@ export class ExtractCommand {
         }
     }
 
-    protected onApiMethodExtracted(method: IExtractedApiDefinition) {
+    protected onApiMethodExtracted(method: IExtractedApiDefinitionWithMetadata) {
         this.extractedApis.push(method);
     }
 
-    protected printExtractionSummary() {
+    protected printExtractionSummary(): string {
         if (this.options.silent) {
             return;
         }
@@ -197,7 +274,7 @@ export class ExtractCommand {
             }
         });
 
-        this.console.log(table.toString());
+        return table.toString();
     }
 
     protected validateProgramOutputType(value: string, defaultValue: string) {

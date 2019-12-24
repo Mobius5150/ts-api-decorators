@@ -13,12 +13,30 @@ import { ApiGetMethod } from '../..';
 import { ApiMethod } from '../../apiManagement';
 import { ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
 import { getQueryParamDecoratorInfo, getBodyParamDecoratorInfo } from './transformer';
+import { IMetadataManager, IMetadataResolver, MetadataManager } from '../MetadataManager';
+import { OpenApiMetadataExtractors } from '../OpenApi';
 
-export default function transformer(program: ts.Program, onApiMethodExtracted: OnApiMethodExtractedHandler): ts.TransformerFactory<ts.SourceFile> {
+export interface IExtractionTransformerArgs {
+    onApiMethodExtracted: OnApiMethodExtractedHandler;
+    metadataManager?: IMetadataResolver;
+    disableOpenApiMetadata?: boolean;
+}
+
+export default function transformer(program: ts.Program, opts: IExtractionTransformerArgs): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, {
 		uniqueNames: true,
 		required: true,
-	});
+    });
+    
+    let metadataManager = opts.metadataManager;
+    if (!metadataManager) {
+        const mgr = new MetadataManager();
+        if (!opts.disableOpenApiMetadata) {
+            OpenApiMetadataExtractors.RegisterMetadataExtractors(mgr);
+        }
+
+        metadataManager = mgr;
+    }
 
     const indexTs = path.join('decorators/API');
     const queryParamIndexTs = path.join('decorators/QueryParams');
@@ -44,7 +62,7 @@ export default function transformer(program: ts.Program, onApiMethodExtracted: O
             ],
             parameterTypes,
             indexTs,
-        }, onApiMethodExtracted),
+        }, opts.onApiMethodExtracted, metadataManager),
         // TODO: Other api methods
 	];
 

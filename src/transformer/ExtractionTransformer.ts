@@ -5,14 +5,16 @@ import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredica
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
 import { IApiDefinition, ApiMethod, IApiDefinitionBase, IApiParamDefinition, ApiParamType } from '../apiManagement/ApiDefinition';
 import { isNodeWithJsDoc, WithJsDoc } from './TransformerUtil';
+import { ITransformerMetadataCollection, ITransformerMetadata, IMetadataType } from './TransformerMetadata';
+import { OpenApiMetadataType } from './OpenApi';
+import { IMetadataResolver } from './MetadataManager';
 
 export interface IExtractedApiDefinition extends IApiDefinitionBase {
 	file: string;
 	parameters: IApiParamDefinition[];
-	description?: string;
-	summary?: string;
-	returnDescription?: string;
-	tags?: IExtractedTag[];
+}
+
+export interface IExtractedApiDefinitionWithMetadata extends IExtractedApiDefinition, ITransformerMetadataCollection {
 }
 
 export interface IExtractedTag {
@@ -20,7 +22,7 @@ export interface IExtractedTag {
 	description?: string;
 }
 
-export type OnApiMethodExtractedHandler = (method: IExtractedApiDefinition) => void;
+export type OnApiMethodExtractedHandler = (method: IExtractedApiDefinitionWithMetadata) => void;
 
 export interface IExtractionTransformInfoBase extends IDecorationFunctionTransformInfoBase {
 	apiDecoratorMethod: ApiMethod;
@@ -34,14 +36,13 @@ export interface IExtractionTransformArgument {
 }
 
 export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclaration, IExtractionTransformInfoBase> {
-	public static readonly JsDocTagTag = 'tags';
-
 	private paramTransformers = new Map<ParamDecoratorTransformerInfo, ParamDecoratorTransformer>();
     constructor(
         program: ts.Program,
         generator: tjs.JsonSchemaGenerator,
 		transformInfo: IExtractionTransformInfoBase,
-		private readonly onApiMethodExtracted: OnApiMethodExtractedHandler
+		private readonly onApiMethodExtracted: OnApiMethodExtractedHandler,
+		private readonly metadataManager: IMetadataResolver,
     ) {
 		super(program, generator, {
             ...transformInfo,
@@ -71,91 +72,67 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 			throw new Error('Unknown node name type');
 		}
 
-		const jsDoc = this.getJsDoc(node);
-		const description = {
-			...(jsDoc || {}),
-			returnDescription: this.jsdocTagString(ts.getJSDocReturnTag(node)),
-		};
-
-		// Replace decorator definitions
+		// Pull out the registered decorators
+		const registeredDecorators = [this.transformInfo, ...this.metadataManager.getApiMethodMetadataDecorators()];
+		const decoratorMap = new Map<IDecorationFunctionTransformInfoBase, ts.CallExpression>();
 		for (const decorator of node.decorators) {
-			if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
-				let route: string = null;
-
-				// Replace decorator invocation
-				for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
-					const argDef = this.transformInfo.arguments[i];
-					const arg = decorator.expression.arguments[i];
-					if (typeof arg === 'undefined') {
-						if (!argDef.optional) {
-							throw new Error('Expected argument');
-						}
-						break;
-					}
-
-					switch (argDef.type) {
-						case 'route':
-							route = this.compileExpressionToStringConstant(arg);
-							break;
-
-						default:
-							throw new Error(`Unknown argdef type for "${this.transformInfo.apiDecoratorMethod}": "${argDef.type}"`);
-					}
-				}
-
-				if (route) {
-					this.onApiMethodExtracted({
-						...description,
-						handlerKey: name,
-						method: this.transformInfo.apiDecoratorMethod,
-						route,
-						file: node.getSourceFile().fileName,
-						parameters: this.parseApiMethodCallParameters(node.parameters),
-					});
+			for (const transformInfo of registeredDecorators) {
+				if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
+					decoratorMap.set(transformInfo, decorator.expression);
 				}
 			}
-        }
+		}
+
+		let apiDef: IExtractedApiDefinition;
+		if (decoratorMap.has(this.transformInfo)) {
+			const expression = decoratorMap.get(this.transformInfo);
+			let route: string = null;
+
+			// Replace decorator invocation
+			for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
+				const argDef = this.transformInfo.arguments[i];
+				const arg = expression.arguments[i];
+				if (typeof arg === 'undefined') {
+					if (!argDef.optional) {
+						throw new Error('Expected argument');
+					}
+					break;
+				}
+
+				switch (argDef.type) {
+					case 'route':
+						route = this.compileExpressionToStringConstant(arg);
+						break;
+
+					default:
+						throw new Error(`Unknown argdef type for "${this.transformInfo.apiDecoratorMethod}": "${argDef.type}"`);
+				}
+			}
+			
+			apiDef = {
+				handlerKey: name,
+				method: this.transformInfo.apiDecoratorMethod,
+				route,
+				file: node.getSourceFile().fileName,
+				parameters: this.parseApiMethodCallParameters(node.parameters),
+			};
+		}
+
+		if (apiDef) {
+			let metadata: ITransformerMetadata[] = [];
+			for (const decorator of decoratorMap) {
+				metadata = metadata.concat(
+					this.metadataManager.getApiMetadataForApiMethod(
+						apiDef, node, decorator[0] === this.transformInfo ? null : decorator[0]));
+			}
+
+			this.onApiMethodExtracted({
+				...apiDef,
+				metadata,
+			});
+		}
 
 		return node;
-	}
-	
-	private getJsDocTags(node: ts.JSDoc): IExtractedTag[] {
-		if (node.tags) {
-			return (
-				node.tags
-					.filter(t => t.tagName.text === ExtractionTransformer.JsDocTagTag)
-					.map(t => {
-						const parts = t.comment.split(/\s+/);
-						return {
-							name: parts.shift(),
-							description: parts.join(' '),
-						};
-					})
-			);
-		}
-
-		return undefined;
-	}
-	
-	private getJsDoc(node: ts.MethodDeclaration): { summary?: string, description?: string, tags: IExtractedTag[] } | undefined {
-		if (isNodeWithJsDoc(node) && node.jsDoc.length > 0) {
-			const firstLine = node.jsDoc.find(n => n.comment.length > 0);
-			return {
-				summary: firstLine ? firstLine.comment : undefined,
-				tags: firstLine ? this.getJsDocTags(firstLine) : undefined,
-				description: node.jsDoc.reduce((prev, current) => prev + current.comment, ''),
-			}
-		}
-
-		return undefined;
-	}
-
-	private jsdocTagString(tag: ts.JSDocTag | undefined): string {
-		if (tag) {
-			return tag.comment;
-		}
-
-		return undefined;
 	}
 
 	private parseApiMethodCallParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>): IApiParamDefinition[] {

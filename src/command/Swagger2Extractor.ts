@@ -1,8 +1,16 @@
-import { IApiDefinitionBase, ApiMethod, IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
+import { IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
 import { IExtractor } from "./IExtractor";
-import * as SwaggerParser from "swagger-parser";
-import {OpenAPIV2} from 'openapi-types';
-import { IExtractedApiDefinition, IExtractedTag } from "../transformer/ExtractionTransformer";
+import { OpenAPIV2 } from 'openapi-types';
+import { IExtractedApiDefinitionWithMetadata, IExtractedTag } from "../transformer/ExtractionTransformer";
+import { getMetadataValue, IMetadataType, getAllMetadataValues } from "../transformer/TransformerMetadata";
+import { OpenApiMetadataType } from "../transformer/OpenApi";
+import * as yaml from 'js-yaml';
+import { ProgramApiInfo } from "./ExtractCommand";
+
+export interface ISwagger2Opts {
+    disableTryInferSchemes?: boolean;
+    yamlOpts?: yaml.DumpOptions;
+}
 
 export class Swagger2Extractor implements IExtractor {
     public static readonly SwaggerVersion = '2.0';
@@ -10,14 +18,25 @@ export class Swagger2Extractor implements IExtractor {
     private tags = new Map<string, IExtractedTag>();
 
     constructor(
-        private readonly extractedApis: IExtractedApiDefinition[],
-        private readonly apiInfo: OpenAPIV2.InfoObject,
+        private readonly extractedApis: IExtractedApiDefinitionWithMetadata[],
+        private readonly apiInfo: ProgramApiInfo,
+        private readonly opts: ISwagger2Opts,
     ) {}
 
-    private getDocument(): OpenAPIV2.Document {
+    protected getDocument(): OpenAPIV2.Document {
         const doc: OpenAPIV2.Document = {
             swagger: Swagger2Extractor.SwaggerVersion,
-            info: this.apiInfo,
+            info: {
+                title: this.apiInfo.title,
+                version: this.apiInfo.version,
+                description: this.apiInfo.description,
+                license: this.apiInfo.license ? this.apiInfo.license[0] : undefined,
+                termsOfService: this.apiInfo.termsOfService,
+                contact: this.apiInfo.contact,
+            },
+            host: this.validHost(this.apiInfo.host || this.apiInfo.homepage),
+            basePath: this.apiInfo.basePath,
+            schemes: this.apiInfo.schemes || this.tryInferSchemes(),
             paths: this.getPaths(),
         };
 
@@ -29,6 +48,33 @@ export class Swagger2Extractor implements IExtractor {
         }
 
         return doc;
+    }
+    
+    private tryInferSchemes(): string[] | undefined {
+        if (this.opts.disableTryInferSchemes) {
+            return;
+        }
+
+        const schemes = new Set<string>();
+        if (this.apiInfo.host) {
+            const url = new URL(this.apiInfo.host);
+            if (url.protocol.length > 0 && !schemes.has(url.protocol)) {
+                schemes.add(url.protocol.replace(':', ''));
+            }
+        }
+
+        if (schemes.size > 0) {
+            return Array.from(schemes);
+        }
+    }
+   
+    private validHost(host: string): string {
+        const url = new URL(host);
+        if (url.host.length > 0) {
+            return url.host;
+        }
+
+        return host;
     }
 
     private getPaths(): OpenAPIV2.PathsObject {
@@ -48,16 +94,16 @@ export class Swagger2Extractor implements IExtractor {
         return paths;
     }
     
-    private getOperationObject(api: IExtractedApiDefinition): OpenAPIV2.OperationObject {
+    private getOperationObject(api: IExtractedApiDefinitionWithMetadata): OpenAPIV2.OperationObject {
         return {
             operationId: api.handlerKey.toString(),
-            description: api.description,
-            summary: api.summary,
-            tags: (api.tags || []).map(t => this.recordTagObject(t)),
+            description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
+            summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
+            tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
             parameters: api.parameters.map(p => this.getParametersObject(p)),
             responses: {
                 default: {
-                    description: api.returnDescription,
+                    description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.ResponseDescription),
                 }
             }
         };
@@ -102,15 +148,22 @@ export class Swagger2Extractor implements IExtractor {
             in: inStr,
             required: !p.args.optional,
             description: p.args.description,
-            // @ts-ignore
             type: p.args.typedef.type,
         };
     }
 
     public toString(): string {
-        return JSON.stringify(
+        return yaml.safeDump(
             this.getDocument(),
-            undefined,
-            '\t');
+            {
+                ...this.opts.yamlOpts,
+                skipInvalid: true,
+            });
+    }
+}
+
+export class Swagger2JsonExtractor extends Swagger2Extractor {
+    public toString(): string {
+        return JSON.stringify(this.getDocument(), undefined, 4);
     }
 }
