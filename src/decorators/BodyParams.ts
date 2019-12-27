@@ -21,7 +21,7 @@ export function GetBodyParamDecorator(param: string): IBodyParamDecoratorDefinit
 	return <IBodyParamDecoratorDefinition>Reflect.getMetadata(bodyParamDecoratorKey, BodyParams, param);
 }
 
-export abstract class BodyParams {
+abstract class BodyParams {
 	/**
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input

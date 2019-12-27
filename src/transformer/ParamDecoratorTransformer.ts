@@ -29,7 +29,8 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
     constructor(
         program: ts.Program,
         generator: tjs.JsonSchemaGenerator,
-        transformInfo: ParamDecoratorTransformerInfo
+		transformInfo: ParamDecoratorTransformerInfo,
+		private readonly extractOnly: boolean = false,
     ) {
 		super(program, generator, {
             ...transformInfo,
@@ -49,7 +50,7 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
 				// Replace decorator invocation
 				const thisArgs = this.getDecoratorArguments(decoratorArg, decorator.expression)
-				if (thisArgs) {
+				if (thisArgs && !this.extractOnly) {
 					// Change decorator arguments
 					decorator.expression.arguments = ts.createNodeArray([this.typeSerializer.objectToLiteral(thisArgs)]);
 				}
@@ -86,17 +87,20 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			let parenExpr = this.parenthesizeExpression(node.initializer);
 			initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr);
 			// Remove the initializer from the definition
-			node.initializer = undefined;
+			// node.initializer = undefined;
 		}
 
 		// Parse optional
 		let optional: boolean = !!node.questionToken;
 
 		// Construct param decorator args
+		let description;
 		const args: ParamArgsInitializer = {
 			name,
 			typedef: internalType,
-			description: this.getParamDescription(node),
+			...((description = this.getParamDescription(node))
+				? {description}
+				: {}),
 		};
 
 		if (optional) {

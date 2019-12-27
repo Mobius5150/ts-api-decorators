@@ -21,7 +21,7 @@ export function GetQueryParamDecorator(param: string): IQueryParamDecoratorDefin
 	return <IQueryParamDecoratorDefinition>Reflect.getMetadata(queryParamDecoratorKey, QueryParams, param);
 }
 
-export abstract class QueryParams {
+abstract class QueryParams {
 	/**
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input

@@ -6,6 +6,7 @@ import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './Para
 import { ApiMethod, IApiDefinitionBase, IApiParamDefinition } from '../apiManagement/ApiDefinition';
 import { ITransformerMetadataCollection, ITransformerMetadata } from './TransformerMetadata';
 import { IMetadataResolver } from './MetadataManager';
+import { IApiMethodDecoratorFunctionArg, IApiMethodDecoratorDefinition } from '..';
 
 export interface IExtractedApiDefinition extends IApiDefinitionBase {
 	file: string;
@@ -22,15 +23,8 @@ export interface IExtractedTag {
 
 export type OnApiMethodExtractedHandler = (method: IExtractedApiDefinitionWithMetadata) => void;
 
-export interface IExtractionTransformInfoBase extends IDecorationFunctionTransformInfoBase {
-	apiDecoratorMethod: ApiMethod;
-	arguments: IExtractionTransformArgument[];
+export interface IExtractionTransformInfoBase extends IDecorationFunctionTransformInfoBase, IApiMethodDecoratorDefinition {
 	parameterTypes: ParamDecoratorTransformerInfo[];
-}
-
-export interface IExtractionTransformArgument {
-	type: 'route';
-	optional: boolean;
 }
 
 export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclaration, IExtractionTransformInfoBase> {
@@ -39,8 +33,9 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
         program: ts.Program,
         generator: tjs.JsonSchemaGenerator,
 		transformInfo: IExtractionTransformInfoBase,
-		private readonly onApiMethodExtracted: OnApiMethodExtractedHandler,
+		private readonly onApiMethodExtracted: OnApiMethodExtractedHandler | undefined,
 		private readonly metadataManager: IMetadataResolver,
+		private readonly extractOnly: boolean = false,
     ) {
 		super(program, generator, {
             ...transformInfo,
@@ -84,29 +79,6 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		let apiDef: IExtractedApiDefinition;
 		if (decoratorMap.has(this.transformInfo)) {
 			const expression = decoratorMap.get(this.transformInfo);
-			let route: string = null;
-
-			// Replace decorator invocation
-			for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
-				const argDef = this.transformInfo.arguments[i];
-				const arg = expression.arguments[i];
-				if (typeof arg === 'undefined') {
-					if (!argDef.optional) {
-						throw new Error('Expected argument');
-					}
-					break;
-				}
-
-				switch (argDef.type) {
-					case 'route':
-						route = this.typeSerializer.compileExpressionToStringConstant(arg);
-						break;
-
-					default:
-						throw new Error(`Unknown argdef type for "${this.transformInfo.apiDecoratorMethod}": "${argDef.type}"`);
-				}
-			}
-
 			const type = this.typeChecker.getTypeAtLocation(node);
 			const callSignatures = type.getCallSignatures();
 			let returnType: InternalTypeDefinition;
@@ -118,14 +90,14 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 				throw new Error('Cannot handle method with multiple call signatures');
 			}
 
-			apiDef = {
+			apiDef = this.getDecoratorArguments({
+				route: null,
 				handlerKey: name,
 				method: this.transformInfo.apiDecoratorMethod,
-				route,
 				file: node.getSourceFile().fileName,
 				parameters: this.parseApiMethodCallParameters(node.parameters),
 				returnType,
-			};
+			}, expression);
 		}
 
 		if (apiDef) {
@@ -136,10 +108,12 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 						apiDef, node, decorator[0] === this.transformInfo ? null : decorator[0]));
 			}
 
-			this.onApiMethodExtracted({
-				...apiDef,
-				metadata,
-			});
+			if (this.onApiMethodExtracted) {
+				this.onApiMethodExtracted({
+					...apiDef,
+					metadata,
+				});
+			}
 		}
 
 		return node;
@@ -187,27 +161,44 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		return false;
 	}
 
-	protected getDecoratorArguments(decoratorArg: ParamArgsInitializer, expression: ts.CallExpression): ParamArgsInitializer | undefined {
+	protected getDecoratorArguments(decoratorArg: IExtractedApiDefinition, expression: ts.CallExpression): IExtractedApiDefinition | undefined {
 		const thisArgs = { ...decoratorArg };
+		const exprArg: ts.Expression[] = [];
 		for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
 			const argDef = this.transformInfo.arguments[i];
 			const arg = expression.arguments[i];
 			if (typeof arg === 'undefined') {
-				if (!argDef.optional) {
+				if (argDef.optional) {
+					if (!argDef.transformedParameter) {
+						break;
+					}
+				} else if (!argDef.optional) {
 					throw new Error('Expected argument');
 				}
-				break;
 			}
 			
 			switch (argDef.type) {
 				case 'route':
-					thisArgs.validationFunction = new ExpressionWrapper(this.parenthesizeExpression(arg));
+					thisArgs.route = this.typeSerializer.compileExpressionToStringConstant(arg);
+					exprArg[i] = arg;
 					break;
+
+				case 'returnSchema':
+					if (thisArgs.returnType) {
+						exprArg[i] = this.typeSerializer.objectToLiteral(thisArgs.returnType);
+					} else {
+						exprArg[i] = arg;
+					}
+					break;
+
 				default:
 					throw new Error(`Unknown argdef type for decorator "${this.transformInfo.apiDecoratorMethod}": "${argDef.type}"`);
 			}
 		}
 
+		if (!this.extractOnly) {
+			expression.arguments = ts.createNodeArray(exprArg);
+		}
 		return thisArgs;
 	}
 }
