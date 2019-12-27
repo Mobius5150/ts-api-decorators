@@ -12,6 +12,7 @@ export const enum ApiParamType {
 	Body,
 	Query,
 	Path,
+	Header,
 	Transport,
 }
 
@@ -41,7 +42,7 @@ interface IApiParamDefinitionBase {
 }
 
 export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
-	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path;
+	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header;
 }
 
 export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBase {

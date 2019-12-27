@@ -9,3 +9,8 @@ export {
 	ApiBodyParamNumber,
 	ApiBodyParamString,
 } from './BodyParams';
+export {
+	ApiHeaderParam,
+	ApiHeaderParamNumber,
+	ApiHeaderParamString,
+} from './HeaderParams';

@@ -17,6 +17,7 @@ import { GetApiMethodDecorator, ApiGetMethod, ApiPostMethod, ApiPutMethod, ApiDe
 import { MetadataManager } from '../MetadataManager';
 import { OpenApiMetadataExtractors } from '../OpenApi';
 import { ITransformerArguments } from '../TransformerUtil';
+import { GetHeaderParamDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators/HeaderParams';
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
@@ -27,6 +28,7 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
     const indexTs = path.join('decorators/API');
     const queryParamIndexTs = path.join('decorators/QueryParams');
 	const bodyParamIndexTs = path.join('decorators/BodyParams');
+	const headerParamIndexTs = path.join('decorators/HeaderParams');
     const parameterTypes: ParamDecoratorTransformerInfo[] = [
         getQueryParamDecoratorInfo(ApiQueryParam.name, queryParamIndexTs),
         getQueryParamDecoratorInfo(ApiQueryParamString.name, queryParamIndexTs),
@@ -35,6 +37,10 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
         getBodyParamDecoratorInfo(ApiBodyParam.name, bodyParamIndexTs),
         getBodyParamDecoratorInfo(ApiBodyParamString.name, bodyParamIndexTs),
 		getBodyParamDecoratorInfo(ApiBodyParamNumber.name, bodyParamIndexTs),
+
+		getHeaderParamDecoratorInfo(ApiHeaderParam.name, headerParamIndexTs),
+		getHeaderParamDecoratorInfo(ApiHeaderParamNumber.name, headerParamIndexTs),
+		getHeaderParamDecoratorInfo(ApiHeaderParamString.name, headerParamIndexTs),
 		
 		...(args.paramDecorators ? args.paramDecorators : []),
     ];
@@ -87,6 +93,20 @@ export function getQueryParamDecoratorInfo(name: string, indexTs: string): Param
 		indexTs,
 		magicFunctionName: name,
 		type: ApiParamType.Query,
+		...d,
+	};
+}
+
+export function getHeaderParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
+	const d = GetHeaderParamDecorator(name);
+	if (!d) {
+		throw new Error('HeaderParamDecorator not defined for: ' + name);
+	}
+
+	return {
+		indexTs,
+		magicFunctionName: name,
+		type: ApiParamType.Header,
 		...d,
 	};
 }

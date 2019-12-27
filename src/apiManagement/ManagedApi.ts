@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
@@ -9,7 +9,7 @@ import { Validator as JsonSchemaValidator } from 'jsonschema';
 import { ClassConstructor } from "..";
 
 export type ApiQueryParamsDict = { [param: string]: string };
-export type ApiHeadersDict = { [param: string]: string };
+export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
 
 export interface IApiBodyContents {
 	contentsStream: Readable;
@@ -22,6 +22,7 @@ export interface IApiBodyContents {
 
 export interface IApiInvocationParams<TransportParamsType extends object> {
 	queryParams: ApiQueryParamsDict;
+	headers: ApiHeadersDict;
 	bodyContents?: IApiBodyContents;
 	transportParams: TransportParamsType;
 }
@@ -177,6 +178,24 @@ export class ManagedApi<TransportParamsType extends object> {
 
 				// Arg was defined, process it
 				return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
+			} else if (def.type === ApiParamType.Header) {
+				const headerName = args.name.toLowerCase();
+				const isDefined = typeof invocationParams.headers[headerName] === 'string';
+				if (!isDefined && args.typedef.type !== 'boolean') {
+					// Query param not defined
+					if (args.initializer) {
+						return args.initializer();
+					} else if (args.optional) {
+						// This arg was optional
+						return undefined;
+					} else {
+						// Arg was required, throw
+						throw new HttpRequiredHeaderParamMissingError(args.name);
+					}
+				}
+
+				// Arg was defined, process it
+				return this.getApiParam(args, isDefined, invocationParams.headers[headerName]);
 			} else if (def.type === ApiParamType.Body) {
 				const {bodyContents} = invocationParams;
 				if (!bodyContents) {
@@ -267,14 +286,30 @@ export class ManagedApi<TransportParamsType extends object> {
 		}
 	}
 
-	private getApiParam(args: __ApiParamArgs, isDefined: boolean, strVal: string | Buffer, contentsMime?: string) {
+	private getApiParam(args: __ApiParamArgs, isDefined: boolean, strVal: string | Buffer | string[], contentsMime?: string) {
 		switch (args.typedef.type) {
 			case 'any':
 			case 'string':
-				return strVal;
+				{
+					if (typeof strVal === 'string') {
+						return strVal;
+					} else if (Array.isArray(strVal)) {
+						return strVal[0];
+					} else if (strVal instanceof Buffer) {
+						return strVal.toString();
+					}
+					
+					throw new HttpQueryParamInvalidTypeError(args.name, 'string');
+				}
 
 			case 'number':
 				{
+					if (Array.isArray(strVal)) {
+						strVal = strVal[0];
+					} else if (strVal instanceof Buffer) {
+						strVal = strVal.toString();
+					}
+
 					const parsed = Number(strVal);
 					if (isNaN(parsed)) {
 						throw new HttpQueryParamInvalidTypeError(args.name, 'number');
@@ -299,6 +334,19 @@ export class ManagedApi<TransportParamsType extends object> {
 					
 					return false;
 				};
+
+			case 'array':
+				{
+					if (typeof strVal === 'string') {
+						return [strVal];
+					} else if (Array.isArray(strVal)) {
+						return strVal;
+					} else if (strVal instanceof Buffer) {
+						return [strVal.toString()];
+					}
+					
+					throw new HttpQueryParamInvalidTypeError(args.name, 'array');
+				}
 
 			default:
 				throw new Error('Not implemented');

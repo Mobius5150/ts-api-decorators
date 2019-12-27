@@ -12,10 +12,10 @@ import { ExtractionTransformer, OnApiMethodExtractedHandler } from '../Extractio
 import { ApiGetMethod } from '../..';
 import { ApiMethod } from '../../apiManagement';
 import { ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
-import { getQueryParamDecoratorInfo, getBodyParamDecoratorInfo } from './transformer';
+import { getQueryParamDecoratorInfo, getBodyParamDecoratorInfo, getHeaderParamDecoratorInfo } from './transformer';
 import { IMetadataManager, IMetadataResolver, MetadataManager } from '../MetadataManager';
 import { OpenApiMetadataExtractors } from '../OpenApi';
-import { ApiPostMethod, ApiPutMethod, ApiDeleteMethod, GetApiMethodDecorator } from '../../decorators';
+import { ApiPostMethod, ApiPutMethod, ApiDeleteMethod, GetApiMethodDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators';
 import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
 
 export interface IExtractionTransformerArgs {
@@ -39,7 +39,8 @@ export default function transformer(program: ts.Program, opts: IExtractionTransf
 
     const indexTs = path.join('decorators/API');
     const queryParamIndexTs = path.join('decorators/QueryParams');
-	const bodyParamIndexTs = path.join('decorators/BodyParams');
+    const bodyParamIndexTs = path.join('decorators/BodyParams');
+    const headerParamIndexTs = path.join('decorators/HeaderParams');
     const parameterTypes: ParamDecoratorTransformerInfo[] = [
         getQueryParamDecoratorInfo(ApiQueryParam.name, queryParamIndexTs),
         getQueryParamDecoratorInfo(ApiQueryParamString.name, queryParamIndexTs),
@@ -48,6 +49,10 @@ export default function transformer(program: ts.Program, opts: IExtractionTransf
         getBodyParamDecoratorInfo(ApiBodyParam.name, bodyParamIndexTs),
         getBodyParamDecoratorInfo(ApiBodyParamString.name, bodyParamIndexTs),
         getBodyParamDecoratorInfo(ApiBodyParamNumber.name, bodyParamIndexTs),
+
+        getHeaderParamDecoratorInfo(ApiHeaderParam.name, headerParamIndexTs),
+		getHeaderParamDecoratorInfo(ApiHeaderParamNumber.name, headerParamIndexTs),
+		getHeaderParamDecoratorInfo(ApiHeaderParamString.name, headerParamIndexTs),
     ];
 	const transformers: ITreeTransformer[] = [
         // GET
