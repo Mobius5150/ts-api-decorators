@@ -86,8 +86,6 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			// Only wrap the expression if it's not already parenthesized
 			let parenExpr = this.parenthesizeExpression(node.initializer);
 			initializer = ts.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr);
-			// Remove the initializer from the definition
-			// node.initializer = undefined;
 		}
 
 		// Parse optional
@@ -136,9 +134,6 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 					throw new Error('Expected argument');
 				}
 				break;
-			}
-			
-			if (argDef.type === 'validationFunc') {
 			}
 			
 			switch (argDef.type) {

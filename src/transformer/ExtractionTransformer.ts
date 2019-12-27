@@ -27,6 +27,11 @@ export interface IExtractionTransformInfoBase extends IDecorationFunctionTransfo
 	parameterTypes: ParamDecoratorTransformerInfo[];
 }
 
+interface IDecoratorArgumentsDefinitionExtractorResult {
+	definition: IExtractedApiDefinition;
+	exprArguments?: ts.NodeArray<ts.Expression>;
+}
+
 export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclaration, IExtractionTransformInfoBase> {
 	private paramTransformers = new Map<ParamDecoratorTransformerInfo, ParamDecoratorTransformer>();
     constructor(
@@ -52,9 +57,6 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
     }
 
 	public visitNode(node: ts.MethodDeclaration): ts.Node{
-		// TODO: Validate the type of the parameter this decorator was used on matches the allowable types
-        // defined on: this.transformInfo.allowableTypes
-        
 		// Parse argument name
 		let name: string;
 		if (typeof node.name === 'string') {
@@ -76,7 +78,7 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 			}
 		}
 
-		let apiDef: IExtractedApiDefinition;
+		let definition: IExtractedApiDefinition;
 		if (decoratorMap.has(this.transformInfo)) {
 			const expression = decoratorMap.get(this.transformInfo);
 			const type = this.typeChecker.getTypeAtLocation(node);
@@ -90,7 +92,7 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 				throw new Error('Cannot handle method with multiple call signatures');
 			}
 
-			apiDef = this.getDecoratorArguments({
+			const result = this.getDecoratorArguments({
 				route: null,
 				handlerKey: name,
 				method: this.transformInfo.apiDecoratorMethod,
@@ -98,19 +100,24 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 				parameters: this.parseApiMethodCallParameters(node.parameters),
 				returnType,
 			}, expression);
+
+			definition = result.definition;
+			if (!this.extractOnly && result.exprArguments) {
+				expression.arguments = result.exprArguments;
+			}
 		}
 
-		if (apiDef) {
+		if (definition) {
 			let metadata: ITransformerMetadata[] = [];
 			for (const decorator of decoratorMap) {
 				metadata = metadata.concat(
 					this.metadataManager.getApiMetadataForApiMethod(
-						apiDef, node, decorator[0] === this.transformInfo ? null : decorator[0]));
+						definition, node, decorator[0] === this.transformInfo ? null : decorator[0]));
 			}
 
 			if (this.onApiMethodExtracted) {
 				this.onApiMethodExtracted({
-					...apiDef,
+					...definition,
 					metadata,
 				});
 			}
@@ -161,9 +168,9 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		return false;
 	}
 
-	protected getDecoratorArguments(decoratorArg: IExtractedApiDefinition, expression: ts.CallExpression): IExtractedApiDefinition | undefined {
-		const thisArgs = { ...decoratorArg };
-		const exprArg: ts.Expression[] = [];
+	protected getDecoratorArguments(decoratorArg: IExtractedApiDefinition, expression: ts.CallExpression): IDecoratorArgumentsDefinitionExtractorResult  {
+		const definition = { ...decoratorArg };
+		const exprArguments: ts.Expression[] = [];
 		for (let i = 0; i < this.transformInfo.arguments.length; ++i) {
 			const argDef = this.transformInfo.arguments[i];
 			const arg = expression.arguments[i];
@@ -179,15 +186,15 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 			
 			switch (argDef.type) {
 				case 'route':
-					thisArgs.route = this.typeSerializer.compileExpressionToStringConstant(arg);
-					exprArg[i] = arg;
+					definition.route = this.typeSerializer.compileExpressionToStringConstant(arg);
+					exprArguments[i] = arg;
 					break;
 
 				case 'returnSchema':
-					if (thisArgs.returnType) {
-						exprArg[i] = this.typeSerializer.objectToLiteral(thisArgs.returnType);
+					if (definition.returnType) {
+						exprArguments[i] = this.typeSerializer.objectToLiteral(definition.returnType);
 					} else {
-						exprArg[i] = arg;
+						exprArguments[i] = arg;
 					}
 					break;
 
@@ -196,9 +203,6 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 			}
 		}
 
-		if (!this.extractOnly) {
-			expression.arguments = ts.createNodeArray(exprArg);
-		}
-		return thisArgs;
+		return { definition, exprArguments: ts.createNodeArray(exprArguments) };
 	}
 }
