@@ -1,12 +1,10 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
-import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber, __ApiParamArgsBase } from '../apiManagement/InternalTypes';
+import { __ApiParamArgs, __ApiParamArgsBase, InternalTypeDefinition } from '../apiManagement/InternalTypes';
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
-import { IApiDefinition, ApiMethod, IApiDefinitionBase, IApiParamDefinition, ApiParamType } from '../apiManagement/ApiDefinition';
-import { isNodeWithJsDoc, WithJsDoc } from './TransformerUtil';
-import { ITransformerMetadataCollection, ITransformerMetadata, IMetadataType } from './TransformerMetadata';
-import { OpenApiMetadataType } from './OpenApi';
+import { ApiMethod, IApiDefinitionBase, IApiParamDefinition } from '../apiManagement/ApiDefinition';
+import { ITransformerMetadataCollection, ITransformerMetadata } from './TransformerMetadata';
 import { IMetadataResolver } from './MetadataManager';
 
 export interface IExtractedApiDefinition extends IApiDefinitionBase {
@@ -101,20 +99,32 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 
 				switch (argDef.type) {
 					case 'route':
-						route = this.compileExpressionToStringConstant(arg);
+						route = this.typeSerializer.compileExpressionToStringConstant(arg);
 						break;
 
 					default:
 						throw new Error(`Unknown argdef type for "${this.transformInfo.apiDecoratorMethod}": "${argDef.type}"`);
 				}
 			}
-			
+
+			const type = this.typeChecker.getTypeAtLocation(node);
+			const callSignatures = type.getCallSignatures();
+			let returnType: InternalTypeDefinition;
+			if (callSignatures.length === 1) {
+				returnType = this.typeSerializer.getInternalTypeRepresentation(
+					node.type,
+					this.typeChecker.getReturnTypeOfSignature(callSignatures[0]));
+			} else if (callSignatures.length > 1) {
+				throw new Error('Cannot handle method with multiple call signatures');
+			}
+
 			apiDef = {
 				handlerKey: name,
 				method: this.transformInfo.apiDecoratorMethod,
 				route,
 				file: node.getSourceFile().fileName,
 				parameters: this.parseApiMethodCallParameters(node.parameters),
+				returnType,
 			};
 		}
 

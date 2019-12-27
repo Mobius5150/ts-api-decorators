@@ -1,11 +1,12 @@
 import { IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
 import { IExtractor } from "./IExtractor";
-import { OpenAPIV2 } from 'openapi-types';
+import { OpenAPIV2, IJsonSchema } from 'openapi-types';
 import { IExtractedApiDefinitionWithMetadata, IExtractedTag } from "../transformer/ExtractionTransformer";
 import { getMetadataValue, IMetadataType, getAllMetadataValues } from "../transformer/TransformerMetadata";
 import { OpenApiMetadataType } from "../transformer/OpenApi";
 import * as yaml from 'js-yaml';
 import { ProgramApiInfo } from "./ExtractCommand";
+import { InternalTypeDefinition, IJsonSchemaWithRefs } from "../apiManagement/InternalTypes";
 
 export interface ISwagger2Opts {
     disableTryInferSchemes?: boolean;
@@ -16,6 +17,7 @@ export class Swagger2Extractor implements IExtractor {
     public static readonly SwaggerVersion = '2.0';
 
     private tags = new Map<string, IExtractedTag>();
+    private definitions = new Map<string, OpenAPIV2.SchemaObject>();
 
     constructor(
         private readonly extractedApis: IExtractedApiDefinitionWithMetadata[],
@@ -47,7 +49,22 @@ export class Swagger2Extractor implements IExtractor {
                     this.getTagObject(tag)));
         }
 
+        if (this.definitions.size > 0) {
+            doc.definitions = this.getDefinitions();
+        }
+
         return doc;
+    }
+
+    private getDefinitions(): OpenAPIV2.DefinitionsObject {
+        const defKeys = Array.from(this.definitions.keys());
+        defKeys.sort();
+        const definitions: OpenAPIV2.DefinitionsObject = {};
+        defKeys.forEach(defName => {
+            definitions[defName] = <OpenAPIV2.SchemaObject>this.definitions.get(defName);
+        });
+
+        return definitions;
     }
     
     private tryInferSchemes(): string[] | undefined {
@@ -103,10 +120,51 @@ export class Swagger2Extractor implements IExtractor {
             parameters: api.parameters.map(p => this.getParametersObject(p)),
             responses: {
                 default: {
+                    schema: this.getInlineTypeSchema(api.returnType),
                     description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.ResponseDescription),
                 }
             }
         };
+    }
+
+    private getInlineTypeSchema(returnType: InternalTypeDefinition): Partial<OpenAPIV2.Schema> {
+        switch (returnType.type) {
+            case 'object':
+                return this.getInternalSchemaToOutputSchema(returnType.schema);
+
+            case 'number':
+            case 'string':
+            case 'boolean':
+                return {
+                    type: returnType.type,
+                };
+
+            default:
+                throw new Error(`Unable to serialize inline type: ${returnType.typename} (type: ${returnType.type})`);
+        }
+    }
+    
+    private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): Partial<OpenAPIV2.SchemaObject> | Partial<OpenAPIV2.ReferenceObject> {
+        if (schema.definitions) {
+            this.addDefinitions(schema.definitions);
+
+            schema = { ...schema };
+            delete schema.definitions;
+        }
+
+        if (schema.$schema) {
+            delete schema.$schema;
+        }
+
+        return <OpenAPIV2.SchemaObject>schema;
+    }
+
+    private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {
+        for (const definition of Object.keys(definitions)) {
+            if (!this.definitions.has(definition)) {
+                this.definitions.set(definition, <OpenAPIV2.SchemaObject>definitions[definition]);
+            }
+        }
     }
 
     private recordTagObject(t: IExtractedTag): string {
@@ -143,12 +201,18 @@ export class Swagger2Extractor implements IExtractor {
                 throw new Error(`Unknown Api Parameter Type: ${p.type}`);
         }
 
+        let schema: OpenAPIV2.SchemaObject;
+        if (p.args.typedef.type === 'object') {
+            schema = this.getInlineTypeSchema(p.args.typedef);
+        }
+
         return {
             name: p.propertyKey.toString(),
             in: inStr,
             required: !p.args.optional,
             description: p.args.description,
             type: p.args.typedef.type,
+            schema,
         };
     }
 

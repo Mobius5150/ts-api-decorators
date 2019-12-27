@@ -51,7 +51,7 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 				const thisArgs = this.getDecoratorArguments(decoratorArg, decorator.expression)
 				if (thisArgs) {
 					// Change decorator arguments
-					decorator.expression.arguments = ts.createNodeArray([this.objectToLiteral(thisArgs)]);
+					decorator.expression.arguments = ts.createNodeArray([this.typeSerializer.objectToLiteral(thisArgs)]);
 				}
 			}
         }
@@ -66,7 +66,7 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 		
 		if (node.type) {
 			const type = this.typeChecker.getTypeFromTypeNode(node.type);
-			internalType = this.getInternalTypeRepresentation(node.type, type);
+			internalType = this.typeSerializer.getInternalTypeRepresentation(node.type, type);
 		}
 
 		// Parse argument name
@@ -142,10 +142,10 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 					thisArgs.validationFunction = new ExpressionWrapper(this.parenthesizeExpression(arg));
 					break;
 				case 'numberMax':
-					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).maxVal = this.compileExpressionToNumericConstant(arg);
+					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).maxVal = this.typeSerializer.compileExpressionToNumericConstant(arg);
 					break;
 				case 'numberMin':
-					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).minVal = this.compileExpressionToNumericConstant(arg);
+					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).minVal = this.typeSerializer.compileExpressionToNumericConstant(arg);
 					break;
 				default:
 					throw new Error('Unknown argdef type');

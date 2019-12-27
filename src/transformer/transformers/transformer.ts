@@ -11,12 +11,10 @@ import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecor
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
 import { ITreeTransformer } from '../ITreeTransformer';
 import { ApiParamType } from '../../apiManagement/ApiDefinition';
+import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
 
 export default function transformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
-	const generator = tjs.buildGenerator(program, {
-		uniqueNames: true,
-		required: true,
-	});
+	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
 
 	const queryParamIndexTs = path.join('decorators/QueryParams');
 	const bodyParamIndexTs = path.join('decorators/BodyParams');

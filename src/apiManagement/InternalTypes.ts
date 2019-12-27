@@ -1,3 +1,5 @@
+import { IJsonSchema } from "openapi-types";
+
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
 export interface __ApiParamArgsBase {
@@ -15,16 +17,21 @@ export interface __ApiParamArgsFuncs {
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
 }
 
-export interface IntrinsicTypeDefinition {
+export interface IntrinsicTypeDefinition extends IntrinsicNamedTped {
 	type: 'boolean' | 'any';
 }
 
-export interface IntrinsicTypeDefinitionString {
+export interface IntrinsicNamedTped {
+	typename?: string;
+	uniqueTypename?: string;
+}
+
+export interface IntrinsicTypeDefinitionString extends IntrinsicNamedTped{
 	type: 'string';
 	validationRegex?: RegExp;
 }
 
-export interface IntrinsicTypeDefinitionNumber {
+export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedTped{
 	type: 'number';
 	minVal?: number;
 	maxVal?: number;
@@ -39,23 +46,27 @@ export type InternalTypeDefinition =
 	| InternalIntersectionTypeDefinition
 	| InternalArrayTypeDefinition;
 
-export interface InternalObjectTypeDefinition {
+export interface InternalObjectTypeDefinition extends IntrinsicNamedTped{
 	type: 'object';
-	schema: object;
+	schema: IJsonSchemaWithRefs;
 }
 
-export interface InternalUnionTypeDefinition {
+export interface InternalUnionTypeDefinition extends IntrinsicNamedTped{
 	type: 'union';
 	types: InternalTypeDefinition[];
 }
 
-export interface InternalArrayTypeDefinition {
+export interface InternalArrayTypeDefinition extends IntrinsicNamedTped{
 	type: 'array';
 	elementType: InternalTypeDefinition;
 }
 
 // TODO: The intersection type will probably yield less-than optimal results or longer validation runtime. Should see if it can be collapased to the single resulting type
-export interface InternalIntersectionTypeDefinition {
+export interface InternalIntersectionTypeDefinition extends IntrinsicNamedTped{
 	type: 'intersection';
 	types: InternalTypeDefinition[];
+}
+
+export interface IJsonSchemaWithRefs extends IJsonSchema {
+	$ref?: string;
 }

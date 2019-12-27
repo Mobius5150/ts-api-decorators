@@ -15,6 +15,8 @@ import { ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
 import { getQueryParamDecoratorInfo, getBodyParamDecoratorInfo } from './transformer';
 import { IMetadataManager, IMetadataResolver, MetadataManager } from '../MetadataManager';
 import { OpenApiMetadataExtractors } from '../OpenApi';
+import { ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from '../../decorators';
+import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
 
 export interface IExtractionTransformerArgs {
     onApiMethodExtracted: OnApiMethodExtractedHandler;
@@ -23,10 +25,7 @@ export interface IExtractionTransformerArgs {
 }
 
 export default function transformer(program: ts.Program, opts: IExtractionTransformerArgs): ts.TransformerFactory<ts.SourceFile> {
-	const generator = tjs.buildGenerator(program, {
-		uniqueNames: true,
-		required: true,
-    });
+	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
     
     let metadataManager = opts.metadataManager;
     if (!metadataManager) {
@@ -51,9 +50,52 @@ export default function transformer(program: ts.Program, opts: IExtractionTransf
         getBodyParamDecoratorInfo(ApiBodyParamNumber.name, bodyParamIndexTs),
     ];
 	const transformers: ITreeTransformer[] = [
+        // GET
 		new ExtractionTransformer(program, generator, {
             magicFunctionName: ApiGetMethod.name,
             apiDecoratorMethod: ApiMethod.GET,
+            arguments: [
+                {
+                    type: 'route',
+                    optional: false,
+                },
+            ],
+            parameterTypes,
+            indexTs,
+        }, opts.onApiMethodExtracted, metadataManager),
+        
+        // POST
+        new ExtractionTransformer(program, generator, {
+            magicFunctionName: ApiPostMethod.name,
+            apiDecoratorMethod: ApiMethod.POST,
+            arguments: [
+                {
+                    type: 'route',
+                    optional: false,
+                },
+            ],
+            parameterTypes,
+            indexTs,
+        }, opts.onApiMethodExtracted, metadataManager),
+
+        // PUT
+        new ExtractionTransformer(program, generator, {
+            magicFunctionName: ApiPutMethod.name,
+            apiDecoratorMethod: ApiMethod.PUT,
+            arguments: [
+                {
+                    type: 'route',
+                    optional: false,
+                },
+            ],
+            parameterTypes,
+            indexTs,
+        }, opts.onApiMethodExtracted, metadataManager),
+
+        // DELETE
+        new ExtractionTransformer(program, generator, {
+            magicFunctionName: ApiDeleteMethod.name,
+            apiDecoratorMethod: ApiMethod.DELETE,
             arguments: [
                 {
                     type: 'route',

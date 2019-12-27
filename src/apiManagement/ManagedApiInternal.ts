@@ -23,8 +23,9 @@ export interface IApiClassDefinition {
 }
 
 export class ManagedApiInternal {
-	private static readonly ApiMethodMetadataKey = 'managedapi:apimethod';
-	private static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
+	public static readonly ApiMetadataKey = 'managedapi:api';
+	public static readonly ApiMethodMetadataKey = 'managedapi:apimethod';
+	public static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
 
 	public static ResetRegisteredApis() {
 		Apis.apis.clear();
@@ -39,6 +40,8 @@ export class ManagedApiInternal {
 			constructor,
 			handlers: new Map<ApiMethod, Map<string, IApiDefinition>>(),
 		});
+
+		Reflect.defineMetadata(ManagedApiInternal.ApiMetadataKey, constructor.name, constructor);
 	}
 
 	public static GetRegisteredApiClassDefinitions(): IApiClassDefinition[] {
@@ -54,13 +57,13 @@ export class ManagedApiInternal {
 		return Array.from(Apis.apis.values());
 	}
 	
-	private static GetHandlersForConstructor(constructor: ClassConstructor): Map<ApiMethod, Map<string, IApiDefinition>> | void {
+	public static GetHandlersForConstructor(constructor: ClassConstructor): Map<ApiMethod, Map<string, IApiDefinition>> {
 		const apis: IApiDefinition[] = ManagedApiInternal.GetApiDefinitionsOnObject(constructor);
+		const handlers = new Map<ApiMethod, Map<string, IApiDefinition>>();
 		if (!apis || apis.length === 0) {
-			return;
+			return handlers;
 		}
 
-		const handlers = new Map<ApiMethod, Map<string, IApiDefinition>>();
 		for (const api of apis) {
 			if (!handlers.has(api.method)) {
 				handlers.set(api.method, new Map<string, IApiDefinition>());

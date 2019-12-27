@@ -6,6 +6,7 @@ import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
 import { Validator as JsonSchemaValidator } from 'jsonschema';
+import { ClassConstructor } from "..";
 
 export type ApiQueryParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [param: string]: string };
@@ -47,16 +48,35 @@ export class ManagedApi<TransportParamsType extends object> {
 
 	private readonly jsonValidator: JsonSchemaValidator;
 
-	public constructor() {
-		if (!ManagedApi.namespace) {
-			ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
+	private classes: IApiClassDefinition[];
 
+	public constructor(
+		private readonly useGlobal: boolean = true
+	) {
+		if (this.useGlobal) {
 			if (!ManagedApi.namespace) {
-				ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
+				ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
+
+				if (!ManagedApi.namespace) {
+					ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
+				}
 			}
+		} else {
+			this.classes = [];
 		}
 
 		this.jsonValidator = new JsonSchemaValidator();
+	}
+
+	public addHandlerClass(constructor: ClassConstructor) {
+		if (this.useGlobal) {
+			throw new Error('addHandlerClass may only be used if ManagedApi is initialized with `useGlobal` = false');
+		}
+
+		this.classes.push({
+			constructor,
+			handlers: ManagedApiInternal.GetHandlersForConstructor(constructor),
+		});
 	}
 
 	/**
@@ -65,14 +85,16 @@ export class ManagedApi<TransportParamsType extends object> {
 	 * TODO: Move to a helper class
 	 */
 	public initHandlers() {
-		// Get the list of registered classes
-		const classes = ManagedApiInternal.GetRegisteredApiClassDefinitions()
-			// Only get the ones that have handlers defined on them
-			.filter(c => c.handlers.size > 0);
+		if (!this.classes) {
+			// Get the list of registered classes
+			this.classes = ManagedApiInternal.GetRegisteredApiClassDefinitions()
+				// Only get the ones that have handlers defined on them
+				.filter(c => c.handlers.size > 0);
+		}
 
 		// Initialize each class and build a master map of all API handlers
 		const handlers = new Map<ApiMethod, Map<string, IApiHandlerInstance<TransportParamsType>>>();
-		for (const handlerClass of classes) {
+		for (const handlerClass of this.classes) {
 			const instance = this.instanstiateHandlerClass(handlerClass);
 			for (const handlerMethod of handlerClass.handlers) {
 				if (!handlers.has(handlerMethod[0])) {

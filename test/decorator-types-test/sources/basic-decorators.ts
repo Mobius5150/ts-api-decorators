@@ -1,7 +1,21 @@
-import { Api, ApiGetMethod } from "../../../src";
+import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod } from "../../../src";
 import { ApiQueryParam } from "../../../src/decorators/QueryParams";
 
 const validator = (name: string, value: string) => {};
+
+interface IGreetArgs {
+	name: string;
+	times: number;
+
+	/**
+	 * @defaultValue 1
+	 */
+	optional?: string;
+}
+
+interface IGreetResponse {
+	response: string;
+}
 
 @Api
 class MyApi {
@@ -19,13 +33,28 @@ class MyApi {
 		@ApiQueryParam(validator) name: string,
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
-	) {
+	): string {
 		let result = optional ? optional : '';
 		for (let i = 0; i < times; ++i) {
 			result += `Hi ${name}! `;
 		}
 
 		return result;
+	}
+
+	/**
+	 * Greets the caller using body parameters
+	 * @param body The greeting options
+	 * @tags greeters A group of methods for greeting
+	 * @returns The greeting as an object
+	 */
+	@ApiPostMethod<IGreetResponse>('/hello')
+	greetObject(
+		@ApiBodyParam() body: IGreetArgs
+	): IGreetResponse {
+		return {
+			response: this.greet(body.name, body.times, body.optional),
+		};
 	}
 
 }

@@ -1,4 +1,4 @@
-import { __ApiParamArgs } from "./InternalTypes";
+import { __ApiParamArgs, InternalTypeDefinition } from "./InternalTypes";
 
 export const enum ApiMethod {
 	GET = 'GET',
@@ -26,6 +26,7 @@ export interface IApiDefinitionBase {
 	method: ApiMethod;
 	route: string;
 	handlerKey: string | symbol;
+	returnType?: InternalTypeDefinition;
 }
 
 export interface IApiDefinition extends IApiDefinitionBase {
