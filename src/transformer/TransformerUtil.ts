@@ -1,5 +1,10 @@
 import * as ts from 'typescript';
 import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
+import { ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
+
+export interface ITransformerArguments {
+    paramDecorators?: ParamDecoratorTransformerInfo[];
+}
 
 export interface SymbolWithId extends ts.Symbol {
     id: number;

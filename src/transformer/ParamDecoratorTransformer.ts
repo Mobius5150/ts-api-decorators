@@ -38,7 +38,7 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
         })
     }
 
-	public visitNode(node: ts.ParameterDeclaration): ts.Node{
+	public visitNode(node: ts.ParameterDeclaration): ts.ParameterDeclaration {
 		// TODO: Validate the type of the parameter this decorator was used on matches the allowable types
         // defined on: this.transformInfo.allowableTypes
         

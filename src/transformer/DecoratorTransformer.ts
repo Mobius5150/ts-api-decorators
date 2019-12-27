@@ -46,7 +46,7 @@ export abstract class DecoratorTransformer<T extends ts.Node, I extends IDecorat
 		return ts.visitEachChild(this.__visitNode(node), childNode => this.visitNodeAndChildren(childNode, context), context);
     }
     
-    public abstract visitNode(node: T): ts.Node;
+    public abstract visitNode(node: T): T;
 
     private __visitNode(node: ts.Node): ts.Node {
         if (!this.transformInfo.nodeCheckFunction(node)) {

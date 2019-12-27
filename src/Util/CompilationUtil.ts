@@ -28,6 +28,7 @@ export function getDefaultCompilerOptions(): ts.CompilerOptions {
 		experimentalDecorators: true,
 		target: ts.ScriptTarget.ES5,
 		downlevelIteration: true,
+		sourceMap: true,
 	}
 }
 

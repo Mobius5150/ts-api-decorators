@@ -1,5 +1,4 @@
 import { Api, ApiGetMethod, ApiBodyParam } from "../../../src";
-import { ApiQueryParam } from "../../../src/decorators/QueryParams";
 
 interface IRequestBody {
 	version: string;

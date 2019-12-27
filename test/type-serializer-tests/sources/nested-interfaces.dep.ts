@@ -1,5 +1,4 @@
 import { Api, ApiGetMethod, ApiBodyParam } from "../../../src";
-import { ApiQueryParam } from "../../../src/decorators/QueryParams";
 import { IBodyParams as IBodyParams2 } from './nested-interfaces';
 
 interface IRequestBody {
@@ -13,6 +12,10 @@ interface IBodyParams {
 	source: 'b';
 }
 
+interface IResponseBody {
+	message: string;
+}
+
 @Api
 export default class MyApi {
 
@@ -21,11 +24,13 @@ export default class MyApi {
 	 * @param body The request body
 	 * @returns The string 'response'
 	 */
-	@ApiGetMethod('/helloDep')
+	@ApiGetMethod<IResponseBody>('/helloDep')
 	greet(
 		@ApiBodyParam() body: IRequestBody,
-	) {
-		return 'reponse';
+	): IResponseBody {
+		return {
+			message: 'response',
+		};
 	}
 
 }

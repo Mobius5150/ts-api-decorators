@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
-import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
@@ -53,17 +53,15 @@ export class ManagedApi<TransportParamsType extends object> {
 	public constructor(
 		private readonly useGlobal: boolean = true
 	) {
-		if (this.useGlobal) {
-			if (!ManagedApi.namespace) {
-				ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
+		if (!ManagedApi.namespace) {
+			ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
 
-				if (!ManagedApi.namespace) {
-					ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
-				}
+			if (!ManagedApi.namespace) {
+				ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
 			}
-		} else {
-			this.classes = [];
 		}
+		
+		this.classes = [];
 
 		this.jsonValidator = new JsonSchemaValidator();
 	}
@@ -160,8 +158,9 @@ export class ManagedApi<TransportParamsType extends object> {
 
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
 		// Resolve handler arguments
-		const args = await Promise.all(handlerArgs.map(async ({args, type}) => {
-			if (type === ApiParamType.Query) {
+		const args = await Promise.all(handlerArgs.map(async (def) => {
+			const {args} = def;
+			if (def.type === ApiParamType.Query) {
 				const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
 				if (!isDefined && args.typedef.type !== 'boolean') {
 					// Query param not defined
@@ -178,7 +177,7 @@ export class ManagedApi<TransportParamsType extends object> {
 
 				// Arg was defined, process it
 				return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
-			} else if (type === ApiParamType.Body) {
+			} else if (def.type === ApiParamType.Body) {
 				const {bodyContents} = invocationParams;
 				if (!bodyContents) {
 					if (args.initializer) {
@@ -215,6 +214,16 @@ export class ManagedApi<TransportParamsType extends object> {
 				
 				this.validateBodyContents(args, contents);
 				return contents;
+			} else if (def.type === ApiParamType.Transport) {
+				if (invocationParams.transportParams[def.transportTypeId]) {
+					return invocationParams.transportParams[def.transportTypeId];
+				} else if (args.initializer) {
+					return args.initializer();
+				} else if (!args.optional) {
+					throw new HttpRequiredTransportParamMissingError(def.transportTypeId);
+				} else {
+					return undefined;
+				}
 			}
 
 			// TODO: How to specify callback arg for callback model?

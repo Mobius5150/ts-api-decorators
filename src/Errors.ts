@@ -51,6 +51,15 @@ export class HttpRequiredBodyParamMissingError extends HttpBadRequestError {
     }
 }
 
+export class HttpRequiredTransportParamMissingError extends HttpBadRequestError {
+    constructor(queryParamName: string) {
+        super(`Missing required transport parameter '${queryParamName}'`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpRequiredTransportParamMissingError.prototype);
+    }
+}
+
 export class HttpQueryParamInvalidTypeError extends HttpBadRequestError {
     constructor(queryParamName: string, expectedType: string) {
         super(`Invalid value for query parameter '${queryParamName}'. Must be a valid ${expectedType}.`);

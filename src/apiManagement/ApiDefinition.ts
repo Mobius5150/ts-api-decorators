@@ -12,6 +12,7 @@ export const enum ApiParamType {
 	Body,
 	Query,
 	Path,
+	Transport,
 }
 
 export type ApiMethodReturnTypePrimitives = void | string | object;
@@ -33,9 +34,19 @@ export interface IApiDefinition extends IApiDefinitionBase {
 	handler: ApiMethodFunction;
 }
 
-export interface IApiParamDefinition {
+interface IApiParamDefinitionBase {
 	args: __ApiParamArgs;
 	propertyKey: string | symbol;
 	parameterIndex: number;
-	type: ApiParamType;
 }
+
+export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
+	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path;
+}
+
+export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBase {
+	type: ApiParamType.Transport;
+	transportTypeId: string;
+}
+
+export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition;

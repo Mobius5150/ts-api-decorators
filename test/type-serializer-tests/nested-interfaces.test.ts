@@ -1,7 +1,7 @@
-import { assert } from 'chai';
+import { assert, expect } from 'chai';
 import * as path from 'path';
 import 'mocha';
-import { getCompiledProgram } from '../TestUtil';
+import { getCompiledProgram, assertRealInclude } from '../TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
 
@@ -9,12 +9,16 @@ import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTy
 describe('TypeSerializer', () => {
 	let api: ManagedApi<object>;
 	let handlers: Map<ApiMethod, Map<string, IApiHandlerInstance<object>>>;
-
-	beforeEach(() => {
-		const modules = getCompiledProgram([
+	let modules: any[];
+	
+	before(() => {
+		modules = getCompiledProgram([
 			path.join(__dirname, 'sources/nested-interfaces.ts'),
 			path.join(__dirname, 'sources/nested-interfaces.dep.ts'),
 		]);
+	})
+
+	beforeEach(() => {
 		api = new ManagedApi(false);
 		for (const m of modules) {
 			api.addHandlerClass(m);
@@ -75,4 +79,41 @@ describe('TypeSerializer', () => {
 		)
 	});
 
+	it('should parse return types', async () => {
+		assert(handlers.has(ApiMethod.GET));
+		const getHandlers = handlers.get(ApiMethod.GET);
+		const routeAssertions: {[key: string]: IApiHandlerInstance<object>['returnType']} = {
+			'/hello': {
+				type: 'string'
+			},
+			'/helloDep': {
+				type: 'object',
+				schema: {
+					$ref: '#/definitions/IResponseBody',
+					definitions: {
+						IResponseBody: {
+							type: 'object',
+							properties: {
+								message: {
+									type: 'string'
+								},
+							},
+							required: ['message'],
+						}
+					}
+				}
+			},
+		};
+
+		assert.equal(getHandlers.size, Object.keys(routeAssertions).length);
+		for (const [route, instance] of getHandlers) {
+			if (!routeAssertions[route]) {
+				throw new Error('Unknown route to verify return type of: ' + instance.route);
+			}
+
+			assertRealInclude(
+				instance.returnType,
+				routeAssertions[route]);
+		}
+	});
 });

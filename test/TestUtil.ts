@@ -1,6 +1,7 @@
 import * as ts from 'typescript';
 import transformer from '../src/transformer';
 import { TransformerType, getDefaultCompilerOptions } from '../src/Util/CompilationUtil';
+import { assert } from 'chai';
 
 export * from '../src/Util/CompilationUtil';
 export * from '../src/Util/AsyncGlob';
@@ -21,4 +22,21 @@ export function getCompiledProgram(moduleNamesTs: string[]) {
 	}
 	
 	return jsModuleNames.map(js => require(js).default);
+}
+
+export function assertRealInclude(actual: object, expected: object, path: string = '$') {
+	for (const expectedKey of Object.keys(expected)) {
+		const propPath = `${path}.${expectedKey}`;
+		assert.property(actual, expectedKey, `Expected property ${propPath}`);
+		const expectedVal = expected[expectedKey];
+		if (typeof expectedVal === 'object') {
+			if (Array.isArray(expectedVal)) {
+				assert.includeDeepMembers(actual[expectedKey], expectedVal);
+			} else {
+				assertRealInclude(actual[expectedKey], expectedVal, propPath)
+			}
+		} else {
+			assert.equal(actual[expectedKey], expectedVal, `Property does not match expected value: ${path}`);
+		}
+	}
 }

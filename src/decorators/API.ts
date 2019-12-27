@@ -2,6 +2,7 @@ import { ManagedApiInternal } from "../apiManagement/ManagedApiInternal";
 import { ApiMethod, ApiMethodFunction, ApiMethodCallbackFunction, IApiDefinition, ApiMethodReturnType } from "../apiManagement/ApiDefinition";
 import 'reflect-metadata';
 import { InternalTypeDefinition } from "../apiManagement/InternalTypes";
+import { IDecorationFunctionTransformInfoBase } from "../transformer/DecoratorTransformer";
 
 const apiMethodDecoratorKey = 'bodyParamDecorator';
 
@@ -18,8 +19,7 @@ interface IApiMethodDecoratorDefinitionBase {
 	arguments: IApiMethodDecoratorFunctionArg[];
 }
 
-export interface IApiMethodDecoratorDefinition extends IApiMethodDecoratorDefinitionBase {
-	magicFunctionName: string;
+export interface IApiMethodDecoratorDefinition extends IApiMethodDecoratorDefinitionBase, IDecorationFunctionTransformInfoBase {
 }
 
 export interface IApiMethodDecoratorFunctionArg {
@@ -28,7 +28,7 @@ export interface IApiMethodDecoratorFunctionArg {
 	transformedParameter?: boolean;
 }
 
-export function ApiMethodDecorator(d: IApiMethodDecoratorDefinitionBase) {
+function ApiMethodDecorator(d: IApiMethodDecoratorDefinitionBase) {
 	return (
 		target: object,
 		propertyKey: string,

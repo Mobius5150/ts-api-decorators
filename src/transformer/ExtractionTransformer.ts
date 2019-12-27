@@ -3,7 +3,7 @@ import * as tjs from "typescript-json-schema";
 import { __ApiParamArgs, __ApiParamArgsBase, InternalTypeDefinition } from '../apiManagement/InternalTypes';
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
-import { ApiMethod, IApiDefinitionBase, IApiParamDefinition } from '../apiManagement/ApiDefinition';
+import { ApiMethod, IApiDefinitionBase, IApiParamDefinition, IApiParamDefinitionCommon, ApiParamType } from '../apiManagement/ApiDefinition';
 import { ITransformerMetadataCollection, ITransformerMetadata } from './TransformerMetadata';
 import { IMetadataResolver } from './MetadataManager';
 import { IApiMethodDecoratorFunctionArg, IApiMethodDecoratorDefinition } from '..';
@@ -56,7 +56,7 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		});
     }
 
-	public visitNode(node: ts.MethodDeclaration): ts.Node{
+	public visitNode(node: ts.MethodDeclaration): ts.MethodDeclaration {
 		// Parse argument name
 		let name: string;
 		if (typeof node.name === 'string') {
@@ -92,18 +92,25 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 				throw new Error('Cannot handle method with multiple call signatures');
 			}
 
+			const nodeParams = this.parseApiMethodCallParameters(node.parameters);
 			const result = this.getDecoratorArguments({
 				route: null,
 				handlerKey: name,
 				method: this.transformInfo.apiDecoratorMethod,
 				file: node.getSourceFile().fileName,
-				parameters: this.parseApiMethodCallParameters(node.parameters),
+				parameters: nodeParams.paramDefs,
 				returnType,
 			}, expression);
 
 			definition = result.definition;
-			if (!this.extractOnly && result.exprArguments) {
-				expression.arguments = result.exprArguments;
+			if (!this.extractOnly) {
+				if (result.exprArguments) {
+					expression.arguments = result.exprArguments;
+				}
+
+				if (nodeParams.parameters) {
+					node.parameters = nodeParams.parameters;
+				}
 			}
 		}
 
@@ -126,10 +133,11 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 		return node;
 	}
 
-	private parseApiMethodCallParameters(parameters: ts.NodeArray<ts.ParameterDeclaration>): IApiParamDefinition[] {
-		const parsedParams: IApiParamDefinition[] = [];
+	private parseApiMethodCallParameters(p: ts.NodeArray<ts.ParameterDeclaration>): {paramDefs: IApiParamDefinitionCommon[], parameters?: ts.NodeArray<ts.ParameterDeclaration> } {
+		const parameters = [...p];
+		const parsedParams: IApiParamDefinitionCommon[] = [];
 		for (let i = 0; i < parameters.length; ++i) {
-			const param = parameters[i];
+			let param = parameters[i];
 			for (const decorator of param.decorators) {
 				for (const decoratorType of this.transformInfo.parameterTypes) {
 					if (this.isArgumentDecoratorCallExpression(decorator.expression, decoratorType)) {
@@ -140,14 +148,21 @@ export class ExtractionTransformer extends DecoratorTransformer<ts.MethodDeclara
 								args: transformer.getDecoratorArguments(paramArgs, decorator.expression, decoratorType),
 								parameterIndex: i,
 								propertyKey: paramArgs.name,
-								type: decoratorType.type,
+								type: <IApiParamDefinitionCommon['type']>decoratorType.type,
 							});
+
+						param = transformer.visitNode(param);
 					}
 				}
 			}
+
+			parameters[i] = param;
 		}
 
-		return parsedParams;
+		return {
+			paramDefs: parsedParams,
+			parameters: ts.createNodeArray(parameters),
+		};
 	}
 	
 	protected isDecoratedMethodDeclaration(node: ts.Node): node is ts.MethodDeclaration {
