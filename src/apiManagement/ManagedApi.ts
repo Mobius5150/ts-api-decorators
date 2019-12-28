@@ -1,13 +1,23 @@
-import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName } from 'ts-api-decorators';
+import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName, ClassConstructor, ApiHeadersDict } from 'ts-api-decorators';
 import * as Express from 'express';
 
 export interface IExpressManagedApiContext {
-	req: Express.Request;
-	res: Express.Response;
+	'express.request': Express.Request;
+	'express.response': Express.Response;
 }
 
 export class ManagedApi {
-	private api: BaseManagedApi<IExpressManagedApiContext> = new BaseManagedApi();
+	private api: BaseManagedApi<IExpressManagedApiContext>;
+
+	public constructor(
+		useGlobal?: boolean,
+	) {
+		this.api = new BaseManagedApi(useGlobal);
+	}
+
+	public addHandlerClass(constructor: ClassConstructor) {
+		this.api.addHandlerClass(constructor);
+	}
 
 	public init(): Express.Router {
 		const handlers = this.api.initHandlers();
@@ -47,6 +57,7 @@ export class ManagedApi {
 			// TODO: Need to properly parse the body based on the content length
 			instance.wrappedHandler({
 				queryParams: this.getRequestQueryParams(req),
+				headers: this.getRequestHeaderParams(req),
 				bodyContents: (
 				(typeof contentType !== 'undefined' && Number(contentLength) > 0)
 					?
@@ -61,8 +72,8 @@ export class ManagedApi {
 					: undefined
 				),
 				transportParams: {
-					req,
-					res,
+					'express.request': req,
+					'express.response': res,
 				},
 			})
 				.then(result => {
@@ -72,6 +83,10 @@ export class ManagedApi {
 					next(e)
 				});
 		};
+	}
+	
+	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {
+		return req.headers;
 	}
 
 	private getRequestQueryParams(req: Express.Request): { [param: string]: string; } {
@@ -90,7 +105,7 @@ export class ManagedApi {
 
 	public getHeader(name: string): string[] | undefined {
 		const context = this.api.getExecutionContextInvocationParams();
-		const headers = context.transportParams.req.header(name);
+		const headers = context.transportParams['express.request'].header(name);
 		if (typeof headers === 'string') {
 			return [headers];
 		}
@@ -100,6 +115,6 @@ export class ManagedApi {
 
 	public setHeader(name: string, value: string): void {
 		const context = this.api.getExecutionContextInvocationParams();
-		context.transportParams.res.header(name, value);
+		context.transportParams['express.response'].header(name, value);
 	}
 }

@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiBodyParam } from "../../../src";
+import { Api, ApiGetMethod, ApiHeaderParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -27,78 +27,92 @@ class MyApi {
 
 	@ApiGetMethod('/hello')
 	greet(
-		@ApiQueryParam() name: string,
-		@ApiQueryParam() times: number = 1,
-		@ApiQueryParam() optional?: string,
+		@ApiHeaderParam() name: string,
+		@ApiHeaderParam() times: number = 1,
+		@ApiHeaderParam() optional?: string,
 	) {
 		return this.getResult({name, times, optional});
 	}
 
 	@ApiPostMethod('/hello')
 	greetPost(
-		@ApiQueryParam() name: string,
-		@ApiQueryParam() times: number = 1,
-		@ApiQueryParam() optional?: string,
+		@ApiHeaderParam() name: string,
+		@ApiHeaderParam() times: number = 1,
+		@ApiHeaderParam() optional?: string,
 	) {
 		return this.getResult({name, times, optional});
-	}
-
-	@ApiPostMethod('/helloBody')
-	greetPostBody(
-		@ApiBodyParam() body: IGreetArgs,
-	) {
-		return this.getResult({ times: 1, ...body });
 	}
 
 	@ApiPutMethod('/hello')
 	greetPut(
-		@ApiQueryParam() name: string,
-		@ApiQueryParam() times: number = 1,
-		@ApiQueryParam() optional?: string,
+		@ApiHeaderParam() name: string,
+		@ApiHeaderParam() times: number = 1,
+		@ApiHeaderParam() optional?: string,
 	) {
 		return this.getResult({name, times, optional});
 	}
 
-	@ApiPutMethod('/helloBody')
-	greetPutBody(
-		@ApiBodyParam() body: IGreetArgs,
-	) {
-		return this.getResult({ times: 1, ...body });
-	}
-
 	@ApiDeleteMethod('/hello')
 	greetDelete(
-		@ApiQueryParam() name: string,
-		@ApiQueryParam() times: number = 1,
-		@ApiQueryParam() optional?: string,
+		@ApiHeaderParam() name: string,
+		@ApiHeaderParam() times: number = 1,
+		@ApiHeaderParam() optional?: string,
 	) {
 		return this.getResult({name, times, optional});
 	}
 
 	@ApiGetMethod('/echo')
 	echo(
-		@ApiQueryParam('echo') str: string,
+		@ApiHeaderParam('x-echo') str: string,
 	) {
 		return str;
 	}
 
 	@ApiPostMethod('/echo')
 	echoPost(
-		@ApiQueryParam('echo') str: string,
+		@ApiHeaderParam('x-echo') str: string,
 	) {
 		return str;
 	}
 
 	@ApiPutMethod('/echo')
 	echoPut(
-		@ApiQueryParam('echo') str: string,
+		@ApiHeaderParam('x-echo') str: string,
 	) {
 		return str;
 	}
 
 	@ApiDeleteMethod('/echo')
 	echoDelete(
-		@ApiQueryParam('echo') str: string,
+		@ApiHeaderParam('x-echo') str: string,
+	) {
+		return str;
+	}
+
+	@ApiGetMethod('/echoCase')
+	echoCase(
+		@ApiHeaderParam('X-Echo') str: string,
+	) {
+		return str;
+	}
+
+	@ApiPostMethod('/echoCase')
+	echoCasePost(
+		@ApiHeaderParam('X-Echo') str: string,
+	) {
+		return str;
+	}
+
+	@ApiPutMethod('/echoCase')
+	echoCasePut(
+		@ApiHeaderParam('X-Echo') str: string,
+	) {
+		return str;
+	}
+
+	@ApiDeleteMethod('/echoCase')
+	echoCaseDelete(
+		@ApiHeaderParam('X-Echo') str: string,
 	) {
 		return str;
 	}
