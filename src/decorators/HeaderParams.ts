@@ -30,15 +30,17 @@ abstract class HeaderParams {
 		allowableTypes: ['string'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: 'regexp',
 				optional: true,
 			}
 		]
 	})
-	public static ApiHeaderParamString(stringValidationRegex?: RegExp) {
-		return HeaderParams.ApiHeaderParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiHeaderParamString(paramName?: string, stringValidationRegex?: RegExp) {
+		throw new Error('Not implemented');
 	}
 
 	/**
@@ -51,6 +53,10 @@ abstract class HeaderParams {
 		allowableTypes: ['number'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: "numberMin",
 				optional: true,
 			},
@@ -60,25 +66,27 @@ abstract class HeaderParams {
 			}
 		]
 	})
-	public static ApiHeaderParamNumber(numberMin?: number, numberMax?: number) {
-		return HeaderParams.ApiHeaderParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiHeaderParamNumber(paramName?: string, numberMin?: number, numberMax?: number) {
+		throw new Error('Not implemented');
 	}
 
 	/**
 	 * A query parameter.
 	 * @param validator 
 	 */
-	public static ApiHeaderParam(): ParameterDecorator;
-	public static ApiHeaderParam(validator?: ApiParamValidationFunction): ParameterDecorator;
+	public static ApiHeaderParam(paramName?: string): ParameterDecorator;
+	public static ApiHeaderParam(paramName?: string, validator?: ApiParamValidationFunction): ParameterDecorator;
 	@HeaderParamDecorator({
 		allowableTypes: ['string', 'number', 'date'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: "validationFunc",
 				optional: true,
-			}
+			},
 		]
 	})
 	public static ApiHeaderParam(a?: any): ParameterDecorator {

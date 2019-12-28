@@ -21,7 +21,7 @@ export interface TransformerType {
 export type ParamDecoratorTransformerInfo = IBodyParamDecoratorDefinition & IDecorationFunctionTransformInfoBase & TransformerType;
 
 export interface IParamDecoratorFunctionArg {
-	type: 'validationFunc' | 'numberMin' | 'numberMax' | 'regexp';
+	type: 'paramName' | 'validationFunc' | 'numberMin' | 'numberMax' | 'regexp';
 	optional: boolean;
 }
 
@@ -137,6 +137,9 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			}
 			
 			switch (argDef.type) {
+				case 'paramName':
+					thisArgs.name = this.typeSerializer.compileExpressionToStringConstant(arg);
+					break;
 				case 'validationFunc':
 					thisArgs.validationFunction = new ExpressionWrapper(this.parenthesizeExpression(arg));
 					break;

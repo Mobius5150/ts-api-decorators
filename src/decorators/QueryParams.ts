@@ -30,15 +30,17 @@ abstract class QueryParams {
 		allowableTypes: ['string'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: 'regexp',
 				optional: true,
 			}
 		]
 	})
-	public static ApiQueryParamString(stringValidationRegex?: RegExp) {
-		return QueryParams.ApiQueryParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiQueryParamString(paramName?: string, stringValidationRegex?: RegExp) {
+		throw new Error('Not implemented');
 	}
 
 	/**
@@ -51,6 +53,10 @@ abstract class QueryParams {
 		allowableTypes: ['number'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: "numberMin",
 				optional: true,
 			},
@@ -60,25 +66,27 @@ abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParamNumber(numberMin?: number, numberMax?: number) {
-		return QueryParams.ApiQueryParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiQueryParamNumber(paramName?: string, numberMin?: number, numberMax?: number) {
+		throw new Error('Not implemented');
 	}
 
 	/**
 	 * A query parameter.
 	 * @param validator 
 	 */
-	public static ApiQueryParam(): ParameterDecorator;
-	public static ApiQueryParam(validator?: ApiParamValidationFunction): ParameterDecorator;
+	public static ApiQueryParam(paramName?: string): ParameterDecorator;
+	public static ApiQueryParam(paramName: string, validator?: ApiParamValidationFunction): ParameterDecorator;
 	@QueryParamDecorator({
 		allowableTypes: ['string', 'number', 'date'],
 		arguments: [
 			{
+				type: "paramName",
+				optional: true,
+			},
+			{
 				type: "validationFunc",
 				optional: true,
-			}
+			},
 		]
 	})
 	public static ApiQueryParam(a?: any): ParameterDecorator {
