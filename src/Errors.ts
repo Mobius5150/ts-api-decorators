@@ -95,3 +95,12 @@ export class HttpBodyParamValidationError extends HttpBadRequestError {
         Object.setPrototypeOf(this, HttpBodyParamValidationError.prototype);
     }
 }
+
+export class HttpTeapotError extends HttpError {
+    constructor(m: string = "I'm a teapot") {
+        super(m, 418, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpTeapotError.prototype);
+    }
+}

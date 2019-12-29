@@ -13,6 +13,7 @@ export const enum ApiParamType {
 	Query,
 	Path,
 	Header,
+	Callback,
 	Transport,
 }
 
@@ -22,7 +23,9 @@ export type ApiMethodReturnType = ApiMethodReturnTypePrimitives | Promise<ApiMet
 
 export type ApiMethodFunction = (...args: any[]) => ApiMethodReturnType;
 
-export type ApiMethodCallbackFunction<T> = (err: any, result: T) => void;
+export type PromiseRejectionTypes = undefined | null | string | Error;
+
+export type ApiMethodCallbackFunction<T> = (err: PromiseRejectionTypes, result?: T) => void;
 
 export interface IApiDefinitionBase {
 	method: ApiMethod;
@@ -42,7 +45,7 @@ interface IApiParamDefinitionBase {
 }
 
 export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
-	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header;
+	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback;
 }
 
 export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBase {

@@ -30,7 +30,7 @@ class MyApi {
 	 */
 	@ApiGetMethod<string>('/hello')
 	greet(
-		@ApiQueryParam(validator) name: string,
+		@ApiQueryParam('name', validator) name: string,
 		@ApiQueryParam() times: number = 1,
 		@ApiQueryParam() optional?: string,
 	): string {

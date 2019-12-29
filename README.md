@@ -71,7 +71,7 @@ An API can accept parameters in the querystring:
 class MyApi {
 
 	@ApiGetMethod('/hello')
-	greet(@ApiQueryParam name: string) {
+	greet(@ApiQueryParam() name: string) {
 		return `Hello ${name}!`;
 	}
 
@@ -97,7 +97,7 @@ We can make the parameter optional by changing the type definition:
 class MyApi {
 
 	@ApiGetMethod('/hello')
-	greet(@ApiQueryParam name?: string) {
+	greet(@ApiQueryParam() name?: string) {
 		if (name) {
 			return `Hello ${name}!`;
 		}
@@ -207,7 +207,7 @@ interface IBodyContents {
 class MyApi {
 
 	@ApiPostMethod('/hello')
-	greet(@ApiBodyParam contents: IBodyContents) {
+	greet(@ApiBodyParam() contents: IBodyContents) {
 		return `Hello ${contents.name}!`;
 	}
 
@@ -400,7 +400,7 @@ We also provide some standard exceptions that can be used.
 import { HttpBadRequestException } from 'ts-managed-api-*';
 
 @ApiPostMethod('/hello')
-greet(@ApiQueryParam(true) name: string) {
+greet(@ApiQueryParam() name: string) {
 	if (name.length >= 10) {
 		throw new HttpBadRequestException('name must be fewer than 10 characters');
 	}
@@ -574,8 +574,8 @@ class MyApi {
 	@ApiInjectedDependency
 	private db: MyCallbackDatabase;
 
-	@ApiGetMethod('/hello')
-	greet(@ApiCallback callback: ManagedApiCallback) {
+	@ApiGetMethod<void, IGreetingResponse>('/hello')
+	greet(@ApiCallback() callback: ApiMethodCallbackFunction<IGreetingResponse>) {
 		this.db.getDefaultGreeting((err, result) => {
 			if (err) {
 				callback(err);

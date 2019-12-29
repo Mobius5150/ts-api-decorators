@@ -14,3 +14,6 @@ export {
 	ApiHeaderParamNumber,
 	ApiHeaderParamString,
 } from './HeaderParams';
+export {
+	ApiCallbackParam,
+} from './CallbackParams';

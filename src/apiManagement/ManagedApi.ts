@@ -7,6 +7,7 @@ import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
 import { Validator as JsonSchemaValidator } from 'jsonschema';
 import { ClassConstructor } from "..";
+import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
 
 export type ApiQueryParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -125,7 +126,7 @@ export class ManagedApi<TransportParamsType extends object> {
 			return ManagedApi.namespace.runPromise(async () => {
 				ManagedApi.namespace.set('invocationParams', invocationParams);
 				try {
-					const handlerResult = await Promise.resolve(this.invokeHandler(def, handlerArgs, instance, invocationParams));
+					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);
 
 					const result: IApiInvocationResult = {
 						statusCode: 200,
@@ -135,9 +136,9 @@ export class ManagedApi<TransportParamsType extends object> {
 
 					return result;
 				} catch (e) {
-					if (e instanceof HttpError) {
+					if (e instanceof HttpError || ((e.statusCode || e.code) && e.message)) {
 						return {
-							statusCode: e.statusCode,
+							statusCode: e.statusCode || e.code,
 							body: e.message,
 							headers: {},
 						};
@@ -159,6 +160,7 @@ export class ManagedApi<TransportParamsType extends object> {
 
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
 		// Resolve handler arguments
+		let useCallback: PromiseCallbackHelper<any>;
 		const args = await Promise.all(handlerArgs.map(async (def) => {
 			const {args} = def;
 			if (def.type === ApiParamType.Query) {
@@ -243,12 +245,23 @@ export class ManagedApi<TransportParamsType extends object> {
 				} else {
 					return undefined;
 				}
+			} else if (def.type === ApiParamType.Callback) {
+				if (useCallback) {
+					throw new Error('Only a single callback parameter may be defined on a handler');
+				}
+
+				useCallback = new PromiseCallbackHelper();
+				return await useCallback.getCallbackFunc();
 			}
 
 			// TODO: How to specify callback arg for callback model?
 		}));
 
-		return def.handler.apply(instance, args);
+		if (useCallback) {
+			return useCallback.execute(() => def.handler.apply(instance, args));
+		} else {
+			return def.handler.apply(instance, args);
+		}
 	}
 
 	private async parseRawRequestBody(bodyContents: IApiBodyContents) {

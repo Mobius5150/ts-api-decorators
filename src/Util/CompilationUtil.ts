@@ -23,10 +23,11 @@ interface TsConfig {
 
 export function getDefaultCompilerOptions(): ts.CompilerOptions {
 	return {
+		module: ts.ModuleKind.CommonJS,
 		noEmitOnError: true,
 		noImplicitAny: false,
 		experimentalDecorators: true,
-		target: ts.ScriptTarget.ES5,
+		target: ts.ScriptTarget.ES2019,
 		downlevelIteration: true,
 		sourceMap: true,
 	}

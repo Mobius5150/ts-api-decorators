@@ -31,3 +31,4 @@ var MyApi = /** @class */ (function () {
     return MyApi;
 }());
 exports.default = MyApi;
+//# sourceMappingURL=nested-interfaces.js.map
