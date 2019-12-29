@@ -1,1 +1,0 @@
-{"version":3,"file":"nested-interfaces.js","sourceRoot":"","sources":["nested-interfaces.ts"],"names":[],"mappings":";;;;;;;;;;;AAAA,oCAA+D;AAa/D;IAAA;IAcA,CAAC;IAZA;;;;OAIG;IAEH,qBAAK,GAAL,UACiB,IAAkB;QAElC,OAAO,SAAS,CAAC;IAClB,CAAC;IAJD;QADC,kBAAY,CAAC,QAAQ,qBAAC;QAErB,WAAA,kBAAY,ulBAAE,CAAA;sCAGf;IAZmB,KAAK;QADzB,SAAG;OACiB,KAAK,CAczB;IAAD,YAAC;CAAA,AAdD,IAcC;kBAdoB,KAAK"}
