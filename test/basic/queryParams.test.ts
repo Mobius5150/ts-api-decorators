@@ -1,5 +1,4 @@
 import 'mocha';
-import { expect, assert } from 'chai';
 import { TestServer } from '../TestServer';
 import { ManagedApiInternal } from 'ts-api-decorators';
 import { DefaultExpressPort } from '../TestUtil';

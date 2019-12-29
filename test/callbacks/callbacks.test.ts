@@ -6,13 +6,13 @@ import * as path from 'path';
 import * as request from 'supertest';
 import * as http from 'http';
 
-describe('Header Params', () => {
+describe('Callbacks', () => {
 	let testServer: TestServer;
 	let httpServer: http.Server;
 
 	before(async () => {
 		ManagedApiInternal.ResetRegisteredApis();
-		testServer = new TestServer(path.resolve(__dirname, './sources/header-params.ts'));
+		testServer = new TestServer(path.resolve(__dirname, './sources/callbacks.ts'));
 		httpServer = await testServer.start(DefaultExpressPort);
 	});
 
@@ -31,17 +31,14 @@ describe('Header Params', () => {
 		it(`[${verbUpper}] accepts strings`, async () => {
 			const name = 'test';
 			return request(httpServer)
-				[verb](`/hello`)
-				.set('name', name)
+				[verb](`/hello?name=${name}`)
 				.expect(200, `Hi ${name}! `);
 		});
 
 		it(`[${verbUpper}] accepts numbers`, async () => {
 			const name = 'test';
 			return request(httpServer)
-				[verb](`/hello`)
-				.set('name', name)
-				.set('times', 3)
+				[verb](`/hello?name=${name}&times=3`)
 				.expect(200, `Hi ${name}! Hi ${name}! Hi ${name}! `);
 		});
 
@@ -50,23 +47,17 @@ describe('Header Params', () => {
 			return Promise.all([
 				// Invalid characters as suffix
 				request(httpServer)
-					[verb](`/hello`)
-					.set('name', name)
-					.set('times', '3n')	
+					[verb](`/hello?name=${name}&times=3n`)
 					.expect(400),
 
 				// Invalid string
 				request(httpServer)
-					[verb](`/hello`)
-					.set('name', name)
-					.set('times', 'potato')
+					[verb](`/hello?name=${name}&times=potato`)
 					.expect(400),
 
 				// Invalid prefix
 				request(httpServer)
-					[verb](`/hello`)
-					.set('name', name)
-					.set('times', 'n3')	
+					[verb](`/hello?name=${name}&times=n3`)
 					.expect(400),
 			]);
 		});
@@ -74,39 +65,28 @@ describe('Header Params', () => {
 		it(`[${verbUpper}] accepts optional args`, async () => {
 			const name = 'test';
 			return request(httpServer)
-				[verb](`/hello`)
-				.set('name', name)
-				.set('times', 3)
-				.set('optional', 'preamble')
+				[verb](`/hello?name=${name}&times=3&optional=preamble`)
 				.expect(200, `preambleHi ${name}! Hi ${name}! Hi ${name}! `);
 		});
 
 		it(`[${verbUpper}] accepts named args`, async () => {
 			const str = 'test';
 			return request(httpServer)
-				[verb](`/echo`)
-				.set('x-echo', str)
-				.expect(200, str);
+				[verb](`/echo?echo=${str}`)
+				.expect(200, {str});
 		});
 
-		it(`[${verbUpper}] is case insensitive`, async () => {
-			const str = 'caseTest';
-			Promise.all([
-				request(httpServer)
-					[verb](`/echo`)
-					.set('X-ECHO', str)
-					.expect(200, str),
+		it(`[${verbUpper}] handles errors`, async () => {
+			const str = 'test';
+			return request(httpServer)
+				[verb](`/hello?name=${str}&throwError`)
+				.expect(418);
+		});
 
-				request(httpServer)
-					[verb](`/echoCase`)
-					.set('X-ECHO', str)
-					.expect(200, str),
-
-				request(httpServer)
-					[verb](`/echoCase`)
-					.set('x-echo', str)
-					.expect(200, str),
-			]);
+		it(`[${verbUpper}] handles incorrectly thrown errors`, async () => {
+			return request(httpServer)
+				[verb](`/unexpectedError`)
+				.expect(418);
 		});
 	}
 });

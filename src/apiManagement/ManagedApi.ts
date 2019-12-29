@@ -86,6 +86,7 @@ export class ManagedApi {
 	}
 	
 	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {
+		// Headers must be returned with keys lowercased, but the express framework does this already
 		return req.headers;
 	}
 
