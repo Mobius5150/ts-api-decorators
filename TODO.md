@@ -29,9 +29,6 @@ The following functionalities have yet to be fully implemented
     - Named dependencies
     - On-demand initialization
 
-- [ ] Async Patterns
-    - Callbacks
-
 - [ ] Custom Hooks
     - handler-preinvoke
     - handler-error
