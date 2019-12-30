@@ -5,13 +5,10 @@ import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredica
 import { ApiParamType } from '../apiManagement/ApiDefinition';
 import { ManagedApiInternal } from '../apiManagement';
 
-export interface IQueryParamDecoratorDefinition {
-	allowableTypes: ('string' | 'number' | 'date' | 'any')[];
-	arguments: IParamDecoratorFunctionArg[];
-}
+export type AllowableTypeStrings = 'object' | 'string' | 'number' | 'date' | 'boolean' | 'any';
 
-export interface IBodyParamDecoratorDefinition {
-	allowableTypes: ('object' | 'string' | 'number' | 'date' | 'any')[];
+export interface IParamDecoratorDefinition {
+	allowableTypes: AllowableTypeStrings[];
 	arguments: IParamDecoratorFunctionArg[];
 }
 
@@ -19,7 +16,7 @@ export interface TransformerType {
 	type: ApiParamType;
 }
 
-export type ParamDecoratorTransformerInfo = IBodyParamDecoratorDefinition & IDecorationFunctionTransformInfoBase & TransformerType;
+export type ParamDecoratorTransformerInfo = IParamDecoratorDefinition & IDecorationFunctionTransformInfoBase & TransformerType;
 
 export interface IParamDecoratorFunctionArg {
 	type: 'paramName' | 'validationFunc' | 'numberMin' | 'numberMax' | 'regexp';

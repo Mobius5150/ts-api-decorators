@@ -1,11 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IQueryParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
+import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
 
 export const queryParamDecoratorKey = 'queryParamDecorator';
 
-export function QueryParamDecorator(d: IQueryParamDecoratorDefinition) {
+export function QueryParamDecorator(d: IParamDecoratorDefinition) {
 	return (
 		target: object,
 		propertyKey: string,
@@ -17,8 +17,8 @@ export function QueryParamDecorator(d: IQueryParamDecoratorDefinition) {
 	}
 }
 
-export function GetQueryParamDecorator(param: string): IQueryParamDecoratorDefinition {
-	return <IQueryParamDecoratorDefinition>Reflect.getMetadata(queryParamDecoratorKey, QueryParams, param);
+export function GetQueryParamDecorator(param: string): IParamDecoratorDefinition {
+	return <IParamDecoratorDefinition>Reflect.getMetadata(queryParamDecoratorKey, QueryParams, param);
 }
 
 abstract class QueryParams {
@@ -79,7 +79,7 @@ abstract class QueryParams {
 	public static ApiQueryParam(paramName?: string): ParameterDecorator;
 	public static ApiQueryParam(paramName: string, validator?: ApiParamValidationFunction): ParameterDecorator;
 	@QueryParamDecorator({
-		allowableTypes: ['string', 'number', 'date'],
+		allowableTypes: ['string', 'number', 'date', 'boolean'],
 		arguments: [
 			{
 				type: "paramName",

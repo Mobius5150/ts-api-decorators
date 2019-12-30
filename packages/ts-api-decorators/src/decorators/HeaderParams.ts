@@ -1,11 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IQueryParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
+import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
 
 export const headerParamDecoratorKey = 'headerParamDecorator';
 
-export function HeaderParamDecorator(d: IQueryParamDecoratorDefinition) {
+export function HeaderParamDecorator(d: IParamDecoratorDefinition) {
 	return (
 		target: object,
 		propertyKey: string,
@@ -17,8 +17,8 @@ export function HeaderParamDecorator(d: IQueryParamDecoratorDefinition) {
 	}
 }
 
-export function GetHeaderParamDecorator(param: string): IQueryParamDecoratorDefinition {
-	return <IQueryParamDecoratorDefinition>Reflect.getMetadata(headerParamDecoratorKey, HeaderParams, param);
+export function GetHeaderParamDecorator(param: string): IParamDecoratorDefinition {
+	return <IParamDecoratorDefinition>Reflect.getMetadata(headerParamDecoratorKey, HeaderParams, param);
 }
 
 abstract class HeaderParams {

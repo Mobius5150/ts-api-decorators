@@ -1,11 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { __ApiParamArgs, ApiParamValidationFunction } from '../apiManagement/InternalTypes';
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IBodyParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
+import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
 
 export const bodyParamDecoratorKey = 'bodyParamDecorator';
 
-export function BodyParamDecorator(d: IBodyParamDecoratorDefinition) {
+export function BodyParamDecorator(d: IParamDecoratorDefinition) {
 	return (
 		target: object,
 		propertyKey: string,
@@ -17,8 +17,8 @@ export function BodyParamDecorator(d: IBodyParamDecoratorDefinition) {
 	}
 }
 
-export function GetBodyParamDecorator(param: string): IBodyParamDecoratorDefinition {
-	return <IBodyParamDecoratorDefinition>Reflect.getMetadata(bodyParamDecoratorKey, BodyParams, param);
+export function GetBodyParamDecorator(param: string): IParamDecoratorDefinition {
+	return <IParamDecoratorDefinition>Reflect.getMetadata(bodyParamDecoratorKey, BodyParams, param);
 }
 
 abstract class BodyParams {
