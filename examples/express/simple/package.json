@@ -1,7 +1,7 @@
 {
   "name": "ts-api-decorators-examples-express-simple",
   "version": "1.0.0",
-  "description": "",
+  "description": "A simple example API using Express and ts-api-decorators-express",
   "main": "index.js",
   "scripts": {
     "build": "ttsc"

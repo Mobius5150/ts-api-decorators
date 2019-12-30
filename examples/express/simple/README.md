@@ -42,15 +42,13 @@ swagger: '2.0'
 info:
   title: ts-api-decorators-examples-express-simple
   version: 1.0.0
-  description: ''
+  description: A simple example API using Express and ts-api-decorators-express
   license:
     name: Apache-2.0
-  contact: {}
 paths:
   /hello:
     get:
       operationId: greet
-      tags: []
       parameters:
         - name: name
           in: query
