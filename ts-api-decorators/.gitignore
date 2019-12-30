@@ -2,7 +2,7 @@ dist
 bin
 .static
 .
-test/**/sources/*.js*
+test/**/*.js*
 # Created by https://www.gitignore.io/api/osx,node,code,linux,windows
 
 ### Code ###
