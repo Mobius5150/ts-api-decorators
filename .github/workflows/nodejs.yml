@@ -62,8 +62,8 @@ jobs:
     - name: npm install, build, and test
       working-directory: packages/ts-api-decorators-express
       run: |
-        npm link ../ts-api-decorators
         npm ci
+        npm link ../ts-api-decorators
         npm run build --if-present
         npm test
       env:
