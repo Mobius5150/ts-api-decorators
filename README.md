@@ -22,10 +22,10 @@ class MyApi {
 }
 ```
 
-This defines an API that exposes a single `GET` handler at `/hello` that returns the string 'Hello World!'. Next, create an instance of `ManagedApi` to handle requests:
+This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. Next, create an instance of `ManagedApi` to handle requests:
 ```typescript
 import express from 'express';
-import { ManagedApi } from 'ts-managed-api-express';
+import { ManagedApi } from 'ts-api-decorators-express';
 
 // We'll use express in this sample, but many other transports are supported
 const app = express();
@@ -39,11 +39,11 @@ app.listen(3000);
 ```
 
 Note that many transports are supported:
-- `ts-managed-api-express`
-- `ts-managed-api-azure-function`
-- `ts-managed-api-aws-lambda`
+- [`ts-api-decorators-express`](packages/ts-api-decorators-express)
+- `ts-api-decorators-azure-function` (WIP)
+- `ts-api-decorators-aws-lambda` (WIP)
 
-You should always import all types and objects from your API transport package directly rather than `ts-managed-api` as some transports will expose different environment-specific parameters that you may want to use. In the below examples you may see imports from `ts-managed-api-*` - this is a placeholder for the transport you've selected.
+You should always import all types and objects from your API transport package directly rather than `ts-api-decorators` as some transports will expose different environment-specific parameters that you may want to use. In the below examples you may see imports from `ts-api-decorators-*` - this is a placeholder for the transport you've selected.
 
 > You can also write your own to hook up to your preferred environment.
 
@@ -372,7 +372,7 @@ class MyApi {
 Because different platforms have different ways of getting and setting headers, we provide a simple, consistent way to access them:
 
 ```typescript
-import { ManagedApi } from 'ts-managed-api-*';
+import { ManagedApi } from 'ts-api-decorators-*';
 
 @ApiGetMethod('/hello')
 greet() {
@@ -397,7 +397,7 @@ ManagedApis handle errors using thrown or passed exceptions. When you throw an e
 We also provide some standard exceptions that can be used.
 
 ```typescript
-import { HttpBadRequestException } from 'ts-managed-api-*';
+import { HttpBadRequestException } from 'ts-api-decorators-*';
 
 @ApiPostMethod('/hello')
 greet(@ApiQueryParam() name: string) {
@@ -419,7 +419,7 @@ name must be 10 or fewer characters
 
 You can also create your own exception classes:
 ```typescript
-import {HttpError} from 'ts-managed-api-*';
+import {HttpError} from 'ts-api-decorators-*';
 
 class HttpTeapotError extends HttpError {
     constructor(m: string = "I'm a teapot") {
@@ -434,7 +434,7 @@ class HttpTeapotError extends HttpError {
 ### JSON Error Responses
 If you'd prefer the API return detailed json responses for errors, this is simple:
 ```typescript
-import { ManagedApi, ApiErrorFormatterJsonDetailed } from 'ts-managed-api-*';
+import { ManagedApi, ApiErrorFormatterJsonDetailed } from 'ts-api-decorators-*';
 const api = new ManagedApi({
 	errorFormatter: ApiErrorFormatterJsonDetailed,
 });

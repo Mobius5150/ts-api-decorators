@@ -9,10 +9,8 @@ export interface IExpressManagedApiContext {
 export class ManagedApi {
 	private api: BaseManagedApi<IExpressManagedApiContext>;
 
-	public constructor(
-		useGlobal?: boolean,
-	) {
-		this.api = new BaseManagedApi(useGlobal);
+	public constructor() {
+		this.api = new BaseManagedApi();
 	}
 
 	public addHandlerClass(constructor: ClassConstructor) {

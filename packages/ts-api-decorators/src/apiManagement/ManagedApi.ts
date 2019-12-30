@@ -53,7 +53,7 @@ export class ManagedApi<TransportParamsType extends object> {
 	private classes: IApiClassDefinition[];
 
 	public constructor(
-		private readonly useGlobal: boolean = true
+		private readonly useGlobal: boolean = false
 	) {
 		if (!ManagedApi.namespace) {
 			ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
