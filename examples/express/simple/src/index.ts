@@ -15,13 +15,11 @@ class MyApi {
 	}
 }
 
-// We'll use express in this sample, but many other transports are supported
-const app = express();
-
-// Instantiate ManagedApi
+// Instantiate ManagedApi and add our customer handler
 const api = new ManagedApi();
 api.addHandlerClass(MyApi);
 
-// Hook things up and start the app
+// Setup express
+const app = express();
 app.use(api.init());
 app.listen(process.env.port || 3000);

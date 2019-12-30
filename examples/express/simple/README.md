@@ -1,5 +1,5 @@
 # Simple Express Sample
-This folder contains a minimal sample for using TS API Decorators with the Express framework. The goal of this sample is to show you how to setup your project for us with this library.
+This folder contains a minimal sample for using TS API Decorators with the Express framework. The goal of this sample is to show you how to setup your project for use with this library.
 
 ## Run the Sample
 To run the sample, run the following commands in the sample directory:
@@ -10,7 +10,7 @@ npm run build
 node dist/index.js
 ```
 
-Then try the following request:
+This will start an express server on port `3000` of localhost. In another terminal, try the following request:
 ```
 curl http://localhost:3000/hello
 ```
@@ -20,7 +20,7 @@ You should receive the following response:
 Hello World!
 ```
 
-Then try using the optional query parameter:
+Then try using the optional query parameter `name`:
 ```
 curl http://localhost:3000/hello?name=Developer
 ```
