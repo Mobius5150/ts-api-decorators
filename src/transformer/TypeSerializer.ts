@@ -11,6 +11,11 @@ interface ITypeInfo {
 	name: string;
 }
 
+interface IFunctionDefinition {
+	arguments: InternalTypeDefinition[];
+	returnType: InternalTypeDefinition | 'void';
+}
+
 export class TypeSerializer {
 	private static readonly ReferencePreamble = '#/definitions/';
 
@@ -106,7 +111,7 @@ export class TypeSerializer {
 
 		return def;
 	}
-	
+
 	protected valueToLiteral(val: any): ts.Expression {
 		switch (typeof val) {
 			case 'string':
@@ -142,6 +147,10 @@ export class TypeSerializer {
 			return compiled;
 		} else if (typeof compiled === 'string') {
 			return Number(compiled);
+		} else if (typeof compiled === 'undefined') {
+			return undefined;
+		} else if (compiled === null) {
+			return null;
 		} else {
 			throw new Error('Unknown compilation result type: ' + typeof compiled);
 		}
@@ -153,6 +162,10 @@ export class TypeSerializer {
 			return compiled.toString();
 		} else if (typeof compiled === 'string') {
 			return compiled;
+		} else if (typeof compiled === 'undefined') {
+			return undefined;
+		} else if (compiled === null) {
+			return null;
 		} else {
 			throw new Error('Unknown compilation result type: ' + typeof compiled);
 		}
@@ -166,6 +179,12 @@ export class TypeSerializer {
 
 				case ts.SyntaxKind.NumericLiteral:
 					return Number(expression.text);
+
+				case ts.SyntaxKind.UndefinedKeyword:
+					return undefined;
+
+				case ts.SyntaxKind.NullKeyword:
+					return null;
 
 				default:
 					throw new Error(`Unknown literal type: ${expression.kind}`);

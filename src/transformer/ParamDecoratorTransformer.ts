@@ -3,6 +3,7 @@ import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ApiParamType } from '../apiManagement/ApiDefinition';
+import { ManagedApiInternal } from '../apiManagement';
 
 export interface IQueryParamDecoratorDefinition {
 	allowableTypes: ('string' | 'number' | 'date' | 'any')[];
@@ -26,25 +27,25 @@ export interface IParamDecoratorFunctionArg {
 }
 
 export class ParamDecoratorTransformer extends DecoratorTransformer<ts.ParameterDeclaration, ParamDecoratorTransformerInfo> {
-    constructor(
-        program: ts.Program,
-        generator: tjs.JsonSchemaGenerator,
+	constructor(
+		program: ts.Program,
+		generator: tjs.JsonSchemaGenerator,
 		transformInfo: ParamDecoratorTransformerInfo,
 		private readonly extractOnly: boolean = false,
-    ) {
+	) {
 		super(program, generator, {
-            ...transformInfo,
-            nodeCheckFunction: <TypePredicateFunc<ts.Node, ts.ParameterDeclaration>>(node => this.isDecoratedParameterExpression(node)),
-        })
-    }
+			...transformInfo,
+			nodeCheckFunction: <TypePredicateFunc<ts.Node, ts.ParameterDeclaration>>(node => this.isDecoratedParameterExpression(node)),
+		})
+	}
 
 	public visitNode(node: ts.ParameterDeclaration): ts.ParameterDeclaration {
 		// TODO: Validate the type of the parameter this decorator was used on matches the allowable types
-        // defined on: this.transformInfo.allowableTypes
-        
+		// defined on: this.transformInfo.allowableTypes
+
 		// Parse type
 		const decoratorArg = this.getParamArgs(node);
-        
+
 		// Replace decorator definitions
 		for (const decorator of node.decorators) {
 			if (this.isArgumentDecoratorCallExpression(decorator.expression)) {
@@ -55,16 +56,16 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 					decorator.expression.arguments = ts.createNodeArray([this.typeSerializer.objectToLiteral(thisArgs)]);
 				}
 			}
-        }
-        
+		}
+
 		return node;
 	}
-	
+
 	public getParamArgs(node: ts.ParameterDeclaration) {
 		let internalType: InternalTypeDefinition = {
 			type: 'any',
 		};
-		
+
 		if (node.type) {
 			const type = this.typeChecker.getTypeFromTypeNode(node.type);
 			internalType = this.typeSerializer.getInternalTypeRepresentation(node.type, type);
@@ -97,7 +98,7 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			name,
 			typedef: internalType,
 			...((description = this.getParamDescription(node))
-				? {description}
+				? { description }
 				: {}),
 		};
 
@@ -129,13 +130,13 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 		for (let i = 0; i < transformInfo.arguments.length; ++i) {
 			const argDef = transformInfo.arguments[i];
 			const arg = expression.arguments[i];
-			if (typeof arg === 'undefined') {
+			if (this.isNullOrUndefinedExpr(arg)) {
 				if (!argDef.optional) {
 					throw new Error('Expected argument');
 				}
-				break;
+				continue;
 			}
-			
+
 			switch (argDef.type) {
 				case 'paramName':
 					thisArgs.name = this.typeSerializer.compileExpressionToStringConstant(arg);
@@ -149,11 +150,32 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 				case 'numberMin':
 					(<IntrinsicTypeDefinitionNumber>thisArgs.typedef!).minVal = this.typeSerializer.compileExpressionToNumericConstant(arg);
 					break;
+				case 'regexp':
+					if (ts.isRegularExpressionLiteral(arg)) {
+						thisArgs.regexp = new ExpressionWrapper(arg);
+					} else {
+						throw new Error('Regular expression must be a regex literal');
+					}
+					break;
 				default:
 					throw new Error('Unknown argdef type');
 			}
 		}
 
 		return thisArgs;
+	}
+
+	private isNullOrUndefinedExpr(arg: ts.Expression): boolean {
+		if (typeof arg === 'undefined') {
+			return true;
+		} else if (ts.isParenthesizedExpression(arg)) {
+			return this.isNullOrUndefinedExpr(arg.expression);
+		} else if (arg.kind === ts.SyntaxKind.UndefinedKeyword || arg.kind === ts.SyntaxKind.NullKeyword) {
+			return true;
+		} else if (ts.isIdentifier(arg)) {
+			return arg.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword || arg.originalKeywordKind === ts.SyntaxKind.NullKeyword;
+		} else {
+			return false;
+		}
 	}
 }

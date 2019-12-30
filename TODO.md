@@ -13,13 +13,9 @@ The following functionalities have yet to be fully implemented
 
 - [ ] QueryParams
     - Date support
-    - ApiQueryParamString
-    - ApiQueryParamNumber
     
 - [ ] HeaderParams
     - Date support
-    - ApiHeaderParamString
-    - ApiHeaderParamNumber
 
 - [ ] BodyParams
     - Advanced Validation

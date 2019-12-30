@@ -2,17 +2,16 @@ import { expect, assert } from 'chai';
 import * as path from 'path';
 import * as ts from 'typescript';
 import 'mocha';
-import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile } from '../TestUtil';
+import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile, getCompiledProgram } from '../TestUtil';
 
 describe('transformer', () => {
 	const defaultOpts = getDefaultCompilerOptions();
 	const transformers = [getTransformer()];
 
 	it('should transform things', async () => {
-		const result = await compileSourcesDir(
-			path.resolve(__dirname, './sources/basic-decorators.ts'),
-			defaultOpts,
-			transformers);
+		const modules = getCompiledProgram([
+			path.join(__dirname, 'sources/basic-decorators.ts'),
+		]);
 	});
 
 	it('ApiQueryParam invalid with object type', () => {

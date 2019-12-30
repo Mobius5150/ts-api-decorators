@@ -26,6 +26,7 @@ abstract class HeaderParams {
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
+	public static ApiHeaderParamString(paramName?: string, stringValidationRegex?: RegExp)
 	@HeaderParamDecorator({
 		allowableTypes: ['string'],
 		arguments: [
@@ -39,8 +40,8 @@ abstract class HeaderParams {
 			}
 		]
 	})
-	public static ApiHeaderParamString(paramName?: string, stringValidationRegex?: RegExp) {
-		throw new Error('Not implemented');
+	public static ApiHeaderParamString(a?: any): ParameterDecorator {
+		return this.ApiHeaderParam(a);
 	}
 
 	/**
@@ -49,6 +50,7 @@ abstract class HeaderParams {
 	 * @param numberMax The maximum value, undefined for no maximum.
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
+	public static ApiHeaderParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
 	@HeaderParamDecorator({
 		allowableTypes: ['number'],
 		arguments: [
@@ -66,8 +68,8 @@ abstract class HeaderParams {
 			}
 		]
 	})
-	public static ApiHeaderParamNumber(paramName?: string, numberMin?: number, numberMax?: number) {
-		throw new Error('Not implemented');
+	public static ApiHeaderParamNumber(a?: any): ParameterDecorator {
+		return this.ApiHeaderParam(a);
 	}
 
 	/**

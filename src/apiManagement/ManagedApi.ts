@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
@@ -136,7 +136,7 @@ export class ManagedApi<TransportParamsType extends object> {
 
 					return result;
 				} catch (e) {
-					if (e instanceof HttpError || ((e.statusCode || e.code) && e.message)) {
+					if (this.isHttpErrorLike(e)) {
 						return {
 							statusCode: e.statusCode || e.code,
 							body: e.message,
@@ -154,6 +154,10 @@ export class ManagedApi<TransportParamsType extends object> {
 		};
 	}
 
+	private isHttpErrorLike(e: any) {
+		return e instanceof HttpError || (typeof e === 'object' && (e.statusCode || e.code) && e.message);
+	}
+
 	public getExecutionContextInvocationParams(): IApiInvocationParams<TransportParamsType> {
 		return ManagedApi.namespace.get('invocationparams');
 	}
@@ -162,105 +166,156 @@ export class ManagedApi<TransportParamsType extends object> {
 		// Resolve handler arguments
 		let useCallback: PromiseCallbackHelper<any>;
 		const args = await Promise.all(handlerArgs.map(async (def) => {
-			const {args} = def;
-			if (def.type === ApiParamType.Query) {
-				const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
-				if (!isDefined && args.typedef.type !== 'boolean') {
-					// Query param not defined
-					if (args.initializer) {
-						return args.initializer();
-					} else if (args.optional) {
-						// This arg was optional
-						return undefined;
-					} else {
-						// Arg was required, throw
-						throw new HttpRequiredQueryParamMissingError(args.name);
-					}
-				}
-
-				// Arg was defined, process it
-				return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
-			} else if (def.type === ApiParamType.Header) {
-				const headerName = args.name.toLowerCase();
-				const isDefined = typeof invocationParams.headers[headerName] === 'string';
-				if (!isDefined && args.typedef.type !== 'boolean') {
-					// Query param not defined
-					if (args.initializer) {
-						return args.initializer();
-					} else if (args.optional) {
-						// This arg was optional
-						return undefined;
-					} else {
-						// Arg was required, throw
-						throw new HttpRequiredHeaderParamMissingError(args.name);
-					}
-				}
-
-				// Arg was defined, process it
-				return this.getApiParam(args, isDefined, invocationParams.headers[headerName]);
-			} else if (def.type === ApiParamType.Body) {
-				const {bodyContents} = invocationParams;
-				if (!bodyContents) {
-					if (args.initializer) {
-						return args.initializer();
-					}
-
-					throw new HttpRequiredBodyParamMissingError();
-				}
-
-				let contents = null;
-				if (typeof bodyContents.parsedBody !== 'undefined') {
-					contents = bodyContents.parsedBody;
-					if (contents instanceof Buffer) {
-						throw new Error('ParsedBody may not be a buffer');
-					}
-				} else {
-					switch (args.typedef.type) {
-						case 'any':
-						case 'string':
-						case 'number':
-						case 'boolean':
-							contents = this.getApiParam(args, true, contents);
-							break;
-
-						case 'object':
-						case 'array':
-							contents = await this.parseRawRequestBody(bodyContents);
-							break;
-
-						default:
-							throw new Error('Not implemented');
-					}
-				}
-				
-				this.validateBodyContents(args, contents);
-				return contents;
-			} else if (def.type === ApiParamType.Transport) {
-				if (invocationParams.transportParams[def.transportTypeId]) {
-					return invocationParams.transportParams[def.transportTypeId];
-				} else if (args.initializer) {
-					return args.initializer();
-				} else if (!args.optional) {
-					throw new HttpRequiredTransportParamMissingError(def.transportTypeId);
-				} else {
-					return undefined;
-				}
-			} else if (def.type === ApiParamType.Callback) {
+			// Callback arg is special
+			if (def.type === ApiParamType.Callback) {
 				if (useCallback) {
 					throw new Error('Only a single callback parameter may be defined on a handler');
 				}
-
+	
 				useCallback = new PromiseCallbackHelper();
 				return await useCallback.getCallbackFunc();
 			}
 
-			// TODO: How to specify callback arg for callback model?
+			// Parse the contents of the argument and validate
+			const parsed = await this.getHandlerArg(def, invocationParams);
+			if (!def.args) {
+				return parsed;
+			}
+
+			if (def.args.regexp) {
+				this.validateRegExpParam(def.args, parsed);
+			}
+			if (def.args.typedef.type === 'number') {
+				this.validateNumberParamr(def.args, parsed);
+			}
+			if (def.args.validationFunction) {
+				try {
+					def.args.validationFunction(def.args.name, parsed);
+				} catch (e) {
+					if (this.isHttpErrorLike(e)) {
+						throw e;
+					} else {
+						throw new HttpParamInvalidError(def.args.name);
+					}
+				}
+			}
+			return parsed;
 		}));
 
 		if (useCallback) {
 			return useCallback.execute(() => def.handler.apply(instance, args));
 		} else {
 			return def.handler.apply(instance, args);
+		}
+	}
+	
+	protected validateNumberParamr({typedef, name}: __ApiParamArgs, parsed: any) {
+		if (typedef.type === 'number') {
+			if ((typedef.minVal && parsed < typedef.minVal) || (typedef.maxVal && parsed > typedef.maxVal)) {
+				throw new HttpNumberParamOutOfBoundsError(name, typedef.minVal, typedef.maxVal);
+			}
+		}
+	}
+
+	protected validateRegExpParam(args: __ApiParamArgs, parsed: any) {
+		if (args.regexp) {
+			let regexp: RegExp;
+			if (typeof args.regexp === 'function') {
+				regexp = args.regexp(args.name);
+			} else {
+				regexp = args.regexp;
+			}
+
+			if (!regexp.test(parsed)) {
+				throw new HttpRegexParamInvalidTypeError(args.name, regexp.source);
+			}
+		}
+	}
+	
+	private async getHandlerArg(def: IApiParamDefinition, invocationParams: IApiInvocationParams<TransportParamsType>) {
+		const {args} = def;
+		if (def.type === ApiParamType.Query) {
+			const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
+			if (!isDefined && args.typedef.type !== 'boolean') {
+				// Query param not defined
+				if (args.initializer) {
+					return args.initializer();
+				} else if (args.optional) {
+					// This arg was optional
+					return undefined;
+				} else {
+					// Arg was required, throw
+					throw new HttpRequiredQueryParamMissingError(args.name);
+				}
+			}
+
+			// Arg was defined, process it
+			return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
+		} else if (def.type === ApiParamType.Header) {
+			const headerName = args.name.toLowerCase();
+			const isDefined = typeof invocationParams.headers[headerName] === 'string';
+			if (!isDefined && args.typedef.type !== 'boolean') {
+				// Query param not defined
+				if (args.initializer) {
+					return args.initializer();
+				} else if (args.optional) {
+					// This arg was optional
+					return undefined;
+				} else {
+					// Arg was required, throw
+					throw new HttpRequiredHeaderParamMissingError(args.name);
+				}
+			}
+
+			// Arg was defined, process it
+			return this.getApiParam(args, isDefined, invocationParams.headers[headerName]);
+		} else if (def.type === ApiParamType.Body) {
+			const {bodyContents} = invocationParams;
+			if (!bodyContents) {
+				if (args.initializer) {
+					return args.initializer();
+				}
+
+				throw new HttpRequiredBodyParamMissingError();
+			}
+
+			let contents = null;
+			if (typeof bodyContents.parsedBody !== 'undefined') {
+				contents = bodyContents.parsedBody;
+				if (contents instanceof Buffer) {
+					throw new Error('ParsedBody may not be a buffer');
+				}
+			} else {
+				switch (args.typedef.type) {
+					case 'any':
+					case 'string':
+					case 'number':
+					case 'boolean':
+						contents = this.getApiParam(args, true, contents);
+						break;
+
+					case 'object':
+					case 'array':
+						contents = await this.parseRawRequestBody(bodyContents);
+						break;
+
+					default:
+						throw new Error('Not implemented');
+				}
+			}
+			
+			this.validateBodyContents(args, contents);
+			return contents;
+		} else if (def.type === ApiParamType.Transport) {
+			if (invocationParams.transportParams[def.transportTypeId]) {
+				return invocationParams.transportParams[def.transportTypeId];
+			} else if (args.initializer) {
+				return args.initializer();
+			} else if (!args.optional) {
+				throw new HttpRequiredTransportParamMissingError(def.transportTypeId);
+			} else {
+				return undefined;
+			}
 		}
 	}
 

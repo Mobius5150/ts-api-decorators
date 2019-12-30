@@ -78,6 +78,33 @@ export class HttpQueryParamInvalidTypeError extends HttpBadRequestError {
     }
 }
 
+export class HttpRegexParamInvalidTypeError extends HttpBadRequestError {
+    constructor(paramName: string, regex: string) {
+        super(`Invalid value for parameter '${paramName}'. Must match regular expression: ${regex}.`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpRegexParamInvalidTypeError.prototype);
+    }
+}
+
+export class HttpNumberParamOutOfBoundsError extends HttpBadRequestError {
+    constructor(paramName: string, minVal: number = Number.NEGATIVE_INFINITY, maxVal: number = Number.POSITIVE_INFINITY) {
+        super(`Invalid value for parameter '${paramName}'. Value must be within [${minVal}, ${maxVal}] (inclusive)`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpNumberParamOutOfBoundsError.prototype);
+    }
+}
+
+export class HttpParamInvalidError extends HttpBadRequestError {
+    constructor(paramName: string) {
+        super(`Invalid value for parameter '${paramName}'.`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpParamInvalidError.prototype);
+    }
+}
+
 export class HttpBodyParamInvalidTypeError extends HttpBadRequestError {
     constructor(expectedType: string) {
         super(`Invalid value for body. Must be a valid ${expectedType}.`);

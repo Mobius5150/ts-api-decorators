@@ -9,9 +9,11 @@ export interface __ApiParamArgsBase {
 	description?: string;
 }
 
+type Func<T1, R> = (t1: T1) => R;
 export interface __ApiParamArgsFuncs {
 	initializer?: () => any;
 	validationFunction?: ApiParamValidationFunction;
+	regexp?: RegExp | Func<string, RegExp>;
 }
 
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {

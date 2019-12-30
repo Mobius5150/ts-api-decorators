@@ -26,6 +26,7 @@ abstract class QueryParams {
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
+	public static ApiQueryParamString(paramName?: string, stringValidationRegex?: RegExp);
 	@QueryParamDecorator({
 		allowableTypes: ['string'],
 		arguments: [
@@ -39,8 +40,8 @@ abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParamString(paramName?: string, stringValidationRegex?: RegExp) {
-		throw new Error('Not implemented');
+	public static ApiQueryParamString(a?: any): ParameterDecorator {
+		return this.ApiQueryParam(a);
 	}
 
 	/**
@@ -49,6 +50,7 @@ abstract class QueryParams {
 	 * @param numberMax The maximum value, undefined for no maximum.
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
+	public static ApiQueryParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
 	@QueryParamDecorator({
 		allowableTypes: ['number'],
 		arguments: [
@@ -66,8 +68,8 @@ abstract class QueryParams {
 			}
 		]
 	})
-	public static ApiQueryParamNumber(paramName?: string, numberMin?: number, numberMax?: number) {
-		throw new Error('Not implemented');
+	public static ApiQueryParamNumber(a?: any): ParameterDecorator {
+		return this.ApiQueryParam(a);
 	}
 
 	/**
