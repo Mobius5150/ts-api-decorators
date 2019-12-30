@@ -69,6 +69,10 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 		if (node.type) {
 			const type = this.typeChecker.getTypeFromTypeNode(node.type);
 			internalType = this.typeSerializer.getInternalTypeRepresentation(node.type, type);
+			
+			if (!this.transformInfo.allowableTypes.find(t => t === internalType.type)) {
+				throw new Error('Invalid type for decorator: ' + internalType.type);
+			}
 		}
 
 		// Parse argument name
