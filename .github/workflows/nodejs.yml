@@ -31,7 +31,7 @@ jobs:
         # Artifact name
         name: ts-api-decorators
         # Directory containing files to upload
-        path: packages/ts-api-decorators
+        path: packages/ts-api-decorators/dist
 
   build_ts-api-decorators-express:
 
@@ -54,7 +54,11 @@ jobs:
         # Artifact name
         name: ts-api-decorators
         # Destination path
-        path: packages/ts-api-decorators
+        path: packages/ts-api-decorators/dist
+    - name: npm install dependencies
+      working-directory: packages/ts-api-decorators
+      run: |
+        npm ci
     - name: npm install, build, and test
       working-directory: packages/ts-api-decorators-express
       run: |
