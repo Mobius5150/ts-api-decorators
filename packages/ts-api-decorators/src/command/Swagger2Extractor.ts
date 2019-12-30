@@ -86,9 +86,13 @@ export class Swagger2Extractor implements IExtractor {
     }
    
     private validHost(host: string): string {
-        const url = new URL(host);
-        if (url.host.length > 0) {
-            return url.host;
+        try {
+            const url = new URL(host);
+            if (url.host.length > 0) {
+                return url.host;
+            }
+        } catch (e) {
+            
         }
 
         return host;

@@ -102,7 +102,7 @@ export class ExtractCommand {
                 }
             )
             .option('--tsconfig <file>', 'The tsconfig.json file to use when compiling')
-            .option('--type <type>', 'The type of output to generate', (d,v) => this.validateProgramOutputType(d, v), 'json')
+            .option('--type <type>', 'The type of output to generate', (d,v) => this.validateProgramOutputType(d, v), 'swagger2')
             .option('--outFile', 'The file to write output to')
             .option('--silent', 'Don\'t output information', false)
             .option('--apiInfo <file>', 'File containing information for the API', 'package.json')

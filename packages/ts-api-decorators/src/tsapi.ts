@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as commander from 'commander';
 import { getPackageVersion } from './command/CommandUtil';
 import { ExtractCommand } from './command/ExtractCommand';
