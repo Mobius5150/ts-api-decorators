@@ -25,10 +25,18 @@ jobs:
         npm test
       env:
         CI: true
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ts-api-decorators
+        # Directory containing files to upload
+        path: packages/ts-api-decorators
 
   build_ts-api-decorators-express:
 
     runs-on: ubuntu-latest
+    needs: [build_ts-api-decorators]
 
     strategy:
       matrix:
@@ -40,6 +48,13 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Download artifact
+      uses: actions/download-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ts-api-decorators
+        # Destination path
+        path: packages/ts-api-decorators
     - name: npm install, build, and test
       working-directory: packages/ts-api-decorators-express
       run: |
