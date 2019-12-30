@@ -30,6 +30,38 @@ You should receive the response:
 Hello Developer!
 ```
 
+## Generate Swagger Documentation
+One of the benefits of using this library, is that it makes generation of documentation and client libraries very easy. For example, let's get a Swagger/OpenAPI specification for the sample API. Run the following command:
+```
+npx tsapi extract ./src
+```
+
+The output should look something like:
+```yaml
+swagger: '2.0'
+info:
+  title: ts-api-decorators-examples-express-simple
+  version: 1.0.0
+  description: ''
+  license:
+    name: Apache-2.0
+  contact: {}
+paths:
+  /hello:
+    get:
+      operationId: greet
+      tags: []
+      parameters:
+        - name: name
+          in: query
+          required: false
+          type: string
+      responses:
+        default:
+          schema:
+            type: string
+```
+
 ## About the Sample
 There are a few key parts of this sample that are needed for the project to work.
 
