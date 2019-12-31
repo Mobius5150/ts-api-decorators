@@ -2,7 +2,8 @@
 **/bin
 .static
 .
-**/test/**/*.js*
+**/test/**/*.js
+**/test/**/*.js.map
 # Created by https://www.gitignore.io/api/osx,node,code,linux,windows
 
 ### Code ###

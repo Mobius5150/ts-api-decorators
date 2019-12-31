@@ -76,7 +76,7 @@ let app: express.Express;
 let server: http.Server;
 export default <ITestServer>{
 	start: (port, started) => {
-        const api = new ManagedApi(false);
+        const api = new ManagedApi();
         api.addHandlerClass(MyApi);
 		app = express();
 		app.use(api.init());
