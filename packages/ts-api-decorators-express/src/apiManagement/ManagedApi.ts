@@ -1,4 +1,4 @@
-import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName, ClassConstructor, ApiHeadersDict } from 'ts-api-decorators';
+import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName, ClassConstructor, ApiHeadersDict, ApiParamsDict } from 'ts-api-decorators';
 import * as Express from 'express';
 
 export interface IExpressManagedApiContext {
@@ -55,6 +55,7 @@ export class ManagedApi {
 			// TODO: Need to properly parse the body based on the content length
 			instance.wrappedHandler({
 				queryParams: this.getRequestQueryParams(req),
+				pathParams: this.getRequestPathParams(req),
 				headers: this.getRequestHeaderParams(req),
 				bodyContents: (
 				(typeof contentType !== 'undefined' && Number(contentLength) > 0)
@@ -88,8 +89,8 @@ export class ManagedApi {
 		return req.headers;
 	}
 
-	private getRequestQueryParams(req: Express.Request): { [param: string]: string; } {
-		const queryParams: { [param: string]: string; } = {};
+	private getRequestQueryParams(req: Express.Request): ApiParamsDict {
+		const queryParams: ApiParamsDict = {};
 		for (const query in req.query) {
 			const queryVal = req.query[query];
 			if (typeof queryVal !== 'string') {
@@ -100,6 +101,26 @@ export class ManagedApi {
 		}
 
 		return queryParams;
+	}
+
+	private getRequestPathParams(req: Express.Request): ApiParamsDict {
+		const pathParams: ApiParamsDict = {};
+		for (const param in req.params) {
+			const paramVal = req.params[param];
+			switch (typeof paramVal) {
+				case 'string':
+					pathParams[param] = paramVal;
+					break;
+
+				case 'undefined':
+					break;
+				
+				default:
+					throw new Error('Unsupported path parameter type');
+			}
+		}
+
+		return pathParams;
 	}
 
 	public getHeader(name: string): string[] | undefined {

@@ -17,3 +17,8 @@ export {
 export {
 	ApiCallbackParam,
 } from './CallbackParams';
+export {
+	ApiPathParam,
+	ApiPathParamNumber,
+	ApiPathParamString,
+} from './PathParams';

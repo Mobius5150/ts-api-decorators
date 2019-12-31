@@ -42,6 +42,15 @@ export class HttpRequiredQueryParamMissingError extends HttpBadRequestError {
     }
 }
 
+export class HttpRequiredPathParamMissingError extends HttpBadRequestError {
+    constructor(pathParamName: string) {
+        super(`Missing required path parameter '${pathParamName}'`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpRequiredPathParamMissingError.prototype);
+    }
+}
+
 export class HttpRequiredHeaderParamMissingError extends HttpBadRequestError {
     constructor(headerParamName: string) {
         super(`Missing required header parameter '${headerParamName}'`);

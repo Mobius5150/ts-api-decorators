@@ -18,6 +18,7 @@ import { MetadataManager } from '../MetadataManager';
 import { OpenApiMetadataExtractors } from '../OpenApi';
 import { ITransformerArguments } from '../TransformerUtil';
 import { GetHeaderParamDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators/HeaderParams';
+import { GetPathParamDecorator, ApiPathParam, ApiPathParamNumber, ApiPathParamString } from '../../decorators/PathParams';
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
@@ -29,6 +30,7 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
     const queryParamIndexTs = path.join('decorators/QueryParams');
 	const bodyParamIndexTs = path.join('decorators/BodyParams');
 	const headerParamIndexTs = path.join('decorators/HeaderParams');
+	const pathParamIndexTs = path.join('decorators/PathParams');
     const parameterTypes: ParamDecoratorTransformerInfo[] = [
         getQueryParamDecoratorInfo(ApiQueryParam.name, queryParamIndexTs),
         getQueryParamDecoratorInfo(ApiQueryParamString.name, queryParamIndexTs),
@@ -41,6 +43,10 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 		getHeaderParamDecoratorInfo(ApiHeaderParam.name, headerParamIndexTs),
 		getHeaderParamDecoratorInfo(ApiHeaderParamNumber.name, headerParamIndexTs),
 		getHeaderParamDecoratorInfo(ApiHeaderParamString.name, headerParamIndexTs),
+
+		getPathParamDecoratorInfo(ApiPathParam.name, pathParamIndexTs),
+		getPathParamDecoratorInfo(ApiPathParamNumber.name, pathParamIndexTs),
+		getPathParamDecoratorInfo(ApiPathParamString.name, pathParamIndexTs),
 		
 		...(args.paramDecorators ? args.paramDecorators : []),
     ];
@@ -107,6 +113,20 @@ export function getHeaderParamDecoratorInfo(name: string, indexTs: string): Para
 		indexTs,
 		magicFunctionName: name,
 		type: ApiParamType.Header,
+		...d,
+	};
+}
+
+export function getPathParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
+	const d = GetPathParamDecorator(name);
+	if (!d) {
+		throw new Error('PathParamDecorator not defined for: ' + name);
+	}
+
+	return {
+		indexTs,
+		magicFunctionName: name,
+		type: ApiParamType.Path,
 		...d,
 	};
 }

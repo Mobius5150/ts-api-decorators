@@ -60,6 +60,8 @@ paths:
             type: string
 ```
 
+With the above definition, you can then consider another tool such as [`openapi-generator`](https://github.com/openapitools/openapi-generator) to generate a client SDK in the language of your choice that can call the API.
+
 ## About the Sample
 There are a few key parts of this sample that are needed for the project to work.
 

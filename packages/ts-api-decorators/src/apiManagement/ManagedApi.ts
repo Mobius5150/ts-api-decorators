@@ -1,15 +1,16 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
 import { Validator as JsonSchemaValidator } from 'jsonschema';
 import { ClassConstructor } from "..";
 import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
+import * as p2r from 'path-to-regexp';
 
-export type ApiQueryParamsDict = { [param: string]: string };
+export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
 
 export interface IApiBodyContents {
@@ -22,7 +23,8 @@ export interface IApiBodyContents {
 }
 
 export interface IApiInvocationParams<TransportParamsType extends object> {
-	queryParams: ApiQueryParamsDict;
+	queryParams: ApiParamsDict;
+	pathParams: ApiParamsDict;
 	headers: ApiHeadersDict;
 	bodyContents?: IApiBodyContents;
 	transportParams: TransportParamsType;
@@ -36,14 +38,26 @@ export interface IApiInvocationResult {
 
 export type WrappedApiHandler<TransportParamsType extends object> = (params: IApiInvocationParams<TransportParamsType>) => Promise<IApiInvocationResult>;
 
+export interface RouteTokenKey {
+	name: string | number;
+	prefix: string;
+	suffix: string;
+	pattern: string;
+	modifier: string;
+}
+
+export type RouteToken = string | RouteTokenKey;
+
 export interface IApiHandlerInstance<TransportParamsType extends object> extends IApiDefinition {
 	parent: object;
 	wrappedHandler: WrappedApiHandler<TransportParamsType>;
 	handlerArgs: IApiParamDefinition[];
+	routeTokens: RouteToken[];
 }
 
-export class ManagedApi<TransportParamsType extends object> {
+export abstract class ManagedApi<TransportParamsType extends object> {
 	private static readonly ClsNamespace = 'ManagedApiNamespace';
+	private static readonly InvocationParamsNamespace = 'invocationParams';
 
 	private static apis = [];
 	private static namespace: Namespace;
@@ -84,7 +98,7 @@ export class ManagedApi<TransportParamsType extends object> {
 	 * 
 	 * TODO: Move to a helper class
 	 */
-	public initHandlers() {
+	protected initHandlers() {
 		if (!this.classes) {
 			// Get the list of registered classes
 			this.classes = ManagedApiInternal.GetRegisteredApiClassDefinitions()
@@ -96,23 +110,25 @@ export class ManagedApi<TransportParamsType extends object> {
 		const handlers = new Map<ApiMethod, Map<string, IApiHandlerInstance<TransportParamsType>>>();
 		for (const handlerClass of this.classes) {
 			const instance = this.instanstiateHandlerClass(handlerClass);
-			for (const handlerMethod of handlerClass.handlers) {
-				if (!handlers.has(handlerMethod[0])) {
-					handlers.set(handlerMethod[0], new Map<string, IApiHandlerInstance<TransportParamsType>>());
+			for (const [handlerMethod, handlerMap] of handlerClass.handlers) {
+				if (!handlers.has(handlerMethod)) {
+					handlers.set(handlerMethod, new Map<string, IApiHandlerInstance<TransportParamsType>>());
 				}
 
-				const handlerMethodCollection = handlers.get(handlerMethod[0]);
-				for (const handlerRoute of handlerMethod[1]) {
-					if (handlerMethodCollection.has(handlerRoute[0])) {
-						throw ManagedApiInternal.ErrorMultipleApiDefinition(handlerMethod[0], handlerRoute[0]);
+				const handlerMethodCollection = handlers.get(handlerMethod);
+				for (const [route, definition] of handlerMap) {
+					if (handlerMethodCollection.has(route)) {
+						throw ManagedApiInternal.ErrorMultipleApiDefinition(handlerMethod, route);
 					}
 
-					const handlerArgs = ManagedApiInternal.GetApiHandlerParams(handlerClass.constructor, handlerRoute[1].handlerKey);
-					handlerMethodCollection.set(handlerRoute[0], {
+					const routeTokens = p2r.parse(route);
+					const handlerArgs = ManagedApiInternal.GetApiHandlerParams(handlerClass.constructor, definition.handlerKey);
+					handlerMethodCollection.set(route, {
 						parent: instance,
-						wrappedHandler: this.getWrappedHandler(handlerRoute[1], handlerArgs, instance),
+						wrappedHandler: this.getWrappedHandler(definition, handlerArgs, instance),
 						handlerArgs,
-						...handlerRoute[1]
+						routeTokens,
+						...definition
 					});
 				}
 			}
@@ -124,7 +140,7 @@ export class ManagedApi<TransportParamsType extends object> {
 	private getWrappedHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object): WrappedApiHandler<TransportParamsType> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
-				ManagedApi.namespace.set('invocationParams', invocationParams);
+				ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
 				try {
 					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);
 
@@ -159,7 +175,7 @@ export class ManagedApi<TransportParamsType extends object> {
 	}
 
 	public getExecutionContextInvocationParams(): IApiInvocationParams<TransportParamsType> {
-		return ManagedApi.namespace.get('invocationparams');
+		return ManagedApi.namespace.get(ManagedApi.InvocationParamsNamespace);
 	}
 
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
@@ -251,6 +267,23 @@ export class ManagedApi<TransportParamsType extends object> {
 
 			// Arg was defined, process it
 			return this.getApiParam(args, isDefined, invocationParams.queryParams[args.name]);
+		} else if (def.type === ApiParamType.Path) {
+			const isDefined = typeof invocationParams.pathParams[args.name] === 'string';
+			if (!isDefined && args.typedef.type !== 'boolean') {
+				// Path param not defined
+				if (args.initializer) {
+					return args.initializer();
+				} else if (args.optional) {
+					// This arg was optional
+					return undefined;
+				} else {
+					// Arg was required, throw
+					throw new HttpRequiredPathParamMissingError(args.name);
+				}
+			}
+
+			// Arg was defined, process it
+			return this.getApiParam(args, isDefined, invocationParams.pathParams[args.name]);
 		} else if (def.type === ApiParamType.Header) {
 			const headerName = args.name.toLowerCase();
 			const isDefined = typeof invocationParams.headers[headerName] === 'string';
@@ -405,6 +438,7 @@ export class ManagedApi<TransportParamsType extends object> {
 
 			case 'array':
 				{
+					// TODO: Check the type of the array elements
 					if (typeof strVal === 'string') {
 						return [strVal];
 					} else if (Array.isArray(strVal)) {
@@ -460,10 +494,14 @@ export class ManagedApi<TransportParamsType extends object> {
 	 * Gets the value of a header in the current request
 	 * @param name The name of the header to get. Case insensitive.
 	 */
-	public getHeader(name: string): string {
-		// Note to self: when implementing this we'll use some request stack magic
-		// to figure out which request is being read. getRequestForCurrentExecutionContext
-		throw new Error('Not implemented');
+	public getHeader(name: string): string | string[] | undefined {
+		const context = this.getExecutionContextInvocationParams();
+		const headers = context.headers;
+		if (!headers) {
+			return;
+		}
+
+		return headers[name];
 	}
 
 	/**
@@ -471,13 +509,5 @@ export class ManagedApi<TransportParamsType extends object> {
 	 * @param name The name of the header to set. Case insensitive.
 	 * @param value The value of the header to set
 	 */
-	public setHeader(name: string, value: string | number): void {
-		// Note to self: when implementing this we'll use some request stack magic
-		// to figure out which request is being read. getRequestForCurrentExecutionContext
-		throw new Error('Not implemented');
-	}
-
-	private getRequestForCurrentExecutionContext(): TransportParamsType {
-		throw new Error('Not implemented');
-	}
+	public abstract setHeader(name: string, value: string | number): void;
 }
