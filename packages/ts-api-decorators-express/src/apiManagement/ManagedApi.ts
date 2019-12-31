@@ -6,19 +6,9 @@ export interface IExpressManagedApiContext {
 	'express.response': Express.Response;
 }
 
-export class ManagedApi {
-	private api: BaseManagedApi<IExpressManagedApiContext>;
-
-	public constructor() {
-		this.api = new BaseManagedApi();
-	}
-
-	public addHandlerClass(constructor: ClassConstructor) {
-		this.api.addHandlerClass(constructor);
-	}
-
+export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 	public init(): Express.Router {
-		const handlers = this.api.initHandlers();
+		const handlers = this.initHandlers();
 
 		// TODO: Options?
 		const router = Express.Router();
@@ -123,18 +113,8 @@ export class ManagedApi {
 		return pathParams;
 	}
 
-	public getHeader(name: string): string[] | undefined {
-		const context = this.api.getExecutionContextInvocationParams();
-		const headers = context.transportParams['express.request'].header(name);
-		if (typeof headers === 'string') {
-			return [headers];
-		}
-
-		return headers;
-	}
-
 	public setHeader(name: string, value: string): void {
-		const context = this.api.getExecutionContextInvocationParams();
+		const context = this.getExecutionContextInvocationParams();
 		context.transportParams['express.response'].header(name, value);
 	}
 }

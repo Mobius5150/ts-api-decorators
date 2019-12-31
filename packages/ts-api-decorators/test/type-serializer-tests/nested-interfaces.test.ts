@@ -5,9 +5,13 @@ import { getCompiledProgram, assertRealInclude } from '../TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
 
+interface IGetInitHandlers {
+	getInitHandlers: ManagedApi<{}>['initHandlers'];
+	addHandlerClass: ManagedApi<{}>['addHandlerClass']
+}
 
 describe('TypeSerializer', () => {
-	let api: ManagedApi<object>;
+	let api: IGetInitHandlers;
 	let handlers: Map<ApiMethod, Map<string, IApiHandlerInstance<object>>>;
 	let modules: any[];
 	
@@ -19,12 +23,21 @@ describe('TypeSerializer', () => {
 	})
 
 	beforeEach(() => {
-		api = new ManagedApi(false);
+		api = new (class extends ManagedApi<{}> {
+			public getInitHandlers() {
+				return this.initHandlers();
+			}
+
+			public setHeader(name: string, value: string | number): void {
+				throw new Error("Method not implemented.");
+			}
+		});
+
 		for (const m of modules) {
 			api.addHandlerClass(m);
 		}
 		
-		handlers = api.initHandlers();
+		handlers = api.getInitHandlers();
 	});
 
 	it('should parse nested interfaces', async () => {

@@ -489,12 +489,39 @@ class MyDatabase {
 @Api
 class MyApi {
 
-	@ApiInjectedDependency
+	@ApiInjectedDependency()
 	private db: MyDatabase;
 
 	@ApiGetMethod('/hello')
 	greet() {
 		return this.db.get('cowboy-greeting');
+	}
+
+}
+
+@Api
+class MyApi {
+
+	constructor(
+		@ApiInjectedDependencyParam()
+		private readonly db: MyDatabase;
+	) {}
+
+	@ApiGetMethod('/hello')
+	greet() {
+		return this.db.get('cowboy-greeting');
+	}
+
+}
+
+@Api
+class MyApi {
+
+	@ApiGetMethod('/hello')
+	greet(
+		@ApiInjectedDependencyParam() db: MyDatabase;
+	) {
+		return db.get('cowboy-greeting');
 	}
 
 }

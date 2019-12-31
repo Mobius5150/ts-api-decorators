@@ -1,6 +1,7 @@
 import { IApiDefinition, ApiMethod, IApiParamDefinition } from "./ApiDefinition";
 import { ClassConstructor } from "../decorators";
 import 'reflect-metadata';
+import { IDependency, IDependencyParam } from "./ApiDependency";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
 
@@ -26,6 +27,8 @@ export class ManagedApiInternal {
 	public static readonly ApiMetadataKey = 'managedapi:api';
 	public static readonly ApiMethodMetadataKey = 'managedapi:apimethod';
 	public static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
+	public static readonly DependencyMetadataKey = 'managedapi:dependency';
+	public static readonly DependencyParamMetadataKey = 'managedapi:dependencyparams';
 
 	public static ResetRegisteredApis() {
 		Apis.apis.clear();
@@ -80,6 +83,10 @@ export class ManagedApiInternal {
 		return handlers;
 	}
 
+	public static GetDependenciesOnConstructor(constructor: ClassConstructor): IDependency[] {
+		return this.GetDependencyDefinitionsOnObject(constructor);
+	}
+
 	public static ErrorMultipleApiDefinition(method: ApiMethod, route: string) {
 		return new Error(`Multiple APIs defined for '${method}' method on '${route}'`);
 	}
@@ -94,6 +101,31 @@ export class ManagedApiInternal {
 		const apis: IApiParamDefinition[] = ManagedApiInternal.GetHandlerParamDefinitionsOnObject(target, metadata.propertyKey);
 		apis.push(metadata);
 		Reflect.defineMetadata(this.ApiMethodParamsMetadataKey, apis, target, metadata.propertyKey);
+	}
+
+	public static AddApiDependencyParamMetadataToObject(metadata: IDependencyParam, target: object): void {
+		const deps: IDependencyParam[] = ManagedApiInternal.GetDependencyParamDefinitionsOnObject(target, metadata.propertyKey);
+		deps.push(metadata);
+		Reflect.defineMetadata(this.DependencyParamMetadataKey, deps, target, metadata.propertyKey);
+	}
+
+	public static AddDependencyMetadataToObject(metadata: IDependency, target: object): void {
+		const deps: IDependency[] = ManagedApiInternal.GetDependencyDefinitionsOnObject(target);
+		deps.push(metadata);
+		Reflect.defineMetadata(this.DependencyMetadataKey, deps, target);
+	}
+
+	public static GetDependencyParams(target: object, key: string | symbol): IDependencyParam[] {
+		const params = this.GetDependencyParamDefinitionsOnObject(target, key)
+			.sort((a, b) => a.parameterIndex-b.parameterIndex);
+
+		for (let i = 0; i < params.length; ++i) {
+			if (params[i].parameterIndex !== i) {
+				throw new Error(`All parameters must be decorated for handler: ${String(key)}`);
+			}
+		}
+
+		return params;
 	}
 
 	public static GetApiHandlerParams(target: object, key: string | symbol): IApiParamDefinition[] {
@@ -115,5 +147,13 @@ export class ManagedApiInternal {
 
 	private static GetHandlerParamDefinitionsOnObject(target: object, key: string | symbol): IApiParamDefinition[] {
 		return Reflect.getMetadata(this.ApiMethodParamsMetadataKey, target, key) || [];
+	}
+
+	private static GetDependencyDefinitionsOnObject(target: object): IDependency[] {
+		return Reflect.getMetadata(this.DependencyMetadataKey, target) || [];
+	}
+
+	private static GetDependencyParamDefinitionsOnObject(target: object, key: string | symbol): IDependencyParam[] {
+		return Reflect.getMetadata(this.DependencyParamMetadataKey, target, key) || [];
 	}
 }
