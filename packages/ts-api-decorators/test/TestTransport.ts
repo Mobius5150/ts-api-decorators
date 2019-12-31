@@ -24,7 +24,7 @@ interface ITestHandler extends IApiHandlerInstance<ITestManagedApiContext> {
 
 type TestHandlerMap = Map<ApiMethod, Set<ITestHandler>>;
 
-export class ManagedApi extends BaseManagedApi<ITestManagedApiContext> implements IApiCallInterface {
+export class TestManagedApi extends BaseManagedApi<ITestManagedApiContext> implements IApiCallInterface {
 	private handlers: TestHandlerMap = new Map();
 
 	public init(): IApiCallInterface {

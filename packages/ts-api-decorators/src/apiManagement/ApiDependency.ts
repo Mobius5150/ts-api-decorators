@@ -180,7 +180,7 @@ export class ApiDependency<C = {}> implements IApiDependency<C> {
     public getDependencies(): IDependency[] {
         return [
             ...ManagedApiInternal.GetDependenciesOnConstructor(this.reference),
-            ...ManagedApiInternal.GetDependencyParams(this.constructionFunc, 'constructor')
+            ...ManagedApiInternal.GetDependencyParams(this.reference, undefined)
         ];
     }
 
@@ -198,7 +198,7 @@ export class ApiDependency<C = {}> implements IApiDependency<C> {
         }
 
         const dependencyParams = 
-            ManagedApiInternal.GetDependencyParams(this.constructionFunc, 'constructor')
+            ManagedApiInternal.GetDependencyParams(this.reference, undefined)
             .map(d => dependencies.get(d.dependency).instance);
 
         this._instance = this.constructionFunc(dependencyParams);

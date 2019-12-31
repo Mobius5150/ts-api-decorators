@@ -9,6 +9,7 @@ import { Validator as JsonSchemaValidator } from 'jsonschema';
 import { ClassConstructor } from "..";
 import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
 import * as p2r from 'path-to-regexp';
+import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -66,6 +67,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	private classes: IApiClassDefinition[];
 
+	private readonly dependencies = new ApiDependencyCollection();
+
 	public constructor(
 		private readonly useGlobal: boolean = false
 	) {
@@ -86,6 +89,9 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		if (this.useGlobal) {
 			throw new Error('addHandlerClass may only be used if ManagedApi is initialized with `useGlobal` = false');
 		}
+
+		this.dependencies.registerDependency(
+			ApiDependency.WithConstructor(constructor));
 
 		this.classes.push({
 			constructor,
@@ -460,21 +466,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param handlerClass 
 	 */
 	private instanstiateHandlerClass(handlerClass: IApiClassDefinition): object {
-		const instance = new handlerClass.constructor();
-
-		// TODO: Inject dependencies
-		// this.injectClassDependencies(handlerClass, instance);
-
+		const instance = this.dependencies.instantiateDependency(handlerClass.constructor);
 		return instance;
-	}
-
-	/**
-	 * Scans the class for declared dependencies and injects them on properties.
-	 * @param handlerClass The class definition
-	 * @param instance An instance of the class
-	 */
-	private injectClassDependencies(handlerClass: IApiClassDefinition, instance: object) {
-		throw new Error('Method not implemented');
 	}
 
 	/**
@@ -486,8 +479,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param dep The dependency to fill
 	 * @param name An optional name for the dependency.
 	 */
-	public addDependency<T>(dep: T, name?: string): void {
-		throw new Error('Not implemented');
+	public addDependency(dep: ClassConstructor, name?: string): void {
+		// TODO: Dependency scopes
+		this.dependencies.registerDependency(
+			ApiDependency.WithConstructor(dep));
 	}
 
 	/**

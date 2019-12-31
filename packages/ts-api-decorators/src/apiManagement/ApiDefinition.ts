@@ -15,6 +15,7 @@ export const enum ApiParamType {
 	Header,
 	Callback,
 	Transport,
+	Dependency,
 }
 
 export type ApiMethodReturnTypePrimitives = void | string | object;

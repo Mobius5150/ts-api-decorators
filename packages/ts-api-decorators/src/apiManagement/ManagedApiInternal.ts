@@ -154,6 +154,12 @@ export class ManagedApiInternal {
 	}
 
 	private static GetDependencyParamDefinitionsOnObject(target: object, key: string | symbol): IDependencyParam[] {
-		return Reflect.getMetadata(this.DependencyParamMetadataKey, target, key) || [];
+		// if (key) {
+			return Reflect.getMetadata(this.DependencyParamMetadataKey, target, key) || [];
+		// } else if (target) {
+		// 	return Reflect.getMetadata(this.DependencyParamMetadataKey, target.constructor) || [];
+		// } else {
+		// 	return [];
+		// }
 	}
 }

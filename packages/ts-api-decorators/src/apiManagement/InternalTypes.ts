@@ -1,4 +1,5 @@
 import { IJsonSchema } from "openapi-types";
+import { ClassConstructor } from "../decorators";
 
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
@@ -14,6 +15,7 @@ export interface __ApiParamArgsFuncs {
 	initializer?: () => any;
 	validationFunction?: ApiParamValidationFunction;
 	regexp?: RegExp | Func<string, RegExp>;
+	typeref?: ClassConstructor;
 }
 
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {

@@ -19,6 +19,7 @@ import { OpenApiMetadataExtractors } from '../OpenApi';
 import { ITransformerArguments } from '../TransformerUtil';
 import { GetHeaderParamDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators/HeaderParams';
 import { GetPathParamDecorator, ApiPathParam, ApiPathParamNumber, ApiPathParamString } from '../../decorators/PathParams';
+import { GetDependencyParamDecorator, ApiInjectedDependencyParam } from '../../decorators/DependencyParams';
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
@@ -31,6 +32,7 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 	const bodyParamIndexTs = path.join('decorators/BodyParams');
 	const headerParamIndexTs = path.join('decorators/HeaderParams');
 	const pathParamIndexTs = path.join('decorators/PathParams');
+	const dependencyParamIndexTs = path.join('decorators/DependencyParams');
     const parameterTypes: ParamDecoratorTransformerInfo[] = [
         getQueryParamDecoratorInfo(ApiQueryParam.name, queryParamIndexTs),
         getQueryParamDecoratorInfo(ApiQueryParamString.name, queryParamIndexTs),
@@ -77,7 +79,11 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
             ...GetApiMethodDecorator(ApiDeleteMethod.name),
             parameterTypes,
             indexTs,
-        }, undefined, metadataManager),
+		}, undefined, metadataManager),
+		
+		// Dependency Injection
+		new ParamDecoratorTransformer(program, generator,
+			getDependencyParamDecoratorInfo(ApiInjectedDependencyParam.name, dependencyParamIndexTs)),
 	];
 
 	return (context: ts.TransformationContext) => (file: ts.SourceFile) =>  {
@@ -127,6 +133,20 @@ export function getPathParamDecoratorInfo(name: string, indexTs: string): ParamD
 		indexTs,
 		magicFunctionName: name,
 		type: ApiParamType.Path,
+		...d,
+	};
+}
+
+export function getDependencyParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
+	const d = GetDependencyParamDecorator(name);
+	if (!d) {
+		throw new Error('DependencyParamDecorator not defined for: ' + name);
+	}
+
+	return {
+		indexTs,
+		magicFunctionName: name,
+		type: ApiParamType.Dependency,
 		...d,
 	};
 }

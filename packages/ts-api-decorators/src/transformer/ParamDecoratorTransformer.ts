@@ -4,6 +4,7 @@ import { InternalTypeDefinition, __ApiParamArgs, IntrinsicTypeDefinitionNumber }
 import { DecoratorTransformer, IDecorationFunctionTransformInfoBase, TypePredicateFunc, ParamArgsInitializer, ExpressionWrapper } from './DecoratorTransformer';
 import { ApiParamType } from '../apiManagement/ApiDefinition';
 import { ManagedApiInternal } from '../apiManagement';
+import { ClassConstructor } from '../decorators';
 
 export type AllowableTypeStrings = 'object' | 'string' | 'number' | 'date' | 'boolean' | 'any';
 
@@ -63,12 +64,20 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 			type: 'any',
 		};
 
+		let typeref: ExpressionWrapper = null;
 		if (node.type) {
 			const type = this.typeChecker.getTypeFromTypeNode(node.type);
 			internalType = this.typeSerializer.getInternalTypeRepresentation(node.type, type);
-			
-			if (!this.transformInfo.allowableTypes.find(t => t === internalType.type)) {
+			if (
+				!this.transformInfo.allowableTypes.find(t => t === internalType.type || t === 'any')
+			) {
 				throw new Error('Invalid type for decorator: ' + internalType.type);
+			}
+
+			if (internalType.type === 'object' && type.isClass() && ts.isTypeReferenceNode(node.type)) {
+				if (ts.isIdentifier(node.type.typeName)) {
+					typeref = new ExpressionWrapper(node.type.typeName);
+				}
 			}
 		}
 
@@ -105,6 +114,10 @@ export class ParamDecoratorTransformer extends DecoratorTransformer<ts.Parameter
 
 		if (optional) {
 			args.optional = optional;
+		}
+
+		if (typeref) {
+			args.typeref = typeref;
 		}
 
 		const decoratorArg = {
