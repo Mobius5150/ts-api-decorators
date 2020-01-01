@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
-    "prepublish": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "author": "Mike Blouin <ts-api-decorators@michaelblouin.ca> (michaelblouin.ca)",
   "license": "Apache-2.0",
