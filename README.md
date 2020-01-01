@@ -436,6 +436,7 @@ class MyApi {
 When writing an api you often need to inject dependencies (such as a database connection) that are used to complete the request. `ManagedApi` can take care of this for you:
 
 ```typescript
+// A Dependency
 class MyDatabase {
 	public get(greeting: string) {
 		switch (greeting) {
@@ -450,7 +451,7 @@ class MyDatabase {
 
 @Api
 class MyApi {
-
+	// Injected property
 	@ApiInjectedDependency()
 	private db: MyDatabase;
 
@@ -458,12 +459,11 @@ class MyApi {
 	greet() {
 		return this.db.get('cowboy-greeting');
 	}
-
 }
 
 @Api
 class MyApi {
-
+	// Injected in constructor
 	constructor(
 		@ApiInjectedDependencyParam()
 		private readonly db: MyDatabase;
@@ -473,28 +473,57 @@ class MyApi {
 	greet() {
 		return this.db.get('cowboy-greeting');
 	}
-
 }
 
 @Api
 class MyApi {
 
+	// Injected when calling handler
 	@ApiGetMethod('/hello')
 	greet(
 		@ApiInjectedDependencyParam() db: MyDatabase;
 	) {
 		return db.get('cowboy-greeting');
 	}
-
 }
 
-const db = new MyDatabase();
+
 const api = new ManagedApi();
-api.addDependency(db);
+
+// Register the depedency
+api.addDependency(MyDatabase);
 ```
 
 Because of the `@ApiInjectedDependency` on the `MyApi` class, and the registration for a matching dependency on the ManagedApi, `ManagedApi` will ensure that the dependency is available before the API is invoked. If the dependency hadn't been registered an error would be thrown during initialization because the dependency couldn't be initialized.
 
+By default, dependencies are initialized just-in-time - meaning that they're only instantiated when needed to respond to a request. A future update will make this behavior configurable to reduce cold-start possibilities.
+
+### Dependencies with Dependencies
+Internally, `ManagedApi` creates a graph of dependencies. This means that you can have dependencies with dependencies:
+```typescript
+class Database {
+	constructor(
+		@ApiInjectedDependencyParam() private readonly config: DbConfig
+	) {}
+
+	// ...
+}
+
+class DbConfig {
+	// ...
+}
+
+const api = new ManagedApi();
+
+// Register the depedency
+api.addDependency(Database);
+api.addDependency(DbConfig);
+```
+
+This will case DbConfig to be initialized before Database, and passed to its constructor and eventually injected into an API handler.
+
+### Scoped Dependencies
+> Note! This section details features which may not be fully implemented.
 You can also provide dependencies with a name in case you have multiple dependencies of the same type:
 
 ```typescript
