@@ -19,7 +19,8 @@ import { OpenApiMetadataExtractors } from '../OpenApi';
 import { ITransformerArguments } from '../TransformerUtil';
 import { GetHeaderParamDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators/HeaderParams';
 import { GetPathParamDecorator, ApiPathParam, ApiPathParamNumber, ApiPathParamString } from '../../decorators/PathParams';
-import { GetDependencyParamDecorator, ApiInjectedDependencyParam } from '../../decorators/DependencyParams';
+import { GetDependencyParamDecorator, ApiInjectedDependencyParam, ApiInjectedDependency } from '../../decorators/DependencyParams';
+import { PropertyTransformer } from '../PropertyTransformer';
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
@@ -84,6 +85,9 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 		// Dependency Injection
 		new ParamDecoratorTransformer(program, generator,
 			getDependencyParamDecoratorInfo(ApiInjectedDependencyParam.name, dependencyParamIndexTs)),
+
+		new PropertyTransformer(program, generator,
+			getDependencyParamDecoratorInfo(ApiInjectedDependency.name, dependencyParamIndexTs)),
 	];
 
 	return (context: ts.TransformationContext) => (file: ts.SourceFile) =>  {

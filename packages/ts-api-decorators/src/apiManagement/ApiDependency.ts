@@ -44,18 +44,20 @@ export class ApiDependencyCollection {
     public instantiateDependency<C>(dependency: ClassConstructor<C>): C;
     public instantiateDependency(dependency: InternalTypeDefinition): any;
     public instantiateDependency(dependency: IDependency['dependency']): any {
-        let dependencies = this.walkDependencyGraph(dependency);
-        for (const d of dependencies) {
-            const filled = this.getFilledDependencies(d.name);
-            if (filled.size !== d.numDependencies) {
-                throw new Error('Cannot instantiate dependency: unfilled dependencies');
+        if (!this.filledDependencies.has(dependency)) {
+            let dependencies = this.walkDependencyGraph(dependency);
+            for (const d of dependencies) {
+                const filled = this.getFilledDependencies(d.name);
+                if (filled.size !== d.numDependencies) {
+                    throw new Error('Cannot instantiate dependency: unfilled dependencies');
+                }
+
+                const apiDep = this.dependencyGraph.getNodeData(d.name);
+                apiDep.instantiate(filled);
+                this.addFilledDependency(apiDep);
             }
-
-            const apiDep = this.dependencyGraph.getNodeData(d.name);
-            apiDep.instantiate(filled);
-            this.addFilledDependency(apiDep);
         }
-
+        
         return this.filledDependencies.get(dependency).instance;
     }
 
@@ -203,7 +205,7 @@ export class ApiDependency<C = {}> implements IApiDependency<C> {
 
         this._instance = this.constructionFunc(dependencyParams);
         for (const dep of ManagedApiInternal.GetDependenciesOnConstructor(this.reference)) {
-            this._instance[dep.propertyKey] = dependencies.get(dep.dependency);
+            this._instance[dep.propertyKey] = dependencies.get(dep.dependency).instance;
         }
 
         return this._instance;

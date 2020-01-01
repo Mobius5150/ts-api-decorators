@@ -46,7 +46,7 @@ interface IApiParamDefinitionBase {
 }
 
 export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
-	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback;
+	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback | ApiParamType.Dependency;
 }
 
 export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBase {

@@ -1,9 +1,8 @@
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import * as path from 'path';
 import 'mocha';
-import { getCompiledProgram, assertRealInclude } from '../TestUtil';
-import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
-import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
+import { getCompiledProgram } from '../TestUtil';
+import { ManagedApi, ApiMethod } from '../../src';
 import { TestManagedApi } from '../TestTransport';
 
 interface IGetInitHandlers {
@@ -12,8 +11,6 @@ interface IGetInitHandlers {
 }
 
 describe('ManagedApi Dependencies', () => {
-	let api: IGetInitHandlers;
-	let handlers: Map<ApiMethod, Map<string, IApiHandlerInstance<object>>>;
 	let modules: TestManagedApi[];
 	
 	before(() => {
@@ -28,6 +25,30 @@ describe('ManagedApi Dependencies', () => {
 	it('should instantiate classes with dependencies', async () => {
         const api = modules[0];
         const result = await api.invokeApiCall(ApiMethod.GET, '/hello', {
+            headers: {},
+            queryParams: {},
+            transportParams: {},
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body, 'response');
+    });
+    
+    it('should set dependencies after instantiation', async () => {
+        const api = modules[0];
+        const result = await api.invokeApiCall(ApiMethod.GET, '/hello2', {
+            headers: {},
+            queryParams: {},
+            transportParams: {},
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body, 'responseresponse');
+    });
+    
+    it('should supply dependencies for handlers', async () => {
+        const api = modules[0];
+        const result = await api.invokeApiCall(ApiMethod.GET, '/hello3', {
             headers: {},
             queryParams: {},
             transportParams: {},

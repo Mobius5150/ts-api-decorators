@@ -355,6 +355,22 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			} else {
 				return undefined;
 			}
+		} else if (def.type === ApiParamType.Dependency) {
+			try {
+				if (args.typeref) {
+					return this.dependencies.instantiateDependency(args.typeref);
+				} else {
+					return this.dependencies.instantiateDependency(args.typedef);
+				}
+			} catch (e) {
+				if (args.initializer) {
+					return args.initializer();
+				} else if (args.optional) {
+					return undefined;
+				}
+
+				throw e;
+			}
 		}
 	}
 

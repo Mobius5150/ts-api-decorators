@@ -86,6 +86,15 @@ abstract class DependencyParams {
 							: DependencyInitializationTime.OnUse,
 					},
 					target.constructor);
+
+				ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+					{
+						args,
+						parameterIndex,
+						propertyKey,
+						type: ApiParamType.Dependency,
+					},
+					target.constructor);
 			} else {
 				ManagedApiInternal.AddApiDependencyParamMetadataToObject(
 					{
