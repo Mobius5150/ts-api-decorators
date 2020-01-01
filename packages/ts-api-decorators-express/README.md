@@ -7,6 +7,8 @@ This library performs preprocessing on APIs during the typescript compilation st
 ## Usage (Defining an API)
 APIs are defined as methods on a class:
 ```typescript
+import { Api, ApiGetMethod } from 'ts-api-decorators-express';
+
 @Api
 class MyApi {
 	@ApiGetMethod('/hello')
@@ -21,20 +23,32 @@ This defines an API that exposes a single `GET` handler at `/hello` that returns
 import express from 'express';
 import { ManagedApi } from 'ts-api-decorators-express';
 
-// We'll use express in this sample, but many other transports are supported
-const app = express();
-
 // Instantiate ManagedApi
 const api = new ManagedApi();
+api.addHandlerClass(MyApi);
 
-// Hook things up and start the app
+// Instantiate Express
+const app = express();
 app.use(api.init());
 app.listen(3000);
 ```
 
-By default, `ManagedApi` will discover all APIs in your solution tagged with `@Api`. If you prefer less magic, then you can import APIs manually:
+For complete documentation on functionality, [see the README at the root of the repo.](../../).
+
+## Access Express Functionality
+You can access the Express request and response objects using Decorators:
 ```typescript
-// Instantiate ManagedApi
-const api = new ManagedApi(false);
-api.addHandlerClass(MyApi);
+import { Api, ApiGetMethod, ExpressApiRequestParam, ExpressApiResponseParam } from 'ts-api-decorators-express';
+import * as express from 'express';
+
+@Api
+class MyApi {
+	@ApiGetMethod('/hello')
+	greet(
+		@ExpressApiRequestParam() req: Express.Request,
+        @ExpressApiResponseParam() res: Express.Response,
+	) {
+		// ...
+	}
+}
 ```

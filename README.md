@@ -1,80 +1,60 @@
-# Typescript Managed APIs
-This library provides a simple way to use typescript decorators to define APIs for a server. The benefits of this approach are many-fold:
+# Typescript API Decorators
+This library provides a simple way to use typescript decorators to define APIs. The benefits of this approach are many-fold:
 
 - __Automatic Runtime Type Safety and Validation__: The library automatically checks that inputs you accept comply with the type definitions in your code. Extended validation also supports deep, customizable validation that helps you simplify your handlers while making them robust.
 - __Easy Logging and Security__: A built in hook system allows you to easily write functions that execute around your handlers - providing simple ways to perform logging or integrate security mechanisms.
-- __Platform-Agnostic Implementation__: You can easily compile the same API code to work in many environments: an Express web server, an Azure Function, AWS Lambda, ...
-- __Automatic Swagger Generation__: The library provides tools to automatically generate swagger definitions for your API.
-- __Automatic Client Generation__: The library provides tools to automatically generate client libraries for many languages for your APIs.
+- __Platform-Agnostic Implementation__: You can easily compile the same API code to work in many environments: an Express web server, an Azure Function, ...
+- __Automatic Swagger Generation__: The library provides tools to automatically generate swagger definitions for your API, which can be used to automatically generate client SDKs.
 - __API Validation__: The library can be run in a type checking mode that ensures that all API responses conform to specification.
+
+## Quick Start
+The fastest way to get started is to check out the docs or samples for the transport/hosting technology that you use:
+
+- Express.js: [Documentation](packages/ts-api-decorators-express) / [Samples](examples/express/simple)
+
+Or you can read on to learn about the capabilities.
+
+# Contents
+1. [Basic Usage](#usage-defining-an-api)
+	1. [Query string parameters](#defining-an-api-that-takes-a-query-string-parameter)
+	1. [Body parameters](#defining-an-api-that-takes-a-body-parameter)
+	1. [Headers](#working-with-headers)
+	1. [Error Handling](#error-handling)
+	1. [Asynchronous Patterns](#asyncronous-patterns)
+1. [Dependency Injection](#asyncronous-patterns)
+1. [Advanced Validation (WIP)](#advanced-parameter-validation)
+1. [Custom Hooks (WIP)](#custom-hooks)
 
 ## Usage (Defining an API)
 APIs are defined as methods on a class:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/hello')
 	greet() {
 		return 'Hello World!';
 	}
-
 }
 ```
 
-This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. Next, create an instance of `ManagedApi` to handle requests:
-```typescript
-import express from 'express';
-import { ManagedApi } from 'ts-api-decorators-express';
-
-// We'll use express in this sample, but many other transports are supported
-const app = express();
-
-// Instantiate ManagedApi
-const api = new ManagedApi();
-
-// Hook things up and start the app
-app.use(api.init());
-app.listen(3000);
-```
-
-Note that many transports are supported:
+This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. To hook this up with your desired transport you'll need to pick and install one of the supported transport packages:
 - [`ts-api-decorators-express`](packages/ts-api-decorators-express)
 - `ts-api-decorators-azure-function` (WIP)
 - `ts-api-decorators-aws-lambda` (WIP)
 
-You should always import all types and objects from your API transport package directly rather than `ts-api-decorators` as some transports will expose different environment-specific parameters that you may want to use. In the below examples you may see imports from `ts-api-decorators-*` - this is a placeholder for the transport you've selected.
-
 > You can also write your own to hook up to your preferred environment.
-
-__Important Prerequisite!__
-Before you can use this library, ensure that you compile typescript with the following options: `--experimentalDecorators` and `--emitDecoratorMetadata`.
-
-If you use a `tsconfig.json` file, you can specify them as follows:
-```json
-{
-	"compilerOptions": {
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
-	}
-}
-```
-
-> TODO: Add instructions about the transformer
-
-These are required to both support the use of decorators in your code, as well as to permit type checking of inputs.
 
 ### Defining an API that takes a query string parameter
 An API can accept parameters in the querystring:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/hello')
-	greet(@ApiQueryParam() name: string) {
+	greet(
+		@ApiQueryParam() name: string
+	) {
 		return `Hello ${name}!`;
 	}
-
 }
 ```
 
@@ -85,19 +65,19 @@ Hello SuperDeveloper!
 ```
 
 However, because the query parameter is required, then if this param is ommited the API returns:
-
 ```
 400 Bad Request
 Missing query parameter 'name'
 ```
 
-We can make the parameter optional by changing the type definition:
+We can make the parameter optional by changing the function argument to be optional:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/hello')
-	greet(@ApiQueryParam() name?: string) {
+	greet(
+		@ApiQueryParam() name?: string
+	) {
 		if (name) {
 			return `Hello ${name}!`;
 		}
@@ -115,11 +95,10 @@ Hello!
 ```
 
 #### Robust type checking
-Because ManagedApis have robust type checking, we can also take other value-type parameters in query strings:
+Because ManagedApis have robust type checking and casting, we can also take other value-type parameters in query strings:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/hello')
 	greet(
 		@ApiQueryParam() name: string,
@@ -129,7 +108,6 @@ class MyApi {
 			return `Hi ${name}! `;
 		}
 	}
-
 }
 ```
 
@@ -141,7 +119,6 @@ You can also perform more robust checking on the values:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/hello')
 	greet(
 		@ApiQueryParamString(/^[a-zA-Z]{2,100}$/) name: string,
@@ -151,7 +128,6 @@ class MyApi {
 			return `Hi ${name}! `;
 		}
 	}
-
 }
 ```
 
@@ -161,14 +137,12 @@ You can also use the `Date` type in query string parameters:
 ```typescript
 @Api
 class MyApi {
-
 	@ApiGetMethod('/day')
 	greet(
 		@ApiQueryParam() date: Date,
 	) {
 		return `The specified day is ${date.toDateString()}`;
 	}
-
 }
 ```
 
@@ -205,12 +179,12 @@ interface IBodyContents {
 
 @Api
 class MyApi {
-
 	@ApiPostMethod('/hello')
-	greet(@ApiBodyParam() contents: IBodyContents) {
+	greet(
+		@ApiBodyParam() contents: IBodyContents
+	) {
 		return `Hello ${contents.name}!`;
 	}
-
 }
 ```
 
@@ -253,16 +227,16 @@ interface IBodyContents {
 
 @Api
 class MyApi {
-
 	@ApiPostMethod('/hello')
-	greet(@ApiBodyParam contents: IBodyContents) {
+	greet(
+		@ApiBodyParam() contents: IBodyContents
+	) {
 		if (contents.formalGreeting) {
 			return `Greetings ${contents.name} (${contents.occupation.title})`;
 		} else {
 			return `Howdy ${contents.name}! I see you're an ${contents.occupation.profession}. Welcome!`;
 		}
 	}
-
 }
 ```
 
@@ -291,94 +265,30 @@ Parameter $.formalGreeting is expected to be a boolean.
 Parameter $.occupation.title is missing.
 ```
 
-#### Advanced Parameter Validation
-Body parameters support advanced validation in two ways: a IParamValidationDefinition, or a custom function:
-
-##### Validation with IParamValidationDefinition
-```typescript
-interface IBodyContents {
-	phoneNumber: string;
-	name: string;
-	age: number;
-}
-
-const BodyContentsValidationDef: IParamValidationDefinition<IBodyContents> = {
-	phoneNumber: {
-		validationRegex: /^[2-9]\d{2}-\d{3}-\d{4}$/
-	},
-	name: {
-		minLength: 2
-	},
-	age: {
-		min: 13,
-		max: 150
-	}
-}
-
-@Api
-class MyApi {
-
-	@ApiPostMethod('/phoneNumber')
-	greet(@ApiBodyParam(BodyContentsValidationDef) contents: IBodyContents) {
-		// Contents will be validated against the definition and the types before
-		// this function is invoked.
-	}
-
-}
-```
-
-##### Validation with Custom Function
-```typescript
-interface IBodyContents {
-	phoneNumber: string;
-	name: string;
-	age: number;
-}
-
-const BodyContentsValidationFunc = (contents: IBodyContents) => {
-	// This function performs detailed validation for IBodyContents.
-	// Type safety is already checked against the interface IBodyContents
-	// before this function is executed.
-	if (!contents.phoneNumber.match(/^[2-9]\d{2}-\d{3}-\d{4}$/)) {
-		throw new HttpBadRequestException('Invalid phone number');
-	}
-
-	if (contents.name.length < 2) {
-		throw new HttpBadRequestException('Name must be at least 2 characters');
-	}
-
-	if (contents.age < 13) {
-		throw new HttpBadRequestException('Age must be at least 13');
-	}
-	
-	if (contents.age > 150) {
-		throw new HttpBadRequestException('Age must be at least 150');
-	}
-};
-
-@Api
-class MyApi {
-
-	@ApiPostMethod('/phoneNumber')
-	greet(@ApiBodyParam(BodyContentsValidationFunc) contents: IBodyContents) {
-		// Contents will be validated by the functions and the types before
-		// this function is invoked.
-	}
-
-}
-```
-
 ### Working with headers
-Because different platforms have different ways of getting and setting headers, we provide a simple, consistent way to access them:
+Because different platforms have different ways of getting and setting headers, we provide a simple way to access them:
 
 ```typescript
 import { ManagedApi } from 'ts-api-decorators-*';
 
-@ApiGetMethod('/hello')
-greet() {
-	const greetHeader = ManagedApi.getHeader('x-name');
-	ManagedApi.setHeader('x-name-response', greetHeader);
-	return `Hello ${greetHeader}!`;
+@Api
+class MyApi {
+	// Using the `getHeader` / `setHeader` functions:
+	@ApiGetMethod('/hello')
+	greet() {
+		const greetHeader = ManagedApi.getHeader('x-name');
+		ManagedApi.setHeader('x-name-response', greetHeader);
+		return `Hello ${greetHeader}!`;
+	}
+
+	// Using the `ApiHeaderParam` descriptor
+	@ApiGetMethod('/hello2')
+	greet2(
+		@ApiHeaderParam('x-name') greetHeader: string
+	) {
+		ManagedApi.setHeader('x-name-response', greetHeader);
+		return `Hello ${greetHeader}!`;
+	}
 }
 ```
 
@@ -391,6 +301,7 @@ X-Name: HeaderDev
 X-Name-Response: HeaderDev
 Hello HeaderDev!
 ```
+
 ### Error Handling
 ManagedApis handle errors using thrown or passed exceptions. When you throw an exception, managed api will look for a `statusCode` or `code` value on the thrown exception that will give an HTTP status code to be returned. When this is present the error can be auto formatted.
 
@@ -399,13 +310,16 @@ We also provide some standard exceptions that can be used.
 ```typescript
 import { HttpBadRequestException } from 'ts-api-decorators-*';
 
-@ApiPostMethod('/hello')
-greet(@ApiQueryParam() name: string) {
-	if (name.length >= 10) {
-		throw new HttpBadRequestException('name must be fewer than 10 characters');
-	}
+@Api
+class MyApi {
+	@ApiPostMethod('/hello')
+	greet(@ApiQueryParam() name: string) {
+		if (name.length >= 10) {
+			throw new HttpBadRequestException('name must be fewer than 10 characters');
+		}
 
-	return `Hello ${name}!`;
+		return `Hello ${name}!`;
+	}
 }
 ```
 
@@ -431,7 +345,9 @@ class HttpTeapotError extends HttpError {
 }
 ```
 
-### JSON Error Responses
+
+#### JSON Error Responses
+> Note! This section details features which may not be fully implemented.
 If you'd prefer the API return detailed json responses for errors, this is simple:
 ```typescript
 import { ManagedApi, ApiErrorFormatterJsonDetailed } from 'ts-api-decorators-*';
@@ -466,9 +382,55 @@ POST /hello
 }
 ```
 
-The following error formatters are supported:
+The following error formatters are in development:
 - ApiErrorFormatterJsonDetailed
 - ApiErrorFormatterJsonSimple
+
+### Asyncronous Patterns
+Two asyncronous patterns are supported for handlers: promises and callbacks. Promises are the preferred pattern.
+
+#### Promises
+ManagedApi supports async/await and Promises out of the box:
+
+```typescript
+@Api
+class MyApi {
+
+	@ApiInjectedDependency
+	private db: MyPromiseDatabase;
+
+	@ApiGetMethod('/hello')
+	async greet() {
+		return await this.db.getDefaultGreeting();
+	}
+
+}
+```
+
+Rejected promises are also handled gracefully.
+
+#### Callbacks
+ManagedApi supports callbacks using the `ApiCallback` decorator:
+```typescript
+@Api
+class MyApi {
+
+	@ApiInjectedDependency
+	private db: MyCallbackDatabase;
+
+	@ApiGetMethod<void, IGreetingResponse>('/hello')
+	greet(@ApiCallback() callback: ApiMethodCallbackFunction<IGreetingResponse>) {
+		this.db.getDefaultGreeting((err, result) => {
+			if (err) {
+				callback(err);
+			} else {
+				callback(null, result.greeting);
+			}
+		});
+	}
+
+}
+```
 
 ## Dependency Injection
 When writing an api you often need to inject dependencies (such as a database connection) that are used to complete the request. `ManagedApi` can take care of this for you:
@@ -558,64 +520,86 @@ api.addDependency(friendssDb, 'friends');
 
 This allows you to have multiple dependencies that have the same type, but may connect to different underlying resources. The dependency injector will also perform type checking before injection of a named dependency and will throw an exception if it is of an incompatible type.
 
-## Logging
-ManagedApi provides logging facilities built in that make it very easy to perform your own custom logging or hook into various logging facilities.
+## Advanced Parameter Validation
+> Note! This section details features which may not be fully implemented.
+Body parameters support advanced validation in two ways: a IParamValidationDefinition, or a custom function:
 
-## Security
-The library does not have a built in security provider, however it provides constructs that make it easy to write highly secure code:
-
-- __Hooks__: The built-in hooks system exposes a way to perform credential checking before handler code is executed.
-- __Auditing__: You can easily locate APIs that haven't explicitly defined their security levels.
-
-For an example on how to implement credential checking on your APIs, please see: __TODO: Security example__.
-
-## Asyncronous Patterns
-Two asyncronous patterns are supported for handlers: promises and callbacks. Promises are the preferred pattern.
-
-### Promises
-ManagedApi supports async/await and Promises out of the box:
-
+### Validation with IParamValidationDefinition
 ```typescript
+interface IBodyContents {
+	phoneNumber: string;
+	name: string;
+	age: number;
+}
+
+const BodyContentsValidationDef: IParamValidationDefinition<IBodyContents> = {
+	phoneNumber: {
+		validationRegex: /^[2-9]\d{2}-\d{3}-\d{4}$/
+	},
+	name: {
+		minLength: 2
+	},
+	age: {
+		min: 13,
+		max: 150
+	}
+}
+
 @Api
 class MyApi {
 
-	@ApiInjectedDependency
-	private db: MyPromiseDatabase;
-
-	@ApiGetMethod('/hello')
-	async greet() {
-		return await this.db.getDefaultGreeting();
+	@ApiPostMethod('/phoneNumber')
+	greet(@ApiBodyParam(BodyContentsValidationDef) contents: IBodyContents) {
+		// Contents will be validated against the definition and the types before
+		// this function is invoked.
 	}
 
 }
 ```
 
-Rejected promises are also handled gracefully.
-
-### Callbacks
-ManagedApi supports callbacks using the `ApiCallback` decorator:
+### Validation with Custom Function
 ```typescript
+interface IBodyContents {
+	phoneNumber: string;
+	name: string;
+	age: number;
+}
+
+const BodyContentsValidationFunc = (contents: IBodyContents) => {
+	// This function performs detailed validation for IBodyContents.
+	// Type safety is already checked against the interface IBodyContents
+	// before this function is executed.
+	if (!contents.phoneNumber.match(/^[2-9]\d{2}-\d{3}-\d{4}$/)) {
+		throw new HttpBadRequestException('Invalid phone number');
+	}
+
+	if (contents.name.length < 2) {
+		throw new HttpBadRequestException('Name must be at least 2 characters');
+	}
+
+	if (contents.age < 13) {
+		throw new HttpBadRequestException('Age must be at least 13');
+	}
+	
+	if (contents.age > 150) {
+		throw new HttpBadRequestException('Age must be at least 150');
+	}
+};
+
 @Api
 class MyApi {
 
-	@ApiInjectedDependency
-	private db: MyCallbackDatabase;
-
-	@ApiGetMethod<void, IGreetingResponse>('/hello')
-	greet(@ApiCallback() callback: ApiMethodCallbackFunction<IGreetingResponse>) {
-		this.db.getDefaultGreeting((err, result) => {
-			if (err) {
-				callback(err);
-			} else {
-				callback(null, result.greeting);
-			}
-		});
+	@ApiPostMethod('/phoneNumber')
+	greet(@ApiBodyParam(BodyContentsValidationFunc) contents: IBodyContents) {
+		// Contents will be validated by the functions and the types before
+		// this function is invoked.
 	}
 
 }
 ```
 
 ## Custom Hooks
+> Note! This section details features which may not be fully implemented.
 Custom hooks execute at various points during the execution lifecycle and allow you to run custom code around the invocation of a function. The below example uses a stopwatch to time the execution of a handler:
 
 ```typescript
