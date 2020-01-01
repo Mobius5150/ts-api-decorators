@@ -1,4 +1,15 @@
-import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, readStreamToStringUtil, readStreamToStringUtilCb, parseApiMimeType, ApiStdHeaderName, ClassConstructor, ApiHeadersDict, ApiParamsDict } from 'ts-api-decorators';
+import {
+	ManagedApi as BaseManagedApi,
+	IApiHandlerInstance,
+	ApiMethod,
+	readStreamToStringUtil,
+	readStreamToStringUtilCb,
+	parseApiMimeType,
+	ApiStdHeaderName,
+	ClassConstructor,
+	ApiHeadersDict,
+	ApiParamsDict
+} from 'ts-api-decorators';
 import * as Express from 'express';
 
 export interface IExpressManagedApiContext {
@@ -37,7 +48,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 
 		return router;
 	}
-	
+
 	private getHandlerWrapper(instance: IApiHandlerInstance<IExpressManagedApiContext>) {
 		return (req: Express.Request, res: Express.Response, next: Function) => {
 			const contentType = req.header(ApiStdHeaderName.ContentType);
@@ -48,8 +59,8 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				pathParams: this.getRequestPathParams(req),
 				headers: this.getRequestHeaderParams(req),
 				bodyContents: (
-				(typeof contentType !== 'undefined' && Number(contentLength) > 0)
-					?
+					(typeof contentType !== 'undefined' && Number(contentLength) > 0)
+						?
 						{
 							contentsStream: req,
 							// TODO: Add text encoding?
@@ -58,7 +69,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 							streamContentsMimeRaw: contentType,
 							streamContentsMimeType: parseApiMimeType(contentType),
 						}
-					: undefined
+						: undefined
 				),
 				transportParams: {
 					'express.request': req,
@@ -73,7 +84,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				});
 		};
 	}
-	
+
 	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {
 		// Headers must be returned with keys lowercased, but the express framework does this already
 		return req.headers;
@@ -104,7 +115,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 
 				case 'undefined':
 					break;
-				
+
 				default:
 					throw new Error('Unsupported path parameter type');
 			}
