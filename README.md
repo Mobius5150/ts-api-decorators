@@ -21,7 +21,7 @@ Or you can read on to learn about the capabilities.
 	1. [Headers](#working-with-headers)
 	1. [Error Handling](#error-handling)
 	1. [Asynchronous Patterns](#asyncronous-patterns)
-1. [Dependency Injection](#asyncronous-patterns)
+1. [Dependency Injection](#dependency-injection)
 1. [Advanced Validation (WIP)](#advanced-parameter-validation)
 1. [Custom Hooks (WIP)](#custom-hooks)
 
