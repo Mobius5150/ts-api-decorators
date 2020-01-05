@@ -127,7 +127,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						throw ManagedApiInternal.ErrorMultipleApiDefinition(handlerMethod, route);
 					}
 
-					const routeTokens = p2r.parse(route);
+					const routeTokens = ManagedApi.GetRouteTokens(route);
 					const handlerArgs = ManagedApiInternal.GetApiHandlerParams(handlerClass.constructor, definition.handlerKey);
 					handlerMethodCollection.set(route, {
 						parent: instance,
@@ -143,6 +143,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return handlers;
 	}
 	
+	public static GetRouteTokens(route: string) {
+		return p2r.parse(route);
+	}
+
 	private getWrappedHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object): WrappedApiHandler<TransportParamsType> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {

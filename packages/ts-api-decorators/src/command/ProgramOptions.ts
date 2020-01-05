@@ -1,6 +1,6 @@
-export interface ProgramOptions {
+export interface IParseOptions {
     tsconfig: string;
-    type: string;
-    outFile: string;
     rootDir: string;
+    isDir?: boolean;
+    apiInfo: string;
 }

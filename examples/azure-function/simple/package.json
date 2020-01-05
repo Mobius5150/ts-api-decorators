@@ -1,0 +1,17 @@
+{
+  "name": "ts-api-decorators-examples-azure-function-simple",
+  "version": "1.0.0",
+  "description": "A simple example API using ts-api-decorators-azure-function",
+  "main": "index.js",
+  "scripts": {
+    "build": "ttsc"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "ttypescript": "^1.5.8"
+  },
+  "dependencies": {
+    "ts-api-decorators-azure-function": "^0.1.3"
+  }
+}

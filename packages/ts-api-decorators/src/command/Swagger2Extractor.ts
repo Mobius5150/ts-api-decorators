@@ -5,7 +5,7 @@ import { IExtractedApiDefinitionWithMetadata, IExtractedTag } from "../transform
 import { getMetadataValue, IMetadataType, getAllMetadataValues } from "../transformer/TransformerMetadata";
 import { OpenApiMetadataType } from "../transformer/OpenApi";
 import * as yaml from 'js-yaml';
-import { ProgramApiInfo } from "./ExtractCommand";
+import { IProgramInfo } from "./IProgramInfo";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from "../apiManagement/InternalTypes";
 
 export interface ISwagger2Opts {
@@ -21,7 +21,7 @@ export class Swagger2Extractor implements IExtractor {
 
     constructor(
         private readonly extractedApis: IExtractedApiDefinitionWithMetadata[],
-        private readonly apiInfo: ProgramApiInfo,
+        private readonly apiInfo: IProgramInfo,
         private readonly opts: ISwagger2Opts,
     ) {}
 

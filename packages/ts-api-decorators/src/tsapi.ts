@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-import * as commander from 'commander';
-import { getPackageVersion } from './command/CommandUtil';
-import { ExtractCommand } from './command/ExtractCommand';
+import { TsApiCommandLine } from './command/TsApiCommandLine';
 
-const program = new commander.Command();
-program.version(getPackageVersion());
-new ExtractCommand(program);
+const program = new TsApiCommandLine();
+program.addCommands(program.getBuiltinCommands());
 program.parse(process.argv);
