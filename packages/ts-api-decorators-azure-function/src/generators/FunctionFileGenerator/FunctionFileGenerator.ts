@@ -11,7 +11,7 @@ export interface IFunctionFileGeneratorOpts {
 }
 
 export class FunctionFileGenerator implements IGenerator {
-	public static readonly TS_FILE_NAME = 'index.ts';
+	public static readonly TS_FILE_NAME = 'index.js';
 	private static readonly TEMPLATE_NAME = `${FunctionFileGenerator.TS_FILE_NAME}.mustache`;
 	private readonly mustacheGenerator: MustacheFileGenerator;
 
@@ -54,8 +54,8 @@ export class FunctionFileGenerator implements IGenerator {
 			path.relative(p,
 				path.join(
 					path.dirname(routeFile),
-					path.basename(routeFile, path.extname(FunctionFileGenerator.TS_FILE_NAME)))
-			).replace(/\\/g, '\\\\')
+					path.basename(routeFile, path.extname(routeFile)))
+			).replace(/\\/g, '/')
 		);
 	}
 

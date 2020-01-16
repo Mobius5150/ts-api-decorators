@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc && copyfiles -u 1 src/**/*.ts.mustache dist",
+    "build": "tsc && copyfiles -u 1 src/**/*.mustache dist",
     "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
     "prepublishOnly": "npm run build"
   },
