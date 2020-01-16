@@ -24,15 +24,14 @@ export class FunctionFileGenerator implements IGenerator {
 
 	public forRoutes(routes: IExtractedApiDefinitionWithMetadata[]): OutputFileGeneratorFunc {
 		return (p) => this.mustacheGenerator.generate({
+			scriptFiles: Array.from(new Set(routes.map(r => r.file))).map(f => this.getScriptFilePathGenerator(p, f)),
 			routes: routes.map(route => ({
-				scriptFile: () => this.getScriptFilePathGenerator(p, route),
 				route,
 			}))
 		});
 	}
 
-	private getScriptFilePathGenerator(p: string, route: IExtractedApiDefinitionWithMetadata) {
-		let routeFile = route.file;
+	private getScriptFilePathGenerator(p: string, routeFile: string) {
 		if (this.opts.tsConfig && this.opts.tsConfig.options && typeof this.opts.tsConfig.options.outDir === 'string') {
 			const baseDir = path.dirname(this.opts.tsConfigPath);
 			routeFile = path.join(
