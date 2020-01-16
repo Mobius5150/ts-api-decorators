@@ -49,7 +49,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
         }
         
         const outGenerator = new OutputFileGenerator(options.outDir);
-        // const functionGen = new FunctionFileGenerator();
+        const functionGen = new FunctionFileGenerator({ tsConfig: api.tsConfig, tsConfigPath: api.tsConfigPath });
         const functionJsonGen = new FunctionJsonFileGenerator({
             triggers: [
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.GET),
@@ -70,8 +70,8 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             }
 
             routes.set(routeName, route);
-            outGenerator.addOutputFile(`${routeName}/function.json`, functionJsonGen.forRoutes([route]));
-            // outGenerator.addOutputFile(`${routeFolderName}/index.ts`, functionGen.forRoutes(routes))
+            outGenerator.addOutputFile(functionJsonGen.getFilenameForFunction(routeName), functionJsonGen.forRoutes([route]));
+            outGenerator.addOutputFile(functionGen.getFilenameForFunction(routeName), functionGen.forRoutes([route]))
         }
 
         const written = await outGenerator.generate();

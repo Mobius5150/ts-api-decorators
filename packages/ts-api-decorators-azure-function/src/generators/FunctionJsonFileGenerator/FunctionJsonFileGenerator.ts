@@ -16,6 +16,7 @@ export interface IFunctionJsonFileGeneratorOpts {
 
 export class FunctionJsonFileGenerator implements IGenerator {
 	public static readonly FILE_NAME = 'function.json';
+	private static readonly JSON_PRETTY_PRINT_SPACE: string | number = 4;
 	private readonly triggers: Map<string, IBindingTrigger> = new Map();
 	private readonly params: Map<string, IBindingParam> = new Map();
 
@@ -38,10 +39,7 @@ export class FunctionJsonFileGenerator implements IGenerator {
 	}
 
 	private async generateRouteStr(routes: IExtractedApiDefinitionWithMetadata): Promise<string> {
-		return JSON.stringify(
-			await this.generateRoutes(routes),
-			undefined,
-			4);
+		return JSON.stringify(this.generateRoutes(routes), undefined, FunctionJsonFileGenerator.JSON_PRETTY_PRINT_SPACE);
 	}
 	
 	private generateRoutes(routes: IExtractedApiDefinitionWithMetadata): IFunctionJson {

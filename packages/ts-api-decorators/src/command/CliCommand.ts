@@ -14,6 +14,8 @@ export interface IParseApiResult {
     compilationResult: { [path: string]: ts.TransformationResult<ts.Node> };
     extractedApis: IExtractedApiDefinitionWithMetadata[];
     programInfo: IProgramInfo;
+    tsConfig?: ParsedCommandLine;
+    tsConfigPath?: string;
 }
 
 export abstract class CliCommand {
@@ -43,8 +45,12 @@ export abstract class CliCommand {
 
         this.disableConsoleOutput();
         let compilationResult = null;
+        let tsConfig: ParsedCommandLine;
+        let tsConfigPath: string;
         if (options.isDir) {
-            const tsConfig = this.loadTsConfig(options.tsconfig, resolvedRootDir);
+            const loadedConfig = this.loadTsConfig(options.tsconfig, resolvedRootDir);
+            tsConfig = loadedConfig.tsConfig;
+            tsConfigPath = loadedConfig.path;
             compilationResult = compileSources(
                 tsConfig.fileNames, 
                 {
@@ -52,7 +58,9 @@ export abstract class CliCommand {
                     noEmit: true,
                 }, transformers);
         } else {
-            const tsConfig = this.loadTsConfig(options.tsconfig, path.dirname(resolvedRootDir));
+            const loadedConfig = this.loadTsConfig(options.tsconfig, path.dirname(resolvedRootDir));
+            tsConfig = loadedConfig.tsConfig;
+            tsConfigPath = loadedConfig.path;
             compilationResult = compileSources(
                 [options.rootDir],
                 {
@@ -63,13 +71,15 @@ export abstract class CliCommand {
         this.enableConsoleOutput();
 
         return {
+            tsConfig,
+            tsConfigPath,
             compilationResult,
             extractedApis: this.extractedApis,
             programInfo: this.loadApiInfo(options.apiInfo),
         };
     }
 
-    private loadTsConfig(tsConfig: string | undefined, resolvedRootDir: string): ParsedCommandLine {
+    private loadTsConfig(tsConfig: string | undefined, resolvedRootDir: string): { tsConfig: ParsedCommandLine, path: string } {
         let config: string;
         if (tsConfig) {
             config = tsConfig;
@@ -84,13 +94,19 @@ export abstract class CliCommand {
             }
 
             return {
-                options: getDefaultCompilerOptions(),
-                errors: [],
-                fileNames: []
+                tsConfig: {
+                    options: getDefaultCompilerOptions(),
+                    errors: [],
+                    fileNames: []
+                },
+                path: tsconfigPath,
             }
         }
 
-        return parseTsConfig(resolvedRootDir, tsconfigPath);
+        return {
+            tsConfig: parseTsConfig(path.dirname(tsconfigPath), tsconfigPath),
+            path: tsconfigPath,
+        };
     }
 
     private loadApiInfo(apiInfoPath: string): IProgramInfo | undefined {
