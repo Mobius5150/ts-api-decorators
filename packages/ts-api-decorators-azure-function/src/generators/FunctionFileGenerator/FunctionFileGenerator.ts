@@ -11,8 +11,8 @@ export interface IFunctionFileGeneratorOpts {
 }
 
 export class FunctionFileGenerator implements IGenerator {
-	public static readonly TS_FILE_NAME = 'index.js';
-	private static readonly TEMPLATE_NAME = `${FunctionFileGenerator.TS_FILE_NAME}.mustache`;
+	public static readonly FILE_NAME = 'index.js';
+	private static readonly TEMPLATE_NAME = `${FunctionFileGenerator.FILE_NAME}.mustache`;
 	private readonly mustacheGenerator: MustacheFileGenerator;
 
 	constructor(
@@ -52,6 +52,6 @@ export class FunctionFileGenerator implements IGenerator {
 	}
 
 	public getFilenameForFunction(functionName: string): string {
-		return `${functionName}/${FunctionFileGenerator.TS_FILE_NAME}`;
+		return `${functionName}/${FunctionFileGenerator.FILE_NAME}`;
 	}
 }

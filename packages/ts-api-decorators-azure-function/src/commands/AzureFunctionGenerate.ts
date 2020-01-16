@@ -9,6 +9,8 @@ import { FunctionJsonFileGenerator } from '../generators/FunctionJsonFileGenerat
 import { ApiMethod } from 'ts-api-decorators';
 import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { HttpBindingTriggerFactory } from '../generators/Bindings/HttpBinding';
+import { NArgReducer } from '../Util/NArgReducer';
+import { IBinding } from '../generators/Bindings';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -60,18 +62,40 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             params: [],
         });
 
-        const routes = new Map<string, IExtractedApiDefinitionWithMetadata>();
+        // TODO: If possible, condense routes with the same arguments but different HTTP methods into a single function.
+        //      e.g. if there are GET, PUT, DELETE, POST methods for /hello, only generate one function file
+        //      This is complicated though because of function parameters. If one of those routes also takes a more exotic parameter
+        //      it can't be joined with the others.
+
+        // SHOULD BE ABLE TO USE THE NEW `NArgReducer` class!!
+        const reducer = new NArgReducer<[string, string, ...IBinding[] /** Need to define the type for bindings? */], IExtractedApiDefinitionWithMetadata>()
+        const routeNames = new Set<string>();
         for (const route of api.extractedApis) {
-            const baseRouteName = `${route.method}_${route.handlerKey.toString()}`;
+            let methodType: string = route.method;
+
+            // TODO: Need a better way to get the method type
+            switch (route.method) {
+                case ApiMethod.GET:
+                case ApiMethod.PUT:
+                case ApiMethod.POST:
+                case ApiMethod.DELETE:
+                    methodType = 'http';
+                    break;
+            }
+            reducer.add([methodType, route.route], route);
+        }
+
+        for (const [[method, route, ...bindings], routes] of reducer.getReduced()) {
+            const baseRouteName = `${route.replace(/[^-a-zA-Z0-9_]/g, '_').toString()}`;
             let routeName = baseRouteName;
             let attempt = 0;
-            while (routes.has(routeName)) {
+            while (routeNames.has(routeName)) {
                 routeName = baseRouteName + '_' + ++attempt;
             }
 
-            routes.set(routeName, route);
-            outGenerator.addOutputFile(functionJsonGen.getFilenameForFunction(routeName), functionJsonGen.forRoutes([route]));
-            outGenerator.addOutputFile(functionGen.getFilenameForFunction(routeName), functionGen.forRoutes([route]))
+            routeNames.add(routeName);
+            outGenerator.addOutputFile(functionJsonGen.getFilenameForFunction(routeName), functionJsonGen.forRoutes(routes));
+            outGenerator.addOutputFile(functionGen.getFilenameForFunction(routeName), functionGen.forRoutes(routes))
         }
 
         const written = await outGenerator.generate();

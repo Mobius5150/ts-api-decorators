@@ -1,20 +1,20 @@
 import { IBindingTrigger, IHttpTriggerBinding } from "./Bindings";
 import { ApiMethod, ManagedApi } from "ts-api-decorators";
-import { IExtractedApiDefinitionWithMetadata } from "ts-api-decorators/dist/transformer/ExtractionTransformer";
 import { AzureFunctionParams } from "../..";
 
 export  class HttpBindingTriggerFactory {
 	public static GetBindingForMethod(method: ApiMethod): IBindingTrigger {
 		return {
-			methodType: method,
-			getTriggerForRoute: route => ([
+			triggerMethod: method,
+			triggerType: 'httpTrigger',
+			getTriggerForRoutes: routes => ([
 				// Input trigger binding
 				{
 					type: 'httpTrigger',
 					direction: 'in',
 					name: AzureFunctionParams.TransportTypeRequestParam,
-					route: HttpBindingTriggerFactory.RewriteRouteForAzureFunction(route.route),
-					methods: [ route.method.toLowerCase() ],
+					route: HttpBindingTriggerFactory.RewriteRouteForAzureFunction(routes[0].route),
+					methods: routes.map(r => r.method.toLowerCase()),
 					// TODO: authLevel
 				},
 

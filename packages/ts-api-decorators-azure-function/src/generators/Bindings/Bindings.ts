@@ -25,8 +25,9 @@ export type Binding = IHttpTriggerBinding | IHttpOutputBinding;
 
 
 export interface IBindingTrigger<T extends IBinding = IBinding> {
-	methodType: string;
-	getTriggerForRoute(routes: IExtractedApiDefinitionWithMetadata): T[];
+	triggerType: string;
+	triggerMethod: string;
+	getTriggerForRoutes(routes: IExtractedApiDefinitionWithMetadata[]): T[];
 }
 
 export interface IBindingParam<T extends IBinding = IBinding> {
