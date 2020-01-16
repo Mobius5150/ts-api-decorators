@@ -78,7 +78,7 @@ export class OutputFileGenerator {
 			await this.createPath(dirName);
 		}
 
-		await fs.writeFile(outPath, await file.generatorFunc(file.path));
+		await fs.writeFile(outPath, await file.generatorFunc(outPath));
 
 		return true;
 	}

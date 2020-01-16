@@ -32,29 +32,21 @@ export class FunctionFileGenerator implements IGenerator {
 	}
 
 	private getScriptFilePathGenerator(p: string, route: IExtractedApiDefinitionWithMetadata) {
-		// TODO: This generates the path to the source file, but instead we want to generate the path to the compiled file. Either something like:
-		// 		{tsconfig.outDir}/**/sourceFile.js
-		// or   source/file/path/sourceFile.js
 		let routeFile = route.file;
 		if (this.opts.tsConfig && this.opts.tsConfig.options && typeof this.opts.tsConfig.options.outDir === 'string') {
-			const outDir = this.opts.tsConfig.options.outDir;
 			const baseDir = path.dirname(this.opts.tsConfigPath);
-			const pDir: string = stripDirs(routeFile.substr(baseDir.length + 1), 1);
-			console.log({
-				p,
-				outDir,
-				baseDir,
-				pDir,
-			});
-			routeFile = path.join(outDir, pDir);
-		} else {
-			throw new Error('Not implemented');
+			routeFile = path.join(
+				this.opts.tsConfig.options.outDir,
+				stripDirs(routeFile.substr(baseDir.length + 1), 1));
 		}
+
 		return (
-			path.relative(p,
+			path.relative(
+				path.dirname(p),
 				path.join(
 					path.dirname(routeFile),
-					path.basename(routeFile, path.extname(routeFile)))
+					path.basename(routeFile, path.extname(routeFile))
+				)
 			).replace(/\\/g, '/')
 		);
 	}
