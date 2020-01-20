@@ -37,6 +37,12 @@ export class TypeSerializer {
 				type: <any>type.intrinsicName,
 			};
 		}
+		else if (ts.isRegularExpressionLiteral(node) || node.getText() === RegExp.name) {
+			return {
+				...base,
+				type: 'regex',
+			};
+		}
 		else if (type.symbol && isSymbolWithId(type.symbol)) {
 			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
 			for (const symbol of this.generator.getSymbols(name)) {

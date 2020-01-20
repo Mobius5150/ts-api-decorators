@@ -1,28 +1,10 @@
 import { ManagedApiInternal } from "../apiManagement";
-import { __ApiParamArgs } from "../apiManagement/InternalTypes";
+import { __ApiParamArgs, InternalTypeUtil } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-
-export const callbackParamDecoratorKey = 'callbackParamDecorator';
-
-export interface ICallbackParamDecoratorDefinition {
-	allowableTypes: ('function')[];
-}
-
-export function CallbackParamDecorator(d: ICallbackParamDecoratorDefinition) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<any>
-	) => {
-		descriptor.writable = false;
-		descriptor.configurable = false;
-		Reflect.defineMetadata(callbackParamDecoratorKey, d, target, propertyKey);
-	}
-}
-
-export function GetCallbackParamDecorator(param: string): ICallbackParamDecoratorDefinition {
-	return <ICallbackParamDecoratorDefinition>Reflect.getMetadata(callbackParamDecoratorKey, CallbackParams, param);
-}
+import { ApiDecorator, DecoratorParentNameDependency } from "./DecoratorUtil";
+import { HandlerMethodParameterDecorator } from "../transformer/treeTransformer/HandlerMethodParameterDecorator";
+import { BuiltinMetadata } from "../transformer/TransformerMetadata";
+import { Api } from "./API";
 
 abstract class CallbackParams {
 	/**
@@ -30,6 +12,15 @@ abstract class CallbackParams {
 	 * @param validator 
 	 */
 	public static ApiCallbackParam(): ParameterDecorator;
+	@ApiDecorator(new HandlerMethodParameterDecorator({
+		magicFunctionName: CallbackParams.ApiCallbackParam.name,
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Body,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeAnyFunction ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		arguments: [],
+	}))
 	public static ApiCallbackParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {

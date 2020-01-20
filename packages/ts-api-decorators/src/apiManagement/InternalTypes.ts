@@ -21,21 +21,21 @@ export interface __ApiParamArgsFuncs {
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
 }
 
-export interface IntrinsicTypeDefinition extends IntrinsicNamedTped {
-	type: 'boolean' | 'any';
+export interface IntrinsicTypeDefinition extends IntrinsicNamedType {
+	type: 'regex' | 'boolean' | 'any';
 }
 
-export interface IntrinsicNamedTped {
+export interface IntrinsicNamedType {
 	typename?: string;
 	uniqueTypename?: string;
 }
 
-export interface IntrinsicTypeDefinitionString extends IntrinsicNamedTped{
+export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType{
 	type: 'string';
 	validationRegex?: RegExp;
 }
 
-export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedTped{
+export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType{
 	type: 'number';
 	minVal?: number;
 	maxVal?: number;
@@ -48,29 +48,66 @@ export type InternalTypeDefinition =
 	| InternalObjectTypeDefinition
 	| InternalUnionTypeDefinition
 	| InternalIntersectionTypeDefinition
-	| InternalArrayTypeDefinition;
+	| InternalArrayTypeDefinition
+	| InternalDateTypeDefinition
+	| InternalFunctionTypeDefinition;
 
-export interface InternalObjectTypeDefinition extends IntrinsicNamedTped{
-	type: 'object';
-	schema: IJsonSchemaWithRefs;
+export interface InternalFunctionTypeDefinition extends IntrinsicNamedType {
+	type: 'function';
+	// TODO: function arguments
 }
 
-export interface InternalUnionTypeDefinition extends IntrinsicNamedTped{
+export interface InternalDateTypeDefinition extends IntrinsicNamedType {
+	type: 'date';
+}
+
+export interface InternalObjectTypeDefinition extends IntrinsicNamedType {
+	type: 'object';
+	schema?: IJsonSchemaWithRefs;
+}
+
+export interface InternalUnionTypeDefinition extends IntrinsicNamedType {
 	type: 'union';
 	types: InternalTypeDefinition[];
 }
 
-export interface InternalArrayTypeDefinition extends IntrinsicNamedTped{
+export interface InternalArrayTypeDefinition extends IntrinsicNamedType {
 	type: 'array';
 	elementType: InternalTypeDefinition;
 }
 
 // TODO: The intersection type will probably yield less-than optimal results or longer validation runtime. Should see if it can be collapased to the single resulting type
-export interface InternalIntersectionTypeDefinition extends IntrinsicNamedTped{
+export interface InternalIntersectionTypeDefinition extends IntrinsicNamedType{
 	type: 'intersection';
 	types: InternalTypeDefinition[];
 }
 
 export interface IJsonSchemaWithRefs extends IJsonSchema {
 	$ref?: string;
+}
+
+export abstract class InternalTypeUtil {
+	public static readonly TypeString: IntrinsicTypeDefinitionString = {
+		type: 'string',
+	};
+
+	public static readonly TypeNumber: IntrinsicTypeDefinitionNumber = {
+		type: 'number',
+	};
+
+	public static readonly TypeRegex: IntrinsicTypeDefinition = {
+		type: 'regex',
+	};
+
+	public static readonly TypeDate: InternalDateTypeDefinition = {
+		type: 'date',
+	};
+
+	public static readonly TypeAnyObject: InternalObjectTypeDefinition = {
+		type: 'object',
+	};
+
+	public static readonly TypeAnyFunction: InternalFunctionTypeDefinition = {
+		type: 'function',
+	};
 }
