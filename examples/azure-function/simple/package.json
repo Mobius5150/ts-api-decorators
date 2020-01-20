@@ -4,7 +4,8 @@
   "description": "A simple example API using ts-api-decorators-azure-function",
   "main": "index.js",
   "scripts": {
-    "build": "ttsc"
+    "build": "ttsc && npm run build:azfunc_files",
+    "build:azfunc_files": "npx tsapi azfunc-generate src function --tsconfig ./tsconfig.json"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -12,6 +13,9 @@
     "ttypescript": "^1.5.8"
   },
   "dependencies": {
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5",
+    "ts-api-decorators": "^0.1.4",
     "ts-api-decorators-azure-function": "^0.1.3"
   }
 }

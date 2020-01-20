@@ -28,9 +28,12 @@ export type PromiseRejectionTypes = undefined | null | string | Error;
 
 export type ApiMethodCallbackFunction<T> = (err: PromiseRejectionTypes, result?: T) => void;
 
-export interface IApiDefinitionBase {
+export interface IApiHandlerIdentifier {
 	method: ApiMethod;
 	route: string;
+}
+
+export interface IApiDefinitionBase extends IApiHandlerIdentifier {
 	handlerKey: string | symbol;
 	returnType?: InternalTypeDefinition;
 }

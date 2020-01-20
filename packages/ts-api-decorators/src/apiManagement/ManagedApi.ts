@@ -105,11 +105,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * TODO: Move to a helper class
 	 */
 	protected initHandlers() {
-		if (!this.classes) {
+		if (this.useGlobal) {
 			// Get the list of registered classes
-			this.classes = ManagedApiInternal.GetRegisteredApiClassDefinitions()
+			const globalClasses = ManagedApiInternal.GetRegisteredApiClassDefinitions()
 				// Only get the ones that have handlers defined on them
-				.filter(c => c.handlers.size > 0);
+				.filter(c => c.handlers.size > 0)
+
+			for (const c of globalClasses) {
+				this.dependencies.registerDependency(
+					ApiDependency.WithConstructor(c.constructor));
+
+				this.classes.push(c);
+			}
 		}
 
 		// Initialize each class and build a master map of all API handlers

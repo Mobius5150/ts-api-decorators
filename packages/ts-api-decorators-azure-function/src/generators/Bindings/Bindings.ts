@@ -1,5 +1,6 @@
 import { IExtractedApiDefinitionWithMetadata } from "ts-api-decorators/dist/transformer/ExtractionTransformer";
-import { IApiTransportTypeParamDefinition } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
+import { IApiTransportTypeParamDefinition, ApiMethod } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
+import { Context } from "@azure/functions";
 
 export interface IBinding {
 	name: string;

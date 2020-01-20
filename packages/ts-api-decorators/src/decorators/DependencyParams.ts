@@ -3,6 +3,7 @@ import { __ApiParamArgs } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
 import { DependencyInitializationTime } from "../apiManagement/ApiDependency";
 import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
+import { Api } from ".";
 
 export const dependencyParamDecoratorKey = 'callbackParamDecorator';
 
@@ -24,6 +25,7 @@ export function GetDependencyParamDecorator(param: string): IParamDecoratorDefin
 
 abstract class DependencyParams {
 	public static readonly ConstructorKey = undefined;
+	static ApiCallbackParam: any;
 
 	/**
 	 * A dependency property

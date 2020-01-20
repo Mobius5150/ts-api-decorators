@@ -9,7 +9,7 @@ class MyApi {
 		if (name) {
 			return `Hello ${name}!`;
 		}
-
+console.log('Apiinvoked');
 		return 'Hello World!';
 	}
 

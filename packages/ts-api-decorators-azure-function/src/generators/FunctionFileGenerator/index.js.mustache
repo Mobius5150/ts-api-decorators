@@ -2,11 +2,12 @@ const { ManagedApi } = require('ts-api-decorators-azure-function');
 {{#scriptFiles}}
 require('{{{.}}}');
 {{/scriptFiles}}
-exports.default = ManagedApi.AzureTrigger([
-	{{#routes}}
-	{
-		method: '{{route.method}}',
-		route: '{{{route.route}}}',
-	},
-	{{/routes}}
-]);
+exports.default = ManagedApi.AzureTrigger({
+	triggerType: '{{triggerType}}',
+	route: '{{{route}}}',
+	methods: [
+		{{#methods}}
+		'{{.}}',
+		{{/methods}}
+	]
+});

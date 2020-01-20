@@ -119,10 +119,11 @@ export class OutputFileGenerator {
 				patterns
 					.map(p => this.matchPatternInOutputDir(p))
 			))
-				.reduce((prev, curr) => prev.concat(curr), []),
+				.reduce((prev, curr) => prev.concat(curr), [])
+				.map(f => path.resolve(this.baseDir, f)),
 		);
 
-		console.log('Untouchable files: ', this.untouchableFiles);
+		this.untouchableFiles.add(ignoreFile);
 	}
 	
 	private matchPatternInOutputDir(p: string): Promise<string[]> {
@@ -139,20 +140,25 @@ export class OutputFileGenerator {
 		return 'utf8';
 	}
 
-	private async clearOutputDirectory(dir: string = this.baseDir) {
+	private async clearOutputDirectory(dir: string = this.baseDir): Promise<boolean> {
+		let hadUntouchableFiles = false;
 		for (const fileName of await fs.readdir(dir)) {
 			const file = path.join(dir, fileName);
 			if (this.isUntouchable(file)) {
+				hadUntouchableFiles = true;
 				continue;
 			}
 
 			const fileStat = await fs.lstat(file);
 			if (fileStat.isDirectory()) {
-				await this.clearOutputDirectory(file);
-				await fs.rmdir(file);
+				if (!await this.clearOutputDirectory(file)) {
+					await fs.rmdir(file);
+				}
 			} else if (fileStat.isFile()) {
 				await fs.unlink(file);
 			}
 		}
+
+		return hadUntouchableFiles;
 	}
 }

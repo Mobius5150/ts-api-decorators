@@ -5,12 +5,13 @@ import { CliCommand, IParseApiResult } from 'ts-api-decorators/dist/command/CliC
 import { OutputFileGenerator } from 'ts-api-decorators/dist/generators/OutputFileGenerator';
 import { IParseOptions } from 'ts-api-decorators/dist/command/ProgramOptions';
 import { FunctionFileGenerator } from '../generators/FunctionFileGenerator';
-import { FunctionJsonFileGenerator } from '../generators/FunctionJsonFileGenerator';
+import { FunctionJsonFileGenerator, IFunctionJsonFileGeneratorOpts } from '../generators/FunctionJsonFileGenerator';
 import { ApiMethod } from 'ts-api-decorators';
 import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { HttpBindingTriggerFactory } from '../generators/Bindings/HttpBinding';
 import { NArgReducer } from '../Util/NArgReducer';
-import { IBinding } from '../generators/Bindings';
+import { IBinding, IBindingTrigger } from '../generators/Bindings';
+import { FunctionHostFileGenerator } from '../generators/FunctionHostFileGenerator';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -50,9 +51,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             this.printSummary(summary);
         }
         
-        const outGenerator = new OutputFileGenerator(options.outDir);
-        const functionGen = new FunctionFileGenerator({ tsConfig: api.tsConfig, tsConfigPath: api.tsConfigPath });
-        const functionJsonGen = new FunctionJsonFileGenerator({
+        const generatorOpts: IFunctionJsonFileGeneratorOpts = {
             triggers: [
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.GET),
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.PUT),
@@ -60,15 +59,14 @@ export class AzureFunctionGenerateCommand extends CliCommand {
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.DELETE),
             ],
             params: [],
-        });
+        };
+        const outGenerator = new OutputFileGenerator(options.outDir);
+        const hostGen = new FunctionHostFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig });
+        const functionGen = new FunctionFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig, tsConfigPath: api.tsConfigPath });
+        const functionJsonGen = new FunctionJsonFileGenerator(generatorOpts);
 
-        // TODO: If possible, condense routes with the same arguments but different HTTP methods into a single function.
-        //      e.g. if there are GET, PUT, DELETE, POST methods for /hello, only generate one function file
-        //      This is complicated though because of function parameters. If one of those routes also takes a more exotic parameter
-        //      it can't be joined with the others.
-
-        // SHOULD BE ABLE TO USE THE NEW `NArgReducer` class!!
-        const reducer = new NArgReducer<[string, string, ...IBinding[] /** Need to define the type for bindings? */], IExtractedApiDefinitionWithMetadata>()
+        // TODO: Actually check on the binding triggers and parameter types for each method
+        const reducer = new NArgReducer<[string, string, ...IBindingTrigger[]], IExtractedApiDefinitionWithMetadata>()
         const routeNames = new Set<string>();
         for (const route of api.extractedApis) {
             let methodType: string = route.method;
@@ -82,10 +80,13 @@ export class AzureFunctionGenerateCommand extends CliCommand {
                     methodType = 'http';
                     break;
             }
+            
             reducer.add([methodType, route.route], route);
         }
 
-        for (const [[method, route, ...bindings], routes] of reducer.getReduced()) {
+        outGenerator.addOutputFile(hostGen.getFilename(), hostGen.forRoutes(api.extractedApis));
+        for (let [[method, route, ...bindings], routes] of reducer.getReduced()) {
+            route = route.startsWith('/') ? route.substr(1) : route;
             const baseRouteName = `${route.replace(/[^-a-zA-Z0-9_]/g, '_').toString()}`;
             let routeName = baseRouteName;
             let attempt = 0;
