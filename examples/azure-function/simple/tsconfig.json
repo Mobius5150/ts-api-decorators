@@ -5,6 +5,7 @@
 		"outDir": "dist",
 		"rootDir": "src",
 		"experimentalDecorators": true,
+		"sourceMap": true,
 		"plugins": [
 			{
 				"transform": "ts-api-decorators/dist/transformer"

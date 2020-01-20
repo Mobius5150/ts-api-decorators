@@ -1,18 +1,18 @@
-# Simple Express Sample
-This folder contains a minimal sample for using TS API Decorators with the Express framework. The goal of this sample is to show you how to setup your project for use with this library.
+# Simple Azure Functions Sample
+This folder contains a minimal sample for using TS API Decorators with Azure Functions. The goal of this sample is to show you how to setup your project for use with this library.
 
 ## Run the Sample
-To run the sample, run the following commands in the sample directory:
+To run the sample, run the following commands in the sample directory.
 
 ```
 npm i
 npm run build
-node dist/index.js
+npm run start
 ```
 
-This will start an express server on port `3000` of localhost. In another terminal, try the following request:
+This will start the Azure Function host on port `7071`. From another terminal, try to send a request:
 ```
-curl http://localhost:3000/hello
+curl http://localhost:7071/hello
 ```
 
 You should receive the following response:
@@ -22,7 +22,7 @@ Hello World!
 
 Then try using the optional query parameter `name`:
 ```
-curl http://localhost:3000/hello?name=Developer
+curl http://localhost:7071/hello?name=Developer
 ```
 
 You should receive the response:
@@ -40,9 +40,9 @@ The output should look something like:
 ```yaml
 swagger: '2.0'
 info:
-  title: ts-api-decorators-examples-express-simple
+  title: ts-api-decorators-examples-azure-function-simple
   version: 1.0.0
-  description: A simple example API using Express and ts-api-decorators-express
+  description: A simple example API using Express and ts-api-decorators-azure-function
   license:
     name: Apache-2.0
 paths:
@@ -85,18 +85,22 @@ This configuration tells ttypescript which transformer to run. ttypescript is in
 // package.json
 {
     "scripts": {
-        "build": "ttsc"
+        "build": "ttsc && npm run build:azfunc_files",
+        "build:azfunc_files": "npx tsapi azfunc-generate src function --tsconfig ./tsconfig.json"
+        // ...
     }
 }
 ```
 
-This causes the `ts-api-decorators-express` library to be invoked during compilation so that it can do it's magic. Curious about what it does? Check out the output in `dist/index.js` after building:
+The `build:azfunc_files` script defined in `package.json` is invoked after a successful build. This is responsible for generating the function file definitions that the Azure Function host looks for.
+
+This causes the `ts-api-decorators-azure-function` library to be invoked during compilation so that it can do it's magic. Curious about what it does? Check out the output in `dist/index.js` after building:
 ```javascript
 // dist/index.js
 // ...
 __decorate([
-    ts_api_decorators_express_1.ApiGetMethod('/hello', { type: "string" }),
-    __param(0, ts_api_decorators_express_1.ApiQueryParam({ name: "name", typedef: { type: "string" }, optional: true }))
+    ts_api_decorators_azure_function_1.ApiGetMethod('/hello', { type: "string" }),
+    __param(0, ts_api_decorators_azure_function_1.ApiQueryParam({ name: "name", typedef: { type: "string" }, optional: true }))
 ], MyApi.prototype, "greet", null);
 // ...
 ```
