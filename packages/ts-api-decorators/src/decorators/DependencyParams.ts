@@ -2,44 +2,41 @@ import { ManagedApiInternal } from "../apiManagement";
 import { __ApiParamArgs } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
 import { DependencyInitializationTime } from "../apiManagement/ApiDependency";
-import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
-import { Api } from ".";
-
-export const dependencyParamDecoratorKey = 'callbackParamDecorator';
-
-export function DependencyParamDecorator(d: IParamDecoratorDefinition) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<any>
-	) => {
-		descriptor.writable = false;
-		descriptor.configurable = false;
-		Reflect.defineMetadata(dependencyParamDecoratorKey, d, target, propertyKey);
-	}
-}
-
-export function GetDependencyParamDecorator(param: string): IParamDecoratorDefinition {
-	return <IParamDecoratorDefinition>Reflect.getMetadata(dependencyParamDecoratorKey, DependencyParams, param);
-}
+import { ApiDecorator, ApiMethodDecoratorGetFunction } from "./DecoratorUtil";
+import { BuiltinMetadata } from "../transformer/TransformerMetadata";
+import { HandlerMethodParameterDecorator } from "../transformer/HandlerMethodParameterDecorator";
+import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtractors";
+import { ClassPropertyDecorator } from "../transformer/ClassPropertyDecorator";
+import { DependencyClassDecorator } from "../transformer/DependencyClassDecorator";
+import { ClassConstructor } from "../Util/ClassConstructors";
 
 abstract class DependencyParams {
 	public static readonly ConstructorKey = undefined;
 	static ApiCallbackParam: any;
+
+	@ApiDecorator(DependencyClassDecorator, {
+		indexTs: __filename,
+		dependencies: [],
+		provider: BuiltinMetadata.BuiltinComponent,
+		arguments: [],
+	})
+	public static ApiDependency<T extends ClassConstructor>(constructor: T) {
+		ManagedApiInternal.RegisterApi(constructor);
+	}
 
 	/**
 	 * A dependency property
 	 * @param validator 
 	 */
 	public static ApiInjectedDependency(scope?: string): PropertyDecorator;
-	@DependencyParamDecorator({
-		allowableTypes: ['any'],
+	@ApiDecorator(ClassPropertyDecorator, {
+		indexTs: __filename,
+		dependencies: [],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: 'paramName',
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.DependencyScopeArgument,
+		],
 	})
 	public static ApiInjectedDependency(a?: any): PropertyDecorator {
 		const args = <__ApiParamArgs>a;
@@ -54,25 +51,20 @@ abstract class DependencyParams {
 		}
 	}
 
-	public static ApiInjectedConstructor(): MethodDecorator;
-	public static ApiInjectedConstructor(a?: any): MethodDecorator {
-		return (target: Object, propertyKey: string) => {
-		}
-	}
-
 	/**
 	 * A dependency parameter
 	 * @param validator 
 	 */
 	public static ApiInjectedDependencyParam(scope?: string): ParameterDecorator;
-	@DependencyParamDecorator({
-		allowableTypes: ['any'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [],
+		parameterType: ApiParamType.Dependency,
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: 'paramName',
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.DependencyScopeArgument,
+		],
 	})
 	public static ApiInjectedDependencyParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
@@ -113,6 +105,8 @@ abstract class DependencyParams {
 	}
 }
 
+export const GetDependencyParamDecorator = ApiMethodDecoratorGetFunction(DependencyParams);
+
+export const ApiDependency = DependencyParams.ApiDependency;
 export const ApiInjectedDependency = DependencyParams.ApiInjectedDependency;
-export const ApiInjectedConstructor = DependencyParams.ApiInjectedConstructor;
 export const ApiInjectedDependencyParam = DependencyParams.ApiInjectedDependencyParam;

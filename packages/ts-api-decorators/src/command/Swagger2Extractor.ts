@@ -1,12 +1,13 @@
 import { IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
 import { IExtractor } from "./IExtractor";
 import { OpenAPIV2, IJsonSchema } from 'openapi-types';
-import { IExtractedApiDefinitionWithMetadata, IExtractedTag } from "../transformer/ExtractionTransformer";
-import { getMetadataValue, IMetadataType, getAllMetadataValues } from "../transformer/TransformerMetadata";
+import { getMetadataValue, IMetadataType, getAllMetadataValues, getMetadataValueByDescriptor, BuiltinMetadata } from "../transformer/TransformerMetadata";
 import { OpenApiMetadataType } from "../transformer/OpenApi";
 import * as yaml from 'js-yaml';
 import { IProgramInfo } from "./IProgramInfo";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from "../apiManagement/InternalTypes";
+import { IExtractedTag } from "../transformer/IExtractedTag";
+import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode } from "../transformer/HandlerTree";
 
 export interface ISwagger2Opts {
     disableTryInferSchemes?: boolean;
@@ -20,7 +21,7 @@ export class Swagger2Extractor implements IExtractor {
     private definitions = new Map<string, OpenAPIV2.SchemaObject>();
 
     constructor(
-        private readonly extractedApis: IExtractedApiDefinitionWithMetadata[],
+        private readonly apiTree: IHandlerTreeNodeRoot,
         private readonly apiInfo: IProgramInfo,
         private readonly opts: ISwagger2Opts,
     ) {}
@@ -100,31 +101,32 @@ export class Swagger2Extractor implements IExtractor {
 
     private getPaths(): OpenAPIV2.PathsObject {
         const paths: OpenAPIV2.PathsObject = {};
-        this.extractedApis.forEach(api => {
+        // Array.from(WalkChildrenByType(api, isHandlerParameterNode)).forEach(api => {
+        for (const api of WalkTreeByType(this.apiTree, isHandlerNode)) {
             if (!paths[api.route]) {
                 paths[api.route] = {};
             }
 
-            if (!paths[api.route][api.method.toLowerCase()]) {
-                paths[api.route][api.method.toLowerCase()] = this.getOperationObject(api);
+            if (!paths[api.route][api.apiMethod.toLowerCase()]) {
+                paths[api.route][api.apiMethod.toLowerCase()] = this.getOperationObject(api);
             } else {
-                throw new Error(`Multiple APIs for route: [${api.method}]: ${api.route}`);
+                throw new Error(`Multiple APIs for route: [${api.apiMethod}]: ${api.route}`);
             }
-        });
+        };
 
         return paths;
     }
     
-    private getOperationObject(api: IExtractedApiDefinitionWithMetadata): OpenAPIV2.OperationObject {
+    private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV2.OperationObject {
         return {
-            operationId: api.handlerKey.toString(),
+            operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
             summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
             tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
-            parameters: api.parameters.map(p => this.getParametersObject(p)),
+            parameters: Array.from(WalkChildrenByType(api, isHandlerParameterNode)).map(p => this.getParametersObject(p)),
             responses: {
                 default: {
-                    schema: this.getInlineTypeSchema(api.returnType),
+                    schema: this.getInlineTypeSchema(getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema).returnType),
                     description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.ResponseDescription),
                 }
             }
@@ -186,9 +188,9 @@ export class Swagger2Extractor implements IExtractor {
         };
     }
     
-    private getParametersObject(p: IApiParamDefinition): OpenAPIV2.Parameter {
+    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV2.Parameter {
         let inStr: string;
-        switch (p.type) {
+        switch (p.paramDef.type) {
             case ApiParamType.Body:
                 inStr = 'body';
                 break;
@@ -206,16 +208,16 @@ export class Swagger2Extractor implements IExtractor {
         }
 
         let schema: OpenAPIV2.SchemaObject;
-        if (p.args.typedef.type === 'object') {
-            schema = this.getInlineTypeSchema(p.args.typedef);
+        if (p.paramDef.args.typedef.type === 'object') {
+            schema = this.getInlineTypeSchema(p.paramDef.args.typedef);
         }
 
         return {
-            name: p.propertyKey.toString(),
+            name: p.paramDef.propertyKey.toString(),
             in: inStr,
-            required: !p.args.optional,
-            description: p.args.description,
-            type: p.args.typedef.type,
+            required: !p.paramDef.args.optional,
+            description: p.paramDef.args.description,
+            type: p.paramDef.args.typedef.type,
             schema,
         };
     }

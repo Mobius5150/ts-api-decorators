@@ -1,0 +1,1 @@
+export type OmitMany<T extends object, K1 extends keyof T, K2 extends keyof T> = Omit<Omit<T, K1>, K2>;

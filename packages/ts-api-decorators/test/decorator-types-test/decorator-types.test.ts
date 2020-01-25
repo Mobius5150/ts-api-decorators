@@ -9,9 +9,15 @@ describe('transformer', () => {
 	const transformers = [getTransformer()];
 
 	it('should transform things', async () => {
-		const modules = getCompiledProgram([
-			path.join(__dirname, 'sources/basic-decorators.ts'),
-		]);
+		assert.doesNotThrow(() => {
+			try {
+				const modules = getCompiledProgram([
+					path.join(__dirname, 'sources/basic-decorators.ts'),
+				]);
+			} catch (e) {
+				throw e;
+			}
+		})
 	});
 
 	it('ApiQueryParam invalid with object type', () => {

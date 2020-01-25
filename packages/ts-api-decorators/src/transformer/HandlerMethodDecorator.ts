@@ -2,8 +2,8 @@ import * as ts from 'typescript';
 import { IMethodDecoratorDefinition, DecoratorType } from './DecoratorDefinition';
 import { ITransformedTreeElement, HandlerTreeNodeType, IHandlerTreeNodeHandler, IHandlerTreeNode } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
-import { getMetadataValueByDescriptor, BuiltinMetadata } from '../TransformerMetadata';
-import { ApiMethod } from '../../apiManagement';
+import { getMetadataValueByDescriptor, BuiltinMetadata } from './TransformerMetadata';
+import { ApiMethod } from '../apiManagement';
 import { Decorator, DecoratorNodeType } from './Decorator';
 
 export class HandlerMethodDecorator extends Decorator<ts.MethodDeclaration, IMethodDecoratorDefinition> implements IMethodDecoratorDefinition {
@@ -40,6 +40,7 @@ export class HandlerMethodDecorator extends Decorator<ts.MethodDeclaration, IMet
 			apiMethod,
 			route,
 			parent,
+			metadata: argumentResult.metadata,
 		};
 		
 		return {

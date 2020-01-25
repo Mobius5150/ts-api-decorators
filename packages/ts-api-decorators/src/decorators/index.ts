@@ -1,8 +1,8 @@
 export * from './API';
 export {
 	ApiQueryParam,
-	ApiQueryParamNumber,
 	ApiQueryParamString,
+	ApiQueryParamNumber,
 } from './QueryParams';
 export {
 	ApiBodyParam,

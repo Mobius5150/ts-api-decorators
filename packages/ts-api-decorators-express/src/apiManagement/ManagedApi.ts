@@ -6,7 +6,6 @@ import {
 	readStreamToStringUtilCb,
 	parseApiMimeType,
 	ApiStdHeaderName,
-	ClassConstructor,
 	ApiHeadersDict,
 	ApiParamsDict
 } from 'ts-api-decorators';

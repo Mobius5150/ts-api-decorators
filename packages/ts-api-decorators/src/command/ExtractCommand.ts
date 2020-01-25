@@ -1,14 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
-import transformer from '../transformer/transformers/extractionTransformer';
 import { TransformerFuncType, compileSourcesFromTsConfigFile, getDefaultCompilerOptions, parseTsConfig, compileSources } from '../Util/CompilationUtil';
 import { IApiDefinitionBase, ApiMethod } from '../apiManagement/ApiDefinition';
 import { resolve } from 'dns';
 import { ParsedCommandLine } from 'typescript';
 import {OpenAPIV3, OpenAPIV2} from 'openapi-types';
 import { PackageJson, getPackageJsonAuthor } from './CommandUtil';
-import { IExtractedApiDefinitionWithMetadata } from '../transformer/ExtractionTransformer';
 import { Swagger2Extractor } from './Swagger2Extractor';
 import { CliCommand, IParseApiResult } from './CliCommand';
 import { IParseOptions } from './ProgramOptions';
@@ -75,7 +73,7 @@ export class ExtractCommand extends CliCommand {
     }
     
     private getSwaggerSummary(options: IProgramOptions, api: IParseApiResult) {
-        const extractor = new Swagger2Extractor(api.extractedApis, api.programInfo, {});
+        const extractor = new Swagger2Extractor(api.tree, api.programInfo, {});
         return extractor.toString();
     }
 

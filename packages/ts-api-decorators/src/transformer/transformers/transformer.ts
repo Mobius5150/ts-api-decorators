@@ -8,19 +8,42 @@ import {
 	GetQueryParamDecorator
 } from '../../decorators/QueryParams';
 import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator } from '../../decorators/BodyParams';
-import { ParamDecoratorTransformer, ParamDecoratorTransformerInfo } from '../ParamDecoratorTransformer';
-import { ITreeTransformer } from '../ITreeTransformer';
-import { ApiParamType } from '../../apiManagement/ApiDefinition';
 import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
-import { ExtractionTransformer } from '../ExtractionTransformer';
 import { GetApiMethodDecorator, ApiGetMethod, ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from '../..';
 import { MetadataManager } from '../MetadataManager';
 import { OpenApiMetadataExtractors } from '../OpenApi';
-import { ITransformerArguments } from '../TransformerUtil';
 import { GetHeaderParamDecorator, ApiHeaderParam, ApiHeaderParamNumber, ApiHeaderParamString } from '../../decorators/HeaderParams';
 import { GetPathParamDecorator, ApiPathParam, ApiPathParamNumber, ApiPathParamString } from '../../decorators/PathParams';
-import { GetDependencyParamDecorator, ApiInjectedDependencyParam, ApiInjectedDependency } from '../../decorators/DependencyParams';
-import { PropertyTransformer } from '../PropertyTransformer';
+import { GetDependencyParamDecorator, ApiInjectedDependencyParam, ApiInjectedDependency, ApiDependency } from '../../decorators/DependencyParams';
+import { IDecoratorResolver } from '../IDecoratorResolver';
+import { DecoratorResolver } from '../DecoratorResolver';
+import { Api, GetApiDecorator } from '../../decorators';
+import { TreeTransformer } from '../TreeTransformer';
+import { IHandlerTreeNodeRoot } from '../HandlerTree';
+
+export type OnTreeExtractedHandler = (error: any, treeRoot: IHandlerTreeNodeRoot) => void;
+
+export interface ITransformerArguments {
+	/**
+	 * A resolver to use when performing transformations.
+	 */
+	decoratorResolver?: IDecoratorResolver;
+	
+	/**
+	 * If `decoratorResolver` is specified, whether to register the builtin decorator suite.
+	 */
+	registerBuiltindecorators?: boolean;
+
+	/**
+	 * Whether to apply transformers or just extract data. Defaults to true.
+	 */
+	applyTransformation?: boolean;
+
+	/**
+	 * A method to be called when the Handler Tree is extracted.
+	 */
+	onTreeExtracted?: OnTreeExtractedHandler;
+}
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
 	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
@@ -28,151 +51,71 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 	let metadataManager = new MetadataManager();
 	OpenApiMetadataExtractors.RegisterMetadataExtractors(metadataManager);
 	
-    const indexTs = path.join('decorators/API');
-    const queryParamIndexTs = path.join('decorators/QueryParams');
-	const bodyParamIndexTs = path.join('decorators/BodyParams');
-	const headerParamIndexTs = path.join('decorators/HeaderParams');
-	const pathParamIndexTs = path.join('decorators/PathParams');
-	const dependencyParamIndexTs = path.join('decorators/DependencyParams');
-    const parameterTypes: ParamDecoratorTransformerInfo[] = [
-        getQueryParamDecoratorInfo(ApiQueryParam.name, queryParamIndexTs),
-        getQueryParamDecoratorInfo(ApiQueryParamString.name, queryParamIndexTs),
-        getQueryParamDecoratorInfo(ApiQueryParamNumber.name, queryParamIndexTs),
+    if (!args.decoratorResolver) {
+		args.decoratorResolver = getDefaultDecoratorResolver();
+	} else if (args.registerBuiltindecorators) {
+		registerDefaultDecorators(args.decoratorResolver);
+	}
 
-        getBodyParamDecoratorInfo(ApiBodyParam.name, bodyParamIndexTs),
-        getBodyParamDecoratorInfo(ApiBodyParamString.name, bodyParamIndexTs),
-		getBodyParamDecoratorInfo(ApiBodyParamNumber.name, bodyParamIndexTs),
-
-		getHeaderParamDecoratorInfo(ApiHeaderParam.name, headerParamIndexTs),
-		getHeaderParamDecoratorInfo(ApiHeaderParamNumber.name, headerParamIndexTs),
-		getHeaderParamDecoratorInfo(ApiHeaderParamString.name, headerParamIndexTs),
-
-		getPathParamDecoratorInfo(ApiPathParam.name, pathParamIndexTs),
-		getPathParamDecoratorInfo(ApiPathParamNumber.name, pathParamIndexTs),
-		getPathParamDecoratorInfo(ApiPathParamString.name, pathParamIndexTs),
-		
-		...(args.paramDecorators ? args.paramDecorators : []),
-    ];
-	const transformers: ITreeTransformer[] = [
-        // GET
-		new ExtractionTransformer(program, generator, {
-            ...GetApiMethodDecorator(ApiGetMethod.name),
-            parameterTypes,
-            indexTs,
-        }, undefined, metadataManager),
-        
-        // POST
-        new ExtractionTransformer(program, generator, {
-            ...GetApiMethodDecorator(ApiPostMethod.name),
-            parameterTypes,
-            indexTs,
-        }, undefined, metadataManager),
-
-        // PUT
-        new ExtractionTransformer(program, generator, {
-            ...GetApiMethodDecorator(ApiPutMethod.name),
-            parameterTypes,
-            indexTs,
-        }, undefined, metadataManager),
-
-        // DELETE
-        new ExtractionTransformer(program, generator, {
-            ...GetApiMethodDecorator(ApiDeleteMethod.name),
-            parameterTypes,
-            indexTs,
-		}, undefined, metadataManager),
-		
-		// Dependency Injection
-		new ParamDecoratorTransformer(program, generator,
-			getDependencyParamDecoratorInfo(ApiInjectedDependencyParam.name, dependencyParamIndexTs)),
-
-		new PropertyTransformer(program, generator,
-			getDependencyParamDecoratorInfo(ApiInjectedDependency.name, dependencyParamIndexTs)),
-	];
+	if (typeof args.applyTransformation !== 'boolean') {
+		args.applyTransformation = true;
+	}
 
 	return (context: ts.TransformationContext) => (file: ts.SourceFile) =>  {
-		for (const transformer of transformers) {
-			file = transformer.visitNodeAndChildren(file, context)
+		const transformer = new TreeTransformer(
+			program,
+			generator,
+			args.decoratorResolver,
+			args.applyTransformation,
+			metadataManager
+		);
+
+		file = transformer.visitNode(file, context);
+		if (args.onTreeExtracted) {
+			args.onTreeExtracted(null, transformer.root);
 		}
 
 		return file;
 	};
 }
 
-export function getQueryParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
-	const d = GetQueryParamDecorator(name);
-	if (!d) {
-		throw new Error('QueryParamDecorator not defined for: ' + name);
+export function getDefaultDecoratorResolver() {
+	const resolver = new DecoratorResolver();
+	registerDefaultDecorators(resolver);
+	return resolver;
+}
+
+
+export function registerDefaultDecorators(resolver: IDecoratorResolver) {
+	const decorators = [
+		GetApiDecorator(Api.name),
+		GetApiMethodDecorator(ApiGetMethod.name),
+		GetApiMethodDecorator(ApiPutMethod.name),
+		GetApiMethodDecorator(ApiPostMethod.name),
+		GetApiMethodDecorator(ApiDeleteMethod.name),
+		
+        GetQueryParamDecorator(ApiQueryParam.name),
+        GetQueryParamDecorator(ApiQueryParamString.name),
+        GetQueryParamDecorator(ApiQueryParamNumber.name),
+
+        GetBodyParamDecorator(ApiBodyParam.name),
+        GetBodyParamDecorator(ApiBodyParamString.name),
+		GetBodyParamDecorator(ApiBodyParamNumber.name),
+
+		GetHeaderParamDecorator(ApiHeaderParam.name),
+		GetHeaderParamDecorator(ApiHeaderParamNumber.name),
+		GetHeaderParamDecorator(ApiHeaderParamString.name),
+
+		GetPathParamDecorator(ApiPathParam.name),
+		GetPathParamDecorator(ApiPathParamNumber.name),
+		GetPathParamDecorator(ApiPathParamString.name),
+
+		GetDependencyParamDecorator(ApiDependency.name),
+		GetDependencyParamDecorator(ApiInjectedDependency.name),
+		GetDependencyParamDecorator(ApiInjectedDependencyParam.name),
+	];
+	
+	for (const decorator of decorators) {
+		resolver.addDecorator(decorator);
 	}
-
-	return {
-		indexTs,
-		magicFunctionName: name,
-		type: ApiParamType.Query,
-		...d,
-	};
-}
-
-export function getHeaderParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
-	const d = GetHeaderParamDecorator(name);
-	if (!d) {
-		throw new Error('HeaderParamDecorator not defined for: ' + name);
-	}
-
-	return {
-		indexTs,
-		magicFunctionName: name,
-		type: ApiParamType.Header,
-		...d,
-	};
-}
-
-export function getPathParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
-	const d = GetPathParamDecorator(name);
-	if (!d) {
-		throw new Error('PathParamDecorator not defined for: ' + name);
-	}
-
-	return {
-		indexTs,
-		magicFunctionName: name,
-		type: ApiParamType.Path,
-		...d,
-	};
-}
-
-export function getDependencyParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
-	const d = GetDependencyParamDecorator(name);
-	if (!d) {
-		throw new Error('DependencyParamDecorator not defined for: ' + name);
-	}
-
-	return {
-		indexTs,
-		magicFunctionName: name,
-		type: ApiParamType.Dependency,
-		...d,
-	};
-}
-
-function getQueryParamTransformer(program: ts.Program, generator: tjs.JsonSchemaGenerator, indexTs: string, name: string) {
-	return new ParamDecoratorTransformer(program, generator, getQueryParamDecoratorInfo(name, indexTs));
-}
-
-export function getBodyParamDecoratorInfo(name: string, indexTs: string): ParamDecoratorTransformerInfo {
-	const d = GetBodyParamDecorator(name);
-	if (!d) {
-		throw new Error('GetBodyParamDecorator not defined for: ' + name);
-	}
-
-	return {
-		indexTs,
-		magicFunctionName: name,
-		type: ApiParamType.Body,
-		...d,
-	};
-}
-
-function getBodyParamTransformer(program: ts.Program, generator: tjs.JsonSchemaGenerator, indexTs: string, name: string) {
-	return new ParamDecoratorTransformer(program, generator, getBodyParamDecoratorInfo(name, indexTs));
 }

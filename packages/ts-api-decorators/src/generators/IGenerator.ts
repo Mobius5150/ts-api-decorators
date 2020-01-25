@@ -1,7 +1,7 @@
-import { IExtractedApiDefinitionWithMetadata } from "../transformer/ExtractionTransformer";
+import { IHandlerTreeNode } from "../transformer/HandlerTree";
 
 export type OutputFileGeneratorFunc = (path: string) => Promise<Buffer>;
 
 export interface IGenerator {
-	forRoutes(routes: IExtractedApiDefinitionWithMetadata[]): OutputFileGeneratorFunc;
+	forTree(routes: IHandlerTreeNode[]): OutputFileGeneratorFunc;
 }

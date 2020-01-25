@@ -1,7 +1,7 @@
 import { IApiDefinition, ApiMethod, IApiParamDefinition } from "./ApiDefinition";
-import { ClassConstructor } from "../decorators";
 import 'reflect-metadata';
 import { IDependency, IDependencyParam } from "./ApiDependency";
+import { ClassConstructor } from "../Util/ClassConstructors";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
 

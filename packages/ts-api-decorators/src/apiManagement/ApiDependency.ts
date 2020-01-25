@@ -1,7 +1,7 @@
-import { ClassConstructor, ClassConstructor1, ClassConstructor2, ClassConstructor3, ClassConstructor4, ClassConstructor5, ClassConstructor6, ClassConstructor7, ClassConstructor8, ClassConstructor9, ClassConstructor0 } from "../decorators";
 import { DepGraph } from 'dependency-graph';
 import { ManagedApiInternal } from "./ManagedApiInternal";
 import { InternalTypeDefinition } from "./InternalTypes";
+import { ClassConstructor } from '../Util/ClassConstructors';
 
 /**
  * The symbol descriptor defines a depedency and allows us to uniquely determine

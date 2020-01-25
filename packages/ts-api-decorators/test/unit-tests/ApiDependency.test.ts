@@ -2,8 +2,8 @@ import { expect, assert } from 'chai';
 import { CollectionUtil } from '../../src/Util/CollectionUtil';
 import 'mocha';
 import { ApiDependencyCollection, ApiDependency, IApiDependency, IDependency, DependencyInitializationTime } from '../../src/apiManagement/ApiDependency';
-import { ClassConstructor } from '../../src';
 import { InternalTypeDefinition } from '../../src/apiManagement/InternalTypes';
+import { ClassConstructor } from '../../src/Util/ClassConstructors';
 
 class DepClass0 {
     public static readonly HelloStr = 'hello';

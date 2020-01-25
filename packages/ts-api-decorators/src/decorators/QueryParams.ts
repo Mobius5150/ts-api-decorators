@@ -1,25 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
-import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
+import { ApiParamValidationFunction, __ApiParamArgs, InternalTypeUtil } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
-
-export const queryParamDecoratorKey = 'queryParamDecorator';
-
-export function QueryParamDecorator(d: IParamDecoratorDefinition) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<any>
-	) => {
-		descriptor.writable = false;
-		descriptor.configurable = false;
-		Reflect.defineMetadata(queryParamDecoratorKey, d, target, propertyKey);
-	}
-}
-
-export function GetQueryParamDecorator(param: string): IParamDecoratorDefinition {
-	return <IParamDecoratorDefinition>Reflect.getMetadata(queryParamDecoratorKey, QueryParams, param);
-}
+import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction } from "./DecoratorUtil";
+import { HandlerMethodParameterDecorator } from "../transformer/HandlerMethodParameterDecorator";
+import { Api } from "./API";
+import { BuiltinMetadata } from "../transformer/TransformerMetadata";
+import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtractors";
 
 abstract class QueryParams {
 	/**
@@ -27,18 +13,17 @@ abstract class QueryParams {
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
 	public static ApiQueryParamString(paramName?: string, stringValidationRegex?: RegExp);
-	@QueryParamDecorator({
-		allowableTypes: ['string'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Query,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: 'regexp',
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.RegexpArgument
+		],
 	})
 	public static ApiQueryParamString(a?: any): ParameterDecorator {
 		return this.ApiQueryParam(a);
@@ -51,22 +36,18 @@ abstract class QueryParams {
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
 	public static ApiQueryParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
-	@QueryParamDecorator({
-		allowableTypes: ['number'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Query,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeNumber ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "numberMin",
-				optional: true,
-			},
-			{
-				type: "numberMax",
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.NumberMinArgument,
+			BuiltinArgumentExtractors.NumberMaxArgument,
+		],
 	})
 	public static ApiQueryParamNumber(a?: any): ParameterDecorator {
 		return this.ApiQueryParam(a);
@@ -78,18 +59,22 @@ abstract class QueryParams {
 	 */
 	public static ApiQueryParam(paramName?: string): ParameterDecorator;
 	public static ApiQueryParam(paramName: string, validator?: ApiParamValidationFunction): ParameterDecorator;
-	@QueryParamDecorator({
-		allowableTypes: ['string', 'number', 'date', 'boolean'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Query,
+		parameterTypeRestrictions: [
+			InternalTypeUtil.TypeNumber,
+			InternalTypeUtil.TypeString,
+			InternalTypeUtil.TypeDate,
+			InternalTypeUtil.TypeBoolean,
+		],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "validationFunc",
-				optional: true,
-			},
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.ValidationFunctionArgument,
+		],
 	})
 	public static ApiQueryParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
@@ -105,6 +90,8 @@ abstract class QueryParams {
 		}
 	}
 }
+
+export const GetQueryParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(QueryParams);
 
 export const ApiQueryParam = QueryParams.ApiQueryParam;
 export const ApiQueryParamString = QueryParams.ApiQueryParamString;

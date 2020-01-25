@@ -26,6 +26,7 @@ export class HandlerMethodModifierDecorator extends Decorator<ts.MethodDeclarati
 			children: [],
 			parent,
 			location: this.getNodeLocation(node),
+			metadata: argumentResult.metadata,
 		};
 		
 		return {

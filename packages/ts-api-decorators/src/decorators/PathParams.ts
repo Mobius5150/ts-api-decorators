@@ -1,25 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
-import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
+import { ApiParamValidationFunction, __ApiParamArgs, InternalTypeUtil } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
-
-export const pathParamDecoratorKey = 'pathParamDecorator';
-
-export function PathParamDecorator(d: IParamDecoratorDefinition) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<any>
-	) => {
-		descriptor.writable = false;
-		descriptor.configurable = false;
-		Reflect.defineMetadata(pathParamDecoratorKey, d, target, propertyKey);
-	}
-}
-
-export function GetPathParamDecorator(param: string): IParamDecoratorDefinition {
-	return <IParamDecoratorDefinition>Reflect.getMetadata(pathParamDecoratorKey, PathParams, param);
-}
+import { HandlerMethodParameterDecorator } from "../transformer/HandlerMethodParameterDecorator";
+import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction } from "./DecoratorUtil";
+import { BuiltinMetadata } from "../transformer/TransformerMetadata";
+import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtractors";
+import { Api } from "./API";
 
 abstract class PathParams {
 	/**
@@ -27,18 +13,17 @@ abstract class PathParams {
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
 	public static ApiPathParamString(paramName?: string, stringValidationRegex?: RegExp);
-	@PathParamDecorator({
-		allowableTypes: ['string'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Path,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString  ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: 'regexp',
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.RegexpArgument,
+		],
 	})
 	public static ApiPathParamString(a?: any): ParameterDecorator {
 		return this.ApiPathParam(a);
@@ -51,22 +36,18 @@ abstract class PathParams {
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
 	public static ApiPathParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
-	@PathParamDecorator({
-		allowableTypes: ['number'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Path,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeNumber  ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "numberMin",
-				optional: true,
-			},
-			{
-				type: "numberMax",
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.NumberMinArgument,
+			BuiltinArgumentExtractors.NumberMaxArgument,
+		],
 	})
 	public static ApiPathParamNumber(a?: any): ParameterDecorator {
 		return this.ApiPathParam(a);
@@ -78,18 +59,22 @@ abstract class PathParams {
 	 */
 	public static ApiPathParam(paramName?: string): ParameterDecorator;
 	public static ApiPathParam(paramName: string, validator?: ApiParamValidationFunction): ParameterDecorator;
-	@PathParamDecorator({
-		allowableTypes: ['string', 'number', 'date', 'boolean'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Path,
+		parameterTypeRestrictions: [
+			InternalTypeUtil.TypeNumber,
+			InternalTypeUtil.TypeString,
+			InternalTypeUtil.TypeDate,
+			InternalTypeUtil.TypeBoolean,
+		],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "validationFunc",
-				optional: true,
-			},
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.ValidationFunctionArgument,
+		],
 	})
 	public static ApiPathParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
@@ -105,6 +90,8 @@ abstract class PathParams {
 		}
 	}
 }
+
+export const GetPathParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(PathParams);
 
 export const ApiPathParam = PathParams.ApiPathParam;
 export const ApiPathParamString = PathParams.ApiPathParamString;

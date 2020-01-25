@@ -1,25 +1,11 @@
 import { ManagedApiInternal } from "../apiManagement";
-import { ApiParamValidationFunction, __ApiParamArgs } from "../apiManagement/InternalTypes";
+import { ApiParamValidationFunction, __ApiParamArgs, InternalTypeUtil } from "../apiManagement/InternalTypes";
 import { ApiParamType } from "../apiManagement/ApiDefinition";
-import { IParamDecoratorDefinition } from "../transformer/ParamDecoratorTransformer";
-
-export const headerParamDecoratorKey = 'headerParamDecorator';
-
-export function HeaderParamDecorator(d: IParamDecoratorDefinition) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<any>
-	) => {
-		descriptor.writable = false;
-		descriptor.configurable = false;
-		Reflect.defineMetadata(headerParamDecoratorKey, d, target, propertyKey);
-	}
-}
-
-export function GetHeaderParamDecorator(param: string): IParamDecoratorDefinition {
-	return <IParamDecoratorDefinition>Reflect.getMetadata(headerParamDecoratorKey, HeaderParams, param);
-}
+import { DecoratorParentNameDependency, ApiDecorator, ApiMethodDecoratorGetFunction } from "./DecoratorUtil";
+import { Api } from "./API";
+import { BuiltinMetadata } from "../transformer/TransformerMetadata";
+import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtractors";
+import { HandlerMethodParameterDecorator } from "../transformer/HandlerMethodParameterDecorator";
 
 abstract class HeaderParams {
 	/**
@@ -27,18 +13,17 @@ abstract class HeaderParams {
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
 	public static ApiHeaderParamString(paramName?: string, stringValidationRegex?: RegExp)
-	@HeaderParamDecorator({
-		allowableTypes: ['string'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Header,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: 'regexp',
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.RegexpArgument,
+		],
 	})
 	public static ApiHeaderParamString(a?: any): ParameterDecorator {
 		return this.ApiHeaderParam(a);
@@ -51,22 +36,18 @@ abstract class HeaderParams {
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
 	public static ApiHeaderParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
-	@HeaderParamDecorator({
-		allowableTypes: ['number'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Header,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeNumber ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "numberMin",
-				optional: true,
-			},
-			{
-				type: "numberMax",
-				optional: true,
-			}
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.NumberMinArgument,
+			BuiltinArgumentExtractors.NumberMaxArgument,
+		],
 	})
 	public static ApiHeaderParamNumber(a?: any): ParameterDecorator {
 		return this.ApiHeaderParam(a);
@@ -78,18 +59,21 @@ abstract class HeaderParams {
 	 */
 	public static ApiHeaderParam(paramName?: string): ParameterDecorator;
 	public static ApiHeaderParam(paramName?: string, validator?: ApiParamValidationFunction): ParameterDecorator;
-	@HeaderParamDecorator({
-		allowableTypes: ['string', 'number', 'date'],
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Header,
+		parameterTypeRestrictions: [
+			InternalTypeUtil.TypeNumber,
+			InternalTypeUtil.TypeString,
+			InternalTypeUtil.TypeDate,
+		],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
-			{
-				type: "paramName",
-				optional: true,
-			},
-			{
-				type: "validationFunc",
-				optional: true,
-			},
-		]
+			BuiltinArgumentExtractors.OptionalNameArgument,
+			BuiltinArgumentExtractors.ValidationFunctionArgument,
+		],
 	})
 	public static ApiHeaderParam(a?: any): ParameterDecorator {
 		const args = <__ApiParamArgs>a;
@@ -105,6 +89,8 @@ abstract class HeaderParams {
 		}
 	}
 }
+
+export const GetHeaderParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(HeaderParams);
 
 export const ApiHeaderParam = HeaderParams.ApiHeaderParam;
 export const ApiHeaderParamString = HeaderParams.ApiHeaderParamString;

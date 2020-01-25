@@ -1,5 +1,5 @@
-import { ApiGetMethodReturnType, ManagedApiInternal } from "ts-api-decorators";
-import { ApiMethodReturnType, ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
+import { ManagedApiInternal } from "ts-api-decorators";
+import { ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
 import { ApplicationRequestHandler } from "express-serve-static-core";
 import { __ApiParamArgs } from "ts-api-decorators/dist/apiManagement/InternalTypes";
 

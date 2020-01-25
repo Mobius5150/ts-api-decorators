@@ -1,9 +1,9 @@
-import { IDecorator } from "../transformer/treeTransformer/Decorator";
-import { AbstractClassConstructor } from "./API";
-import { DecoratorDependencyLocation, IDecoratorDependency, DecoratorDependencyType } from "../transformer/treeTransformer/DecoratorDefinition";
+import { IDecorator } from "../transformer/Decorator";
+import { AbstractClassConstructor,  ClassConstructor1 } from "../Util/ClassConstructors";
+import { DecoratorDependencyLocation, IDecoratorDependency, DecoratorDependencyType, IDecoratorDefinitionBase } from "../transformer/DecoratorDefinition";
 
 const apiDecoratorKey = 'apidecorator';
-export function ApiDecorator<D extends IDecorator>(d: D) {
+export function ApiDecorator<Def extends Omit<IDecoratorDefinitionBase, 'decoratorType'>, Dec extends IDecorator = IDecorator>(c: ClassConstructor1<Def, Dec>, d: Omit<Def, 'magicFunctionName'>) {
 	return (
 		target: object,
 		propertyKey: string,
@@ -11,7 +11,10 @@ export function ApiDecorator<D extends IDecorator>(d: D) {
 	) => {
 		descriptor.writable = false;
 		descriptor.configurable = false;
-		Reflect.defineMetadata(apiDecoratorKey, d, target, propertyKey);
+		Reflect.defineMetadata(apiDecoratorKey, new c(<Def>{
+			...d,
+			magicFunctionName: propertyKey,
+		}), target, propertyKey);
 	}
 }
 

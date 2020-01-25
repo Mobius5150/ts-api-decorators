@@ -1,14 +1,12 @@
 import * as ts from 'typescript';
-import { InternalTypeDefinition } from '../../apiManagement/InternalTypes';
-import { IExtractedApiDefinition } from '../ExtractionTransformer';
-import { IHandlerTreeNodeParameter, IHandlerTreeNode } from './HandlerTree';
-import { ITransformerMetadata, IMetadataDescriptor } from '../TransformerMetadata';
+import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
+import { ITransformerMetadata, IMetadataDescriptor } from './TransformerMetadata';
 import { ITransformContext } from './ITransformContext';
-import { ApiParamType } from '../../apiManagement/ApiDefinition';
+import { ApiParamType } from '../apiManagement/ApiDefinition';
 
 export enum DecoratorType {
 	Class,
-	ClassMember,
+	ClassProperty,
 	Method,
 	MethodParameter,
 	Constructor,
@@ -16,14 +14,26 @@ export enum DecoratorType {
 }
 
 // Decorator type definition
-export interface IDecoratorDefinitionBase {
+export interface IDecorationFunctionTransformInfoBase {
 	magicFunctionName: string;
 	indexTs: string;
 	provider: string;
+}
+
+export interface IDecoratorDefinitionBase extends IDecorationFunctionTransformInfoBase {
 	decoratorType: DecoratorType;
 	dependencies: IDecoratorDependency[];
 	arguments: IDecoratorArgument[];
 	metadata?: ITransformerMetadata[];
+	
+	/**
+	 * If set, all arguments will be transformed to object keys
+	 */
+	transformArgumentsToObject?: IMetadataDescriptor[] | boolean;
+}
+
+export interface IDecoratorMagicFuncAssignment {
+	assignToMagicFuncName(name: string): void;
 }
 
 export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase {
@@ -39,15 +49,10 @@ export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase 
 	 * If set, parameter type must match at least one of the type restrictions
 	 */
 	parameterTypeRestrictions?: InternalTypeDefinition[];
-	
-	/**
-	 * If set, all arguments will be transformed to object keys
-	 */
-	transformArgumentsToObject?: IMetadataDescriptor[] | boolean;
 }
 
-export interface IClassMemberDecoratorDefinition extends IDecoratorDefinitionBase {
-	decoratorType: DecoratorType.ClassMember | DecoratorType.ConstructorParameter;
+export interface IClassPropertyDecoratorDefinition extends IDecoratorDefinitionBase {
+	decoratorType: DecoratorType.ClassProperty | DecoratorType.ConstructorParameter;
 
 	/**
 	 * If set, parameter type must match at least one of the type restrictions
@@ -75,7 +80,7 @@ export interface IConstructorDecoratorDefinition extends IDecoratorDefinitionBas
 export type IDecoratorDefinition =
 	IParameterDecoratorDefinition
 	| IConstructorDecoratorDefinition
-	| IClassMemberDecoratorDefinition
+	| IClassPropertyDecoratorDefinition
 	| IClassDecoratorDefinition
 	| IMethodDecoratorDefinition
 ;

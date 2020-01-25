@@ -2,19 +2,7 @@ import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from '../apiManagement/InternalTypes';
 import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId } from './TransformerUtil';
-import { ExpressionWrapper } from './DecoratorTransformer';
-
-interface ITypeInfo {
-	schema: IJsonSchemaWithRefs;
-	type?: ts.Type;
-	reffedName?: string;
-	name: string;
-}
-
-interface IFunctionDefinition {
-	arguments: InternalTypeDefinition[];
-	returnType: InternalTypeDefinition | 'void';
-}
+import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
 	private static readonly ReferencePreamble = '#/definitions/';

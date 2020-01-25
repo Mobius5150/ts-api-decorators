@@ -1,11 +1,11 @@
 import * as ts from 'typescript';import { ITransformerMetadata } from "./TransformerMetadata";
-import { IExtractedApiDefinition } from "./ExtractionTransformer";
-import { IDecorationFunctionTransformInfoBase } from "./DecoratorTransformer";
+import { IDecorationFunctionTransformInfoBase } from './DecoratorDefinition';
 import { IApiParamDefinition } from "../apiManagement/ApiDefinition";
 import { CollectionUtil } from '../Util/CollectionUtil';
+import { IHandlerTreeNodeHandler } from './HandlerTree';
 
-export type ApiMethodMetadataGeneratorFunc = (method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration) => ITransformerMetadata[];
-export type ApiMethodParamMetadataGeneratorFunc = (param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration) => ITransformerMetadata[];
+export type ApiMethodMetadataGeneratorFunc = (method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration) => ITransformerMetadata[];
+export type ApiMethodParamMetadataGeneratorFunc = (param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration) => ITransformerMetadata[];
 
 export interface IMetadataManager {
     addApiMethodMetadataGenerator(generator: ApiMethodMetadataGeneratorFunc): void;
@@ -22,9 +22,9 @@ export interface IMetadataManager {
 }
 
 export interface IMetadataResolver {
-    getApiMetadataForApiMethod(method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase): ITransformerMetadata[];
+    getApiMetadataForApiMethod(method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase): ITransformerMetadata[];
     getApiMethodMetadataDecorators(): IDecorationFunctionTransformInfoBase[];
-    getApiMetadataForApiMethodParam(param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase): ITransformerMetadata[];
+    getApiMetadataForApiMethodParam(param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase): ITransformerMetadata[];
     getApiMethodParamMetadataDecorators(): IDecorationFunctionTransformInfoBase[];
 }
 
@@ -70,7 +70,7 @@ export class MetadataManager implements IMetadataManager, IMetadataResolver {
             .filter(k => k !== null);
     }
 
-    public getApiMetadataForApiMethod(method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase | null): ITransformerMetadata[] {
+    public getApiMetadataForApiMethod(method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase | null): ITransformerMetadata[] {
         const set = CollectionUtil.getSet(this.apiMethodGenerators, decorator, this.isMatchingDecorator);
         if (!set) {
             return [];
@@ -86,7 +86,7 @@ export class MetadataManager implements IMetadataManager, IMetadataResolver {
             }, []);
     }
 
-    public getApiMetadataForApiMethodParam(param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase | null): ITransformerMetadata[] {
+    public getApiMetadataForApiMethodParam(param: IApiParamDefinition, paramNode: ts.ParameterDeclaration, method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration, decorator: IDecorationFunctionTransformInfoBase | null): ITransformerMetadata[] {
         const set = CollectionUtil.getSet(this.apiMethodParamGenerators, decorator, this.isMatchingDecorator);
         if (!set) {
             return [];
@@ -109,6 +109,6 @@ export class MetadataManager implements IMetadataManager, IMetadataResolver {
             return false;
         }
 
-        return a.magicFunctionName === b.magicFunctionName && a.indexTs === b.indexTs;
+        return a.magicFunctionName === b.magicFunctionName && a.indexTs === b.indexTs && a.provider === b.provider;
     }
 }

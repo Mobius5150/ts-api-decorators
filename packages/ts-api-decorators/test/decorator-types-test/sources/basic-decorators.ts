@@ -1,5 +1,4 @@
-import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber } from "../../../src";
-import { ApiQueryParam } from "../../../src/decorators/QueryParams";
+import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber, ApiQueryParam } from "../../../src";
 
 const validator = (name: string, value: string) => {};
 

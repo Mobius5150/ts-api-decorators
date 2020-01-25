@@ -1,22 +1,29 @@
 import * as ts from 'typescript';
 import * as path from 'path';
 import * as tjs from 'typescript-json-schema';
-import { TypeSerializer } from '../TypeSerializer';
-import { DecoratorResolver } from './DecoratorResolver';
+import { TypeSerializer } from './TypeSerializer';
 import { DecoratorNodeType, IDecorator } from './Decorator';
-import { IHandlerTreeNode } from './HandlerTree';
+import { IHandlerTreeNode, IHandlerTreeNodeRoot, HandlerTreeNodeType } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
-import { IMetadataResolver } from '../MetadataManager';
+import { IMetadataResolver } from './MetadataManager';
+import { IDecoratorResolver } from './IDecoratorResolver';
+import { ITransformer } from './ITransformer';
 
-export abstract class TreeTransformer {
+export class TreeTransformer implements ITransformer {
 	protected readonly typeChecker: ts.TypeChecker;
 	protected readonly typeSerializer: TypeSerializer;
 	protected readonly transformContext: ITransformContext;
 
+	private readonly rootNode: IHandlerTreeNodeRoot = {
+		type: HandlerTreeNodeType.Root,
+		children: [],
+		metadata: [],
+	};
+
 	constructor(
         protected readonly program: ts.Program,
         protected readonly generator: tjs.JsonSchemaGenerator,
-		protected readonly decorators: DecoratorResolver,
+		protected readonly decorators: IDecoratorResolver,
 		protected readonly applyTransformation: boolean,
 		metadataManager: IMetadataResolver,
     ) {
@@ -29,21 +36,27 @@ export abstract class TreeTransformer {
 			typeChecker: this.typeChecker,
 			typeSerializer: this.typeSerializer,
 		};
-    }
+	}
+	
+	public get root(): IHandlerTreeNodeRoot {
+		return this.rootNode;
+	}
 
+	public visitNode(node: ts.SourceFile, context: ts.TransformationContext): ts.SourceFile;
+	public visitNode(node: ts.Node, context: ts.TransformationContext): ts.Node;
     public visitNode(node: ts.Node, context: ts.TransformationContext): ts.Node {
 		if (this.isPotentialClassContainer(node)) {
 			return this.visitNodeChildren(node, context);
 		}
 
-		return this.visitNodeInTreeContext(node, context, undefined);
+		return this.visitNodeInTreeContext(node, context, this.rootNode);
 	}
 
 	private visitNodeChildren(node, context): ts.Node {
 		return ts.visitEachChild(node, node => this.visitNode(node, context), context);
 	}
 	
-	private visitNodeInTreeContext(node: ts.Node, context: ts.TransformationContext, parent?: IHandlerTreeNode): ts.Node {
+	private visitNodeInTreeContext(node: ts.Node, context: ts.TransformationContext, parent: IHandlerTreeNode): ts.Node {
 		const nodeType = this.getTypeForNode(node);
 		if (!nodeType || !this.nodeHasDecorators(node)) {
 			if (parent) {
@@ -60,9 +73,7 @@ export abstract class TreeTransformer {
 			for (const definition of decorators) {
 				if (this.isArgumentDecoratorCallExpression(nodeDecorators[i].expression, definition)) {
 					const treeNode = definition.getDecoratorTreeElement(parent, node, nodeDecorators[i], this.transformContext);
-					if (parent) {
-						parent.children.push(treeNode.decoratorTreeNode);
-					}
+					parent.children.push(treeNode.decoratorTreeNode);
 
 					if (treeNode.transformedDecorator) {
 						nodeDecorators[i] = treeNode.transformedDecorator;
@@ -93,16 +104,18 @@ export abstract class TreeTransformer {
 	 * @param node 
 	 */
 	private isPotentialClassContainer(node: ts.Node) {
-		return ts.isSourceFile(node) || ts.isModuleBlock(node) || ts.isModuleDeclaration(node);
+		return ts.isSourceFile(node) || ts.isModuleBlock(node) || ts.isModuleDeclaration(node) || ts.isBlock(node);
 	}
 
 	public getTypeForNode(node: ts.Node): DecoratorNodeType {
 		if (ts.isMethodDeclaration(node)) {
 			return DecoratorNodeType.Method;
-		} else if (ts.isClassDeclaration(node)) {
-			return DecoratorNodeType.Class;
 		} else if (ts.isParameter(node)) {
 			return DecoratorNodeType.Parameter;
+		} else if (ts.isPropertyDeclaration(node)) {
+			return DecoratorNodeType.ClassProperty;
+		} else if (ts.isClassDeclaration(node)) {
+			return DecoratorNodeType.Class;
 		}
 	}
 
@@ -124,7 +137,6 @@ export abstract class TreeTransformer {
 			return false;
 		}
 		
-		const sourceFile = path.join(declaration.getSourceFile().fileName);
-		return sourceFile.endsWith(definition.indexTs + '.ts') || sourceFile.endsWith(definition.indexTs + '.d.ts');
+		return definition.isSourceFileMatch(declaration.getSourceFile());
 	}
 }

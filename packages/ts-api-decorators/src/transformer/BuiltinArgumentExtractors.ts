@@ -1,15 +1,37 @@
 import * as ts from 'typescript';
 import { IDecoratorArgument } from "./DecoratorDefinition";
-import { InternalTypeUtil, InternalTypeDefinition } from "../../apiManagement/InternalTypes";
-import { BuiltinMetadata } from "../TransformerMetadata";
+import { InternalTypeUtil, InternalTypeDefinition } from "../apiManagement/InternalTypes";
+import { BuiltinMetadata } from "./TransformerMetadata";
 import { ITransformContext } from './ITransformContext';
-import { ExpressionWrapper } from '../DecoratorTransformer';
+import { ExpressionWrapper } from './ExpressionWrapper';
 
 export abstract class BuiltinArgumentExtractors {
 	public static readonly RouteArgument: IDecoratorArgument = {
 		type: InternalTypeUtil.TypeString,
 		metadataExtractor: (args) => ({
 			...BuiltinMetadata.Route,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly NameArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeString,
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.Name,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly OptionalNameArgument: IDecoratorArgument = {
+		...BuiltinArgumentExtractors.NameArgument,
+		optional: true,
+	};
+
+	public static readonly DependencyScopeArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeString,
+		optional: true,
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.DependencyScope,
 			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
 		}),
 	};

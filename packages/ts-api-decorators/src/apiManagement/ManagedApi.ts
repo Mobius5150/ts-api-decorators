@@ -6,10 +6,10 @@ import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
 import { Validator as JsonSchemaValidator } from 'jsonschema';
-import { ClassConstructor } from "..";
 import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
 import * as p2r from 'path-to-regexp';
 import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
+import { ClassConstructor } from "../Util/ClassConstructors";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };

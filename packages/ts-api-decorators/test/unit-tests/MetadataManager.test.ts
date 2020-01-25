@@ -2,17 +2,28 @@ import 'mocha';
 import { expect, assert } from 'chai';
 import * as sinon from 'sinon';
 import { MetadataManager } from '../../src/transformer/MetadataManager';
-import { ITransformerMetadata, IMetadataType } from '../../src/transformer/TransformerMetadata';
-import { IExtractedApiDefinition } from '../../src/transformer/ExtractionTransformer';
+import { ITransformerMetadata, IMetadataType, BuiltinMetadata } from '../../src/transformer/TransformerMetadata';
 import { ApiMethod } from '../../src/apiManagement/ApiDefinition';
-import { IDecorationFunctionTransformInfoBase } from '../../src/transformer/DecoratorTransformer';
+import { IDecorationFunctionTransformInfoBase } from '../../src/transformer/DecoratorDefinition';
+import { IHandlerTreeNodeHandler, HandlerTreeNodeType } from '../../src/transformer/HandlerTree';
 
 describe('MetadataManager', () => {
-    const method: IExtractedApiDefinition = {
-        file: 'file.ts',
-        handlerKey: 'method',
-        method: ApiMethod.GET,
-        parameters: [],
+    const method: IHandlerTreeNodeHandler = {
+        apiMethod: ApiMethod.GET,
+        children: [],
+        decorator: null,
+        location: {
+            file: 'file.ts',
+            character: 0,
+            line: 0,
+            position: 0,
+        },
+        metadata: [],
+        type: HandlerTreeNodeType.Handler,
+        // file: 'file.ts',
+        // handlerKey: 'method',
+        // method: ApiMethod.GET,
+        // parameters: [],
         route: '/method',
     };
 
@@ -43,11 +54,13 @@ describe('MetadataManager', () => {
         const callDecorator: IDecorationFunctionTransformInfoBase = {
             indexTs: 'index.ts',
             magicFunctionName: 'magicFunc',
+            provider: BuiltinMetadata.BuiltinComponent,
         };
 
         const noCallDecorator: IDecorationFunctionTransformInfoBase = {
             indexTs: 'index.ts',
             magicFunctionName: 'magicFunc2',
+            provider: BuiltinMetadata.BuiltinComponent,
         };
 
         const callGeneratorFunc = sinon.spy((method, methodNode) => [testObj]);

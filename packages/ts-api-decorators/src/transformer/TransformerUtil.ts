@@ -1,10 +1,5 @@
 import * as ts from 'typescript';
 import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
-import { ParamDecoratorTransformerInfo } from './ParamDecoratorTransformer';
-
-export interface ITransformerArguments {
-    paramDecorators?: ParamDecoratorTransformerInfo[];
-}
 
 export interface SymbolWithId extends ts.Symbol {
     id: number;
@@ -27,7 +22,15 @@ export interface ArrayType extends ts.Type {
 }
 
 export interface WithJsDoc extends ts.Node {
-   jsDoc: ts.JSDoc[];
+    jsDoc: ts.JSDoc[];
+}
+
+export interface NamedNode extends ts.Node {
+    name: ts.PropertyName;
+}
+
+export function isNamedNode(n: ts.Node & Partial<NamedNode>): n is NamedNode {
+    return typeof n.name !== 'undefined';
 }
 
 export function isSymbolWithId(s: ts.Symbol & Partial<SymbolWithId>): s is SymbolWithId {

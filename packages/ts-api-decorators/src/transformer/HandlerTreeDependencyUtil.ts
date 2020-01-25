@@ -1,5 +1,5 @@
 import { IDecoratorDependency, DecoratorDependencyLocation, DecoratorDependencyType } from "./DecoratorDefinition";
-import { IHandlerTreeNode } from "./HandlerTree";
+import { IHandlerTreeNode, isDecoratorNode } from "./HandlerTree";
 
 export abstract class HandlerTreeDependencyUtil {
 	public static CheckParentNodeDependencySatisfied(dependency: IDecoratorDependency, parent?: IHandlerTreeNode): boolean {
@@ -21,6 +21,10 @@ export abstract class HandlerTreeDependencyUtil {
 	}
 
 	private static CheckDependency(dependency: IDecoratorDependency, node: IHandlerTreeNode) {
+		if (!isDecoratorNode(node)) {
+			return false;
+		}
+		
 		switch (dependency.type) {
 			case DecoratorDependencyType.NameDependency:
 				return node.decorator.magicFunctionName === dependency.dependency;

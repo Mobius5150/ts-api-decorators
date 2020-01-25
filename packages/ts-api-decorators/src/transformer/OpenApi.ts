@@ -1,8 +1,9 @@
 import * as ts from 'typescript';
 import { IMetadataManager } from "./MetadataManager";
-import { IExtractedApiDefinition, IExtractedTag } from './ExtractionTransformer';
 import { ITransformerMetadata, IMetadataType } from './TransformerMetadata';
 import { isNodeWithJsDoc } from './TransformerUtil';
+import { IExtractedTag } from './IExtractedTag';
+import { IHandlerTreeNodeHandler } from './HandlerTree';
 
 export const enum OpenApiMetadataType {
     Summary = 'summary',
@@ -20,7 +21,7 @@ export class OpenApiMetadataExtractors {
         mm.addApiMethodMetadataGenerator(this.ExtractJsDocMetadata);
     }
 
-    public static ExtractJsDocMetadata(method: IExtractedApiDefinition, methodNode: ts.MethodDeclaration): ITransformerMetadata[] {
+    public static ExtractJsDocMetadata(method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration): ITransformerMetadata[] {
         const metadata: ITransformerMetadata[] = [];
         if (isNodeWithJsDoc(methodNode) && methodNode.jsDoc.length > 0) {
             // Method description

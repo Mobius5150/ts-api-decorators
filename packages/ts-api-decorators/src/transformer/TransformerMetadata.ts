@@ -85,10 +85,22 @@ export abstract class BuiltinMetadata {
         };
     }
 
+    public static readonly Name: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'name',
+    }
+
     public static readonly Route: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,
         key: 'route',
+    }
+
+    public static readonly DependencyScope: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'dependencyScope',
     }
 
     public static readonly NumberMin: IMetadataDescriptor = {
@@ -119,5 +131,47 @@ export abstract class BuiltinMetadata {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,
         key: 'validationFunc',
+    }
+
+    public static readonly Typedef: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'typedef',
+    }
+
+    public static readonly Typeref: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'typeref',
+    }
+
+    public static readonly Optional: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'optional',
+    }
+
+    public static readonly Initializer: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'initializer',
+    }
+
+    public static readonly Description: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'description',
+    }
+
+    public static readonly ParameterIndex: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'parameterIndex',
+    }
+
+    public static readonly PropertyKey: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'propertyKey',
     }
 }

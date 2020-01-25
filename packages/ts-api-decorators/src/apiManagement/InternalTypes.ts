@@ -1,5 +1,5 @@
 import { IJsonSchema } from "openapi-types";
-import { ClassConstructor } from "../decorators";
+import { ClassConstructor } from "../Util/ClassConstructors";
 
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
@@ -101,6 +101,10 @@ export abstract class InternalTypeUtil {
 
 	public static readonly TypeDate: InternalDateTypeDefinition = {
 		type: 'date',
+	};
+
+	public static readonly TypeBoolean: IntrinsicTypeDefinition = {
+		type: 'boolean',
 	};
 
 	public static readonly TypeAnyObject: InternalObjectTypeDefinition = {

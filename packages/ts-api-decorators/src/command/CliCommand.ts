@@ -1,18 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ts from 'typescript';
-import transformer from '../transformer/transformers/extractionTransformer';
 import { TransformerFuncType, getDefaultCompilerOptions, parseTsConfig, compileSources } from '../Util/CompilationUtil';
 import { ParsedCommandLine } from 'typescript';
 import { PackageJson, getPackageJsonAuthor } from './CommandUtil';
-import { IExtractedApiDefinitionWithMetadata } from '../transformer/ExtractionTransformer';
 import { IProgramInfo } from './IProgramInfo';
 import { IParseOptions } from './ProgramOptions';
 import { ApiMethod } from '..';
+import transformer from '../transformer';
+import { IHandlerTreeNodeRoot, WalkTreeByType, isHandlerNode, IHandlerTreeNodeHandler } from '../transformer/HandlerTree';
 
 export interface IParseApiResult {
     compilationResult: { [path: string]: ts.TransformationResult<ts.Node> };
-    extractedApis: IExtractedApiDefinitionWithMetadata[];
+    tree: IHandlerTreeNodeRoot;
     programInfo: IProgramInfo;
     tsConfig?: ParsedCommandLine;
     tsConfigPath?: string;
@@ -21,7 +21,7 @@ export interface IParseApiResult {
 export abstract class CliCommand {
     private static readonly DEFAULT_TSCONFIG = 'tsconfig.json';
     private console: typeof console = console;
-    private extractedApis: IExtractedApiDefinitionWithMetadata[] = [];
+    private tree: IHandlerTreeNodeRoot;
 
     protected async parseApi(options: IParseOptions): Promise<IParseApiResult> {
         if (!fs.existsSync(options.rootDir)) {
@@ -34,7 +34,7 @@ export abstract class CliCommand {
 
         const transformers: TransformerFuncType[] = [
             program => transformer(program, {
-                onApiMethodExtracted: apiMethod => this.onApiMethodExtracted(apiMethod)
+                onTreeExtracted: (err, tree) => this.onTreeExtracted(tree)
             }),
         ]
         
@@ -74,9 +74,13 @@ export abstract class CliCommand {
             tsConfig,
             tsConfigPath,
             compilationResult,
-            extractedApis: this.extractedApis,
+            tree: this.tree,
             programInfo: this.loadApiInfo(options.apiInfo),
         };
+    }
+    
+    private onTreeExtracted(tree: IHandlerTreeNodeRoot): void {
+        throw new Error("Method not implemented.");
     }
 
     private loadTsConfig(tsConfig: string | undefined, resolvedRootDir: string): { tsConfig: ParsedCommandLine, path: string } {
@@ -153,10 +157,6 @@ export abstract class CliCommand {
         }
     }
 
-    private onApiMethodExtracted(method: IExtractedApiDefinitionWithMetadata) {
-        this.extractedApis.push(method);
-    }
-
     protected printExtractionSummary(options: IParseOptions, api: IParseApiResult): string {
         const Table = require('cli-table');
         const table = new Table({
@@ -164,17 +164,26 @@ export abstract class CliCommand {
         });
 
         const methodRoutes = new Map<ApiMethod, Set<string>>();
-        api.extractedApis.forEach(a => {
-            if (!methodRoutes.has(a.method)) {
-                methodRoutes.set(a.method, new Set<string>());
+        const apiIterator = WalkTreeByType(this.tree, isHandlerNode);
+        let current = apiIterator.next();
+        while (!current.done) {
+            const handler = current.value;
+            if (!handler) {
+                continue;
             }
 
-            const methodMath = methodRoutes.get(a.method);
-            if (!methodMath.has(a.route)) {
-                methodMath.add(a.route);
-                table.push([a.method, a.route, a.file]);
+            if (!methodRoutes.has(handler.apiMethod)) {
+                methodRoutes.set(handler.apiMethod, new Set<string>());
             }
-        });
+
+            const methodMath = methodRoutes.get(handler.apiMethod);
+            if (!methodMath.has(handler.route)) {
+                methodMath.add(handler.route);
+                table.push([handler.apiMethod, handler.route, handler.location.file]);
+            }
+
+            current = apiIterator.next();
+        };
 
         return table.toString();
     }

@@ -2,8 +2,8 @@ import * as commander from 'commander';
 import * as path from 'path';
 import { getPackageVersion } from './CommandUtil';
 import { CliCommand } from './CliCommand';
-import { ClassConstructor1 } from '..';
 import { ExtractCommand } from './ExtractCommand';
+import { ClassConstructor1 } from '../Util/ClassConstructors';
 
 export type CommandConstructor<T extends CliCommand = CliCommand> = ClassConstructor1<commander.Command, T>;
 
