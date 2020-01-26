@@ -1,6 +1,6 @@
-import { IExtractedApiDefinitionWithMetadata } from "ts-api-decorators/dist/transformer/ExtractionTransformer";
 import { IApiTransportTypeParamDefinition, ApiMethod } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
 import { Context } from "@azure/functions";
+import { IHandlerTreeNodeHandler } from "ts-api-decorators/dist/transformer/HandlerTree";
 
 export interface IBinding {
 	name: string;
@@ -28,10 +28,10 @@ export type Binding = IHttpTriggerBinding | IHttpOutputBinding;
 export interface IBindingTrigger<T extends IBinding = IBinding> {
 	triggerType: string;
 	triggerMethod: string;
-	getTriggerForRoutes(routes: IExtractedApiDefinitionWithMetadata[]): T[];
+	getTriggerForRoutes(routes: IHandlerTreeNodeHandler[]): T[];
 }
 
 export interface IBindingParam<T extends IBinding = IBinding> {
 	paramTypeId: string;
-	getBindingForParam(param: IApiTransportTypeParamDefinition, route: IExtractedApiDefinitionWithMetadata): T | undefined;
+	getBindingForParam(param: IApiTransportTypeParamDefinition, route: IHandlerTreeNodeHandler): T | undefined;
 }

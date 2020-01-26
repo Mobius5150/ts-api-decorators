@@ -1,8 +1,8 @@
-import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { IGenerator, OutputFileGeneratorFunc } from 'ts-api-decorators/dist/generators/IGenerator';
 import { FunctionFileGenerator } from '../FunctionFileGenerator';
 import { ApiParamType, IApiTransportTypeParamDefinition } from 'ts-api-decorators/dist/apiManagement/ApiDefinition';
 import { IBinding, IBindingParam, IBindingTrigger } from '../Bindings';
+import { IHandlerTreeNode, IHandlerTreeNodeHandler, isHandlerNode, WalkChildrenByType, isHandlerParameterNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
 
 export interface IFunctionJson {
 	bindings: IBinding[];
@@ -30,19 +30,19 @@ export class FunctionJsonFileGenerator implements IGenerator {
 		}
 	}
 
-	public forRoutes(routes: IExtractedApiDefinitionWithMetadata[]): OutputFileGeneratorFunc {
+	public forTree(routes: IHandlerTreeNode[]): OutputFileGeneratorFunc {
 		if (routes.length === 0) {
 			throw new Error('Azure Function Generator requires at least one route');
 		}
 
-		return async () => Buffer.from(await this.generateRouteStr(routes));
+		return async () => Buffer.from(await this.generateRouteStr(routes.filter(isHandlerNode)));
 	}
 
-	private async generateRouteStr(routes: IExtractedApiDefinitionWithMetadata[]): Promise<string> {
+	private async generateRouteStr(routes: IHandlerTreeNodeHandler[]): Promise<string> {
 		return JSON.stringify(this.generateRoutes(routes), undefined, FunctionJsonFileGenerator.JSON_PRETTY_PRINT_SPACE);
 	}
 	
-	private generateRoutes(routes: IExtractedApiDefinitionWithMetadata[]): IFunctionJson {
+	private generateRoutes(routes: IHandlerTreeNodeHandler[]): IFunctionJson {
 		// TODO: This whole method isn't smart enough to handle a route with multiple triggers (e.g. http and queue trigger)
 		const triggers = routes.map(r => this.getTriggerType(r));
 		const routePaths = new Set(routes.map(r => r.route));
@@ -65,16 +65,16 @@ export class FunctionJsonFileGenerator implements IGenerator {
 		};
 	}
 
-	private getParamBindings(routes: IExtractedApiDefinitionWithMetadata[]): IBinding[] {
+	private getParamBindings(routes: IHandlerTreeNodeHandler[]): IBinding[] {
 		const routeBindings = routes.map(route => {
 			const bindings: IBinding[] = [];
-			for (const param of route.parameters) {
-				if (param.type === ApiParamType.Transport) {
-					if (!this.params.has(param.transportTypeId)) {
-						throw new Error('Param binding not registered for param: ' + param.transportTypeId);
+			for (const param of WalkChildrenByType(route, isHandlerParameterNode)) {
+				if (param.paramDef.type === ApiParamType.Transport) {
+					if (!this.params.has(param.paramDef.transportTypeId)) {
+						throw new Error('Param binding not registered for param: ' + param.paramDef.transportTypeId);
 					}
 
-					const binding = this.params.get(param.transportTypeId).getBindingForParam(param, route);
+					const binding = this.params.get(param.paramDef.transportTypeId).getBindingForParam(param.paramDef, route);
 					if (binding) {
 						bindings.push(binding);
 					}
@@ -95,12 +95,12 @@ export class FunctionJsonFileGenerator implements IGenerator {
 		return bindings;
 	}
 
-	private getTriggerType(route: IExtractedApiDefinitionWithMetadata): IBindingTrigger {
-		if (!this.triggers.has(route.method)) {
+	private getTriggerType(route: IHandlerTreeNodeHandler): IBindingTrigger {
+		if (!this.triggers.has(route.apiMethod)) {
 			throw new Error('No trigger defined for route');
 		}
 
-		return this.triggers.get(route.method);
+		return this.triggers.get(route.apiMethod);
 	}
 
 	public getFilenameForFunction(functionName: string): string {

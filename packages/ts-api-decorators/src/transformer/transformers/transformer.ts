@@ -88,31 +88,31 @@ export function getDefaultDecoratorResolver() {
 
 export function registerDefaultDecorators(resolver: IDecoratorResolver) {
 	const decorators = [
-		GetApiDecorator(Api.name),
-		GetApiMethodDecorator(ApiGetMethod.name),
-		GetApiMethodDecorator(ApiPutMethod.name),
-		GetApiMethodDecorator(ApiPostMethod.name),
-		GetApiMethodDecorator(ApiDeleteMethod.name),
+		GetApiDecorator(Api),
+		GetApiMethodDecorator(ApiGetMethod),
+		GetApiMethodDecorator(ApiPutMethod),
+		GetApiMethodDecorator(ApiPostMethod),
+		GetApiMethodDecorator(ApiDeleteMethod),
 		
-        GetQueryParamDecorator(ApiQueryParam.name),
-        GetQueryParamDecorator(ApiQueryParamString.name),
-        GetQueryParamDecorator(ApiQueryParamNumber.name),
+        GetQueryParamDecorator(ApiQueryParam),
+        GetQueryParamDecorator(ApiQueryParamString),
+        GetQueryParamDecorator(ApiQueryParamNumber),
 
-        GetBodyParamDecorator(ApiBodyParam.name),
-        GetBodyParamDecorator(ApiBodyParamString.name),
-		GetBodyParamDecorator(ApiBodyParamNumber.name),
+        GetBodyParamDecorator(ApiBodyParam),
+        GetBodyParamDecorator(ApiBodyParamString),
+		GetBodyParamDecorator(ApiBodyParamNumber),
 
-		GetHeaderParamDecorator(ApiHeaderParam.name),
-		GetHeaderParamDecorator(ApiHeaderParamNumber.name),
-		GetHeaderParamDecorator(ApiHeaderParamString.name),
+		GetHeaderParamDecorator(ApiHeaderParam),
+		GetHeaderParamDecorator(ApiHeaderParamNumber),
+		GetHeaderParamDecorator(ApiHeaderParamString),
 
-		GetPathParamDecorator(ApiPathParam.name),
-		GetPathParamDecorator(ApiPathParamNumber.name),
-		GetPathParamDecorator(ApiPathParamString.name),
+		GetPathParamDecorator(ApiPathParam),
+		GetPathParamDecorator(ApiPathParamNumber),
+		GetPathParamDecorator(ApiPathParamString),
 
-		GetDependencyParamDecorator(ApiDependency.name),
-		GetDependencyParamDecorator(ApiInjectedDependency.name),
-		GetDependencyParamDecorator(ApiInjectedDependencyParam.name),
+		GetDependencyParamDecorator(ApiDependency),
+		GetDependencyParamDecorator(ApiInjectedDependency),
+		GetDependencyParamDecorator(ApiInjectedDependencyParam),
 	];
 	
 	for (const decorator of decorators) {

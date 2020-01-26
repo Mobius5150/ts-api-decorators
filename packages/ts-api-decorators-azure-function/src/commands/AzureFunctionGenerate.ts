@@ -7,11 +7,12 @@ import { IParseOptions } from 'ts-api-decorators/dist/command/ProgramOptions';
 import { FunctionFileGenerator } from '../generators/FunctionFileGenerator';
 import { FunctionJsonFileGenerator, IFunctionJsonFileGeneratorOpts } from '../generators/FunctionJsonFileGenerator';
 import { ApiMethod } from 'ts-api-decorators';
-import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { HttpBindingTriggerFactory } from '../generators/Bindings/HttpBinding';
 import { NArgReducer } from '../Util/NArgReducer';
 import { IBinding, IBindingTrigger } from '../generators/Bindings';
 import { FunctionHostFileGenerator } from '../generators/FunctionHostFileGenerator';
+import { IHandlerTreeNode, WalkChildrenByType, isHandlerNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { getMetadataValueByDescriptor, BuiltinMetadata } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -66,25 +67,18 @@ export class AzureFunctionGenerateCommand extends CliCommand {
         const functionJsonGen = new FunctionJsonFileGenerator(generatorOpts);
 
         // TODO: Actually check on the binding triggers and parameter types for each method
-        const reducer = new NArgReducer<[string, string, ...IBindingTrigger[]], IExtractedApiDefinitionWithMetadata>()
+        const reducer = new NArgReducer<[string, string, ...IBindingTrigger[]], IHandlerTreeNode>()
         const routeNames = new Set<string>();
-        for (const route of api.extractedApis) {
-            let methodType: string = route.method;
-
-            // TODO: Need a better way to get the method type
-            switch (route.method) {
-                case ApiMethod.GET:
-                case ApiMethod.PUT:
-                case ApiMethod.POST:
-                case ApiMethod.DELETE:
-                    methodType = 'http';
-                    break;
+        for (const route of WalkChildrenByType(api.tree, isHandlerNode)) {
+            let methodType: string = getMetadataValueByDescriptor(route.metadata, BuiltinMetadata.ApiMethodType);
+            if (!methodType) {
+                throw new Error(`Unknown http method type: ${methodType}`);
             }
-            
+
             reducer.add([methodType, route.route], route);
         }
 
-        outGenerator.addOutputFile(hostGen.getFilename(), hostGen.forRoutes(api.extractedApis));
+        outGenerator.addOutputFile(hostGen.getFilename(), hostGen.forTree([api.tree]));
         for (let [[method, route, ...bindings], routes] of reducer.getReduced()) {
             route = route.startsWith('/') ? route.substr(1) : route;
             const baseRouteName = `${route.replace(/[^-a-zA-Z0-9_]/g, '_').toString()}`;
@@ -95,8 +89,8 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             }
 
             routeNames.add(routeName);
-            outGenerator.addOutputFile(functionJsonGen.getFilenameForFunction(routeName), functionJsonGen.forRoutes(routes));
-            outGenerator.addOutputFile(functionGen.getFilenameForFunction(routeName), functionGen.forRoutes(routes))
+            outGenerator.addOutputFile(functionJsonGen.getFilenameForFunction(routeName), functionJsonGen.forTree(routes));
+            outGenerator.addOutputFile(functionGen.getFilenameForFunction(routeName), functionGen.forTree(routes))
         }
 
         const written = await outGenerator.generate();

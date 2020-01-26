@@ -44,7 +44,10 @@ abstract class ApiMethodDecorators {
 			BuiltinArgumentExtractors.RouteArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
-		metadata: [ BuiltinMetadata.ApiMethodWithValue(ApiMethod.GET) ],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.GET),
+			BuiltinMetadata.ApiMethodTypeHttp,
+		],
 	})
 	public static ApiGetMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition): ApiMethodDecoratorReturnType<T> {
 		return (
@@ -71,7 +74,10 @@ abstract class ApiMethodDecorators {
 			BuiltinArgumentExtractors.RouteArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
-		metadata: [ BuiltinMetadata.ApiMethodWithValue(ApiMethod.POST) ],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.POST),
+			BuiltinMetadata.ApiMethodTypeHttp,
+		],
 	})
 	public static ApiPostMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
 		return (
@@ -98,7 +104,10 @@ abstract class ApiMethodDecorators {
 			BuiltinArgumentExtractors.RouteArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
-		metadata: [ BuiltinMetadata.ApiMethodWithValue(ApiMethod.PUT) ],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.PUT),
+			BuiltinMetadata.ApiMethodTypeHttp,
+		],
 	})
 	public static ApiPutMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
 		return (
@@ -125,7 +134,10 @@ abstract class ApiMethodDecorators {
 			BuiltinArgumentExtractors.RouteArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
-		metadata: [ BuiltinMetadata.ApiMethodWithValue(ApiMethod.DELETE) ],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.DELETE),
+			BuiltinMetadata.ApiMethodTypeHttp,
+		],
 	})
 	public static ApiDeleteMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
 		return (

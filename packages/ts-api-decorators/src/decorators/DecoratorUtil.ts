@@ -19,8 +19,8 @@ export function ApiDecorator<Def extends Omit<IDecoratorDefinitionBase, 'decorat
 }
 
 export function ApiMethodDecoratorGetFunction<D extends IDecorator>(baseClass: AbstractClassConstructor) {
-	return (param: string): D => {
-		return <D>Reflect.getMetadata(apiDecoratorKey, baseClass, param);
+	return (param: string | Function): D => {
+		return <D>Reflect.getMetadata(apiDecoratorKey, baseClass, typeof param === 'function' ? param.name : param);
 	}
 }
 

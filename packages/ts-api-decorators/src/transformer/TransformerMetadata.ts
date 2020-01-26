@@ -85,6 +85,17 @@ export abstract class BuiltinMetadata {
         };
     }
 
+    public static readonly ApiMethodType: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'apiMethodType',
+    }
+
+    public static readonly ApiMethodTypeHttp: ITransformerMetadata = {
+        ...BuiltinMetadata.ApiMethodType,
+        value: 'http',
+    }
+
     public static readonly Name: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,

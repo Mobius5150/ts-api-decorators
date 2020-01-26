@@ -1,11 +1,10 @@
-import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { IGenerator, OutputFileGeneratorFunc } from 'ts-api-decorators/dist/generators/IGenerator';
 import { MustacheFileGenerator } from 'ts-api-decorators/dist/generators/MustacheFileGenerator';
 import { GeneratorUtil } from 'ts-api-decorators/dist/Util/GeneratorUtil';
 import { ParsedCommandLine } from 'typescript';
-import * as stripDirs from 'strip-dirs';
-import * as path from 'path';
 import { IBindingTrigger, IBindingParam } from '../Bindings';
+import { IHandlerTreeNode, isHandlerNode, IHandlerTreeNodeHandler } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import * as path from 'path';
 
 export interface IFunctionFileGeneratorOpts {
 	tsConfig?: ParsedCommandLine;
@@ -36,13 +35,26 @@ export class FunctionFileGenerator implements IGenerator {
 		}
 	}
 
-	public forRoutes(routes: IExtractedApiDefinitionWithMetadata[]): OutputFileGeneratorFunc {
+	public forTree(routes: IHandlerTreeNode[]): OutputFileGeneratorFunc {
+		const handlerNodes = routes.filter(isHandlerNode);
 		return (p) => this.mustacheGenerator.generate({
-			scriptFiles: Array.from(new Set(routes.map(r => r.file))).map(f => this.getScriptFilePathGenerator(p, f)),
-			triggerType: this.getTriggerTypeForRoutes(routes).triggerType,
-			route: this.getRoute(routes),
-			methods: routes.map(route => route.method),
+			scriptFiles: this.getSourceFilesForRoutes(handlerNodes, p),
+			triggerType: this.getTriggerTypeForRoutes(handlerNodes).triggerType,
+			route: this.getRoute(handlerNodes),
+			methods: handlerNodes.map(route => route.apiMethod),
 		});
+	}
+
+	getSourceFilesForRoutes(routes: IHandlerTreeNodeHandler[], p: string): string[] {
+		const routeArray = new Set<string>();
+		for (const route of routes) {
+			const scriptPath = this.getScriptFilePathGenerator(p, route.location.file);
+			if (!routeArray.has(scriptPath)) {
+				routeArray.add(scriptPath);
+			}
+		}
+
+		return Array.from(routeArray);
 	}
 
 	private getScriptFilePathGenerator(p: string, routeFile: string) {
@@ -60,7 +72,7 @@ export class FunctionFileGenerator implements IGenerator {
 		return `${functionName}/${FunctionFileGenerator.FILE_NAME}`;
 	}
 
-	private getRoute(routes: IExtractedApiDefinitionWithMetadata[]) {
+	private getRoute(routes: IHandlerTreeNodeHandler[]) {
 		if (routes.length === 0) {
 			throw new Error('Must have at least one route');
 		}
@@ -75,7 +87,7 @@ export class FunctionFileGenerator implements IGenerator {
 		return route.route;
 	}
 
-	private getTriggerTypeForRoutes(routes: IExtractedApiDefinitionWithMetadata[]): IBindingTrigger {
+	private getTriggerTypeForRoutes(routes: IHandlerTreeNodeHandler[]): IBindingTrigger {
 		if (routes.length === 0) {
 			throw new Error('Must have at least one route');
 		}
@@ -90,11 +102,11 @@ export class FunctionFileGenerator implements IGenerator {
 		return trigger;
 	}
 
-	private getTriggerType(route: IExtractedApiDefinitionWithMetadata): IBindingTrigger {
-		if (!this.triggers.has(route.method)) {
+	private getTriggerType(route: IHandlerTreeNodeHandler): IBindingTrigger {
+		if (!this.triggers.has(route.apiMethod)) {
 			throw new Error('No trigger defined for route');
 		}
 
-		return this.triggers.get(route.method);
+		return this.triggers.get(route.apiMethod);
 	}
 }

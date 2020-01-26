@@ -7,7 +7,6 @@ import {
 	readStreamToStringUtilCb,
 	parseApiMimeType,
 	ApiStdHeaderName,
-	ClassConstructor,
 	ApiHeadersDict,
 	ApiParamsDict,
 	IApiInvocationParams

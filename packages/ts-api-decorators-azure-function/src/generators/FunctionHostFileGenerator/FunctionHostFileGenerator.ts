@@ -1,4 +1,3 @@
-import { IExtractedApiDefinitionWithMetadata } from 'ts-api-decorators/dist/transformer/ExtractionTransformer';
 import { IGenerator, OutputFileGeneratorFunc } from 'ts-api-decorators/dist/generators/IGenerator';
 import { FunctionFileGenerator } from '../FunctionFileGenerator';
 import { ApiParamType, IApiTransportTypeParamDefinition } from 'ts-api-decorators/dist/apiManagement/ApiDefinition';
@@ -6,6 +5,7 @@ import { IBinding, IBindingParam, IBindingTrigger } from '../Bindings';
 import { ParsedCommandLine } from 'typescript';
 import * as path from 'path';
 import { GeneratorUtil } from 'ts-api-decorators/dist/Util/GeneratorUtil';
+import { IHandlerTreeNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
 
 export interface IFunctionJson {
 	bindings: IBinding[];
@@ -44,7 +44,7 @@ export class FunctionHostFileGenerator implements IGenerator {
 		}
 	}
 
-	public forRoutes(routes: IExtractedApiDefinitionWithMetadata[]): OutputFileGeneratorFunc {
+	public forTree(routes: IHandlerTreeNode[]): OutputFileGeneratorFunc {
 		if (routes.length === 0) {
 			throw new Error('Azure Function Generator requires at least one route');
 		}
@@ -52,7 +52,7 @@ export class FunctionHostFileGenerator implements IGenerator {
 		return async (currentFile) => Buffer.from(await this.generateHostJson(currentFile, routes));
 	}
 
-	private generateHostJson(currentFile: string, routes: IExtractedApiDefinitionWithMetadata[]): string {
+	private generateHostJson(currentFile: string, routes: IHandlerTreeNode[]): string {
 		const hostfile: IFunctionHostFile = {
 			version: FunctionHostFileGenerator.DEFAULT_FUNCTIONS_VERSION,
 		};

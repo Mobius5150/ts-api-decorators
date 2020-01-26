@@ -18,7 +18,7 @@ export class HttpBindingTriggerFactory {
 					direction: 'in',
 					name: AzureFunctionParams.TransportTypeRequestParam,
 					route: HttpBindingTriggerFactory.RewriteRouteForAzureFunction(routes[0].route),
-					methods: routes.map(r => r.method.toLowerCase()),
+					methods: routes.map(r => r.apiMethod.toLowerCase()),
 					// TODO: authLevel
 				},
 
