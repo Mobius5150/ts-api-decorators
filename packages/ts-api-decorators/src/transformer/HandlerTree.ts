@@ -116,8 +116,8 @@ export function* WalkTree(node: IHandlerTreeNode): Generator<IHandlerTreeNode, v
  */
 export function* WalkTreeByType<T extends any>(node: IHandlerTreeNode, checkFunc?: (node) => node is T): Generator<T, void, void> {
 	for (const child of node.children) {
-		if (!checkFunc || checkFunc(node)) {
-			yield <T>node;
+		if (!checkFunc || checkFunc(child)) {
+			yield <T>child;
 		}
 
 		yield * WalkTreeByType<T>(child, checkFunc);
@@ -131,8 +131,8 @@ export function* WalkTreeByType<T extends any>(node: IHandlerTreeNode, checkFunc
  */
 export function* WalkChildrenByType<T extends any>(node: IHandlerTreeNode, checkFunc?: (node) => node is T): Generator<T, void, void> {
 	for (const child of node.children) {
-		if (!checkFunc || checkFunc(node)) {
-			yield <T>node;
+		if (!checkFunc || checkFunc(child)) {
+			yield <T>child;
 		}
 	}
 }

@@ -7,7 +7,7 @@ import { PackageJson, getPackageJsonAuthor } from './CommandUtil';
 import { IProgramInfo } from './IProgramInfo';
 import { IParseOptions } from './ProgramOptions';
 import { ApiMethod } from '..';
-import transformer from '../transformer';
+import transformer, { ITransformerArguments } from '../transformer';
 import { IHandlerTreeNodeRoot, WalkTreeByType, isHandlerNode, IHandlerTreeNodeHandler } from '../transformer/HandlerTree';
 
 export interface IParseApiResult {
@@ -23,7 +23,21 @@ export abstract class CliCommand {
     private console: typeof console = console;
     private tree: IHandlerTreeNodeRoot;
 
-    protected async parseApi(options: IParseOptions): Promise<IParseApiResult> {
+    protected async wrapCliError(f: Function) {
+        try {
+            await f();
+        } catch (e) {
+            this.handleError(e);
+            throw e;
+        }
+    }
+
+    protected async handleError(err: any) {
+        console.error('Error processing command: ');
+        console.error(err);
+    }
+
+    protected async parseApi(options: IParseOptions, transformerArgs: ITransformerArguments = {}): Promise<IParseApiResult> {
         if (!fs.existsSync(options.rootDir)) {
             throw new Error(`File does not exist: ${options.rootDir}`);
         }
@@ -34,6 +48,7 @@ export abstract class CliCommand {
 
         const transformers: TransformerFuncType[] = [
             program => transformer(program, {
+                ...transformerArgs,
                 onTreeExtracted: (err, tree) => this.onTreeExtracted(tree)
             }),
         ]
@@ -43,7 +58,7 @@ export abstract class CliCommand {
             options.tsconfig = CliCommand.DEFAULT_TSCONFIG;
         }
 
-        this.disableConsoleOutput();
+        // this.disableConsoleOutput();
         let compilationResult = null;
         let tsConfig: ParsedCommandLine;
         let tsConfigPath: string;
@@ -68,7 +83,7 @@ export abstract class CliCommand {
                     noEmit: true,
                 }, transformers);
         }
-        this.enableConsoleOutput();
+        // this.enableConsoleOutput();
 
         return {
             tsConfig,
@@ -80,7 +95,7 @@ export abstract class CliCommand {
     }
     
     private onTreeExtracted(tree: IHandlerTreeNodeRoot): void {
-        throw new Error("Method not implemented.");
+        this.tree = tree;
     }
 
     private loadTsConfig(tsConfig: string | undefined, resolvedRootDir: string): { tsConfig: ParsedCommandLine, path: string } {
@@ -164,14 +179,7 @@ export abstract class CliCommand {
         });
 
         const methodRoutes = new Map<ApiMethod, Set<string>>();
-        const apiIterator = WalkTreeByType(this.tree, isHandlerNode);
-        let current = apiIterator.next();
-        while (!current.done) {
-            const handler = current.value;
-            if (!handler) {
-                continue;
-            }
-
+        for (const handler of WalkTreeByType(this.tree, isHandlerNode)) {
             if (!methodRoutes.has(handler.apiMethod)) {
                 methodRoutes.set(handler.apiMethod, new Set<string>());
             }
@@ -181,8 +189,6 @@ export abstract class CliCommand {
                 methodMath.add(handler.route);
                 table.push([handler.apiMethod, handler.route, handler.location.file]);
             }
-
-            current = apiIterator.next();
         };
 
         return table.toString();

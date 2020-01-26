@@ -6,6 +6,9 @@ import { ParsedCommandLine } from 'typescript';
 import * as path from 'path';
 import { GeneratorUtil } from 'ts-api-decorators/dist/Util/GeneratorUtil';
 import { IHandlerTreeNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { AzFuncExtension } from '../../metadata/AzFuncExtension';
+import { getMetadataValueByDescriptor } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
+import { AzFuncMetadata } from '../../metadata/AzFuncMetadata';
 
 export interface IFunctionJson {
 	bindings: IBinding[];
@@ -23,6 +26,10 @@ export interface IFunctionJsonFileGeneratorOpts {
 interface IFunctionHostFile {
 	version: string;
 	watchDirectories?: string[];
+	extensionBundle?: {
+		id: string;
+		version: string;
+	}
 }
 
 export class FunctionHostFileGenerator implements IGenerator {
@@ -61,7 +68,19 @@ export class FunctionHostFileGenerator implements IGenerator {
 			hostfile.watchDirectories = this.getWatchedDirectories(currentFile);
 		}
 
+		if (this.usesExtensionBundle(routes)) {
+			hostfile.extensionBundle = AzFuncExtension.ExtensionBundle;
+		}
+
 		return JSON.stringify(hostfile, undefined, FunctionHostFileGenerator.JSON_PRETTY_PRINT_SPACE);
+	}
+
+	private usesExtensionBundle(routes: IHandlerTreeNode[]) {
+		for (const route of routes) {
+			if (getMetadataValueByDescriptor(route.metadata, AzFuncMetadata.ExtensionBundle)) {
+				return true;
+			}
+		}
 	}
 
 	private getWatchedDirectories(currentFile: string): string[] {

@@ -3,18 +3,17 @@ import { ApiMethod, ManagedApi, IApiInvocationParams, ApiStdHeaderName, parseApi
 import { AzureFunctionParams, IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
 import { trimLeft } from "../../Util/TrimLeft";
+import { AzFuncBinding } from "../../metadata/AzFuncBindings";
 
 export class HttpBindingTriggerFactory {
-	public static readonly TriggerType: string = 'httpTrigger';
-
 	public static GetBindingForMethod(method: ApiMethod): IBindingTrigger {
 		return {
 			triggerMethod: method,
-			triggerType: HttpBindingTriggerFactory.TriggerType,
+			triggerType: AzFuncBinding.HttpTrigger,
 			getTriggerForRoutes: routes => ([
 				// Input trigger binding
 				{
-					type: 'httpTrigger',
+					type: AzFuncBinding.HttpTrigger,
 					direction: 'in',
 					name: AzureFunctionParams.TransportTypeRequestParam,
 					route: HttpBindingTriggerFactory.RewriteRouteForAzureFunction(routes[0].route),

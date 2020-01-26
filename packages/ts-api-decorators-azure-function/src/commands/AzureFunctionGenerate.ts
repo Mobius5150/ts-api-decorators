@@ -13,6 +13,9 @@ import { IBinding, IBindingTrigger } from '../generators/Bindings';
 import { FunctionHostFileGenerator } from '../generators/FunctionHostFileGenerator';
 import { IHandlerTreeNode, WalkChildrenByType, isHandlerNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
 import { getMetadataValueByDescriptor, BuiltinMetadata } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
+import { FunctionExtensionJsonFileGenerator } from '../generators/FunctionExtensionJsonFileGenerator';
+import { TimerBindingTriggerFactory } from '../generators/Bindings/TimerBinding';
+import { getTransformerArguments } from '../transformer';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -46,7 +49,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
     }
 
     protected async runCommand(options: IAzureFunctionGenerateCommandOptions) {
-        const api = await this.parseApi(options);
+        const api = await this.parseApi(options, getTransformerArguments());
         if (!options.silent) {
             let summary: string | Buffer = this.printExtractionSummary(options, api);
             this.printSummary(summary);
@@ -58,11 +61,13 @@ export class AzureFunctionGenerateCommand extends CliCommand {
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.PUT),
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.POST),
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.DELETE),
+                TimerBindingTriggerFactory.GetBinding(),
             ],
             params: [],
         };
         const outGenerator = new OutputFileGenerator(options.outDir);
         const hostGen = new FunctionHostFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig });
+        const extensionGen = new FunctionExtensionJsonFileGenerator();
         const functionGen = new FunctionFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig, tsConfigPath: api.tsConfigPath });
         const functionJsonGen = new FunctionJsonFileGenerator(generatorOpts);
 
@@ -79,6 +84,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
         }
 
         outGenerator.addOutputFile(hostGen.getFilename(), hostGen.forTree([api.tree]));
+        outGenerator.addOutputFile(extensionGen.getFilename(), extensionGen.forTree([api.tree]));
         for (let [[method, route, ...bindings], routes] of reducer.getReduced()) {
             route = route.startsWith('/') ? route.substr(1) : route;
             const baseRouteName = `${route.replace(/[^-a-zA-Z0-9_]/g, '_').toString()}`;
@@ -97,7 +103,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
         if (options.verbose) {
             console.log('Wrote output files: ');
             for (const f of written) {
-                console.log(f);
+                console.log('\t', f);
             }
         }
     }

@@ -3,21 +3,18 @@ import {
 	ManagedApi as BaseManagedApi,
 	IApiHandlerInstance,
 	ApiMethod,
-	readStreamToStringUtil,
-	readStreamToStringUtilCb,
-	parseApiMimeType,
-	ApiStdHeaderName,
 	ApiHeadersDict,
-	ApiParamsDict,
 	IApiInvocationParams
 } from 'ts-api-decorators';
-import { AzureFunctionHandlerFunc, IAzureFunctionResponse } from "./AzureFunctionTypes";
+import { AzureFunctionHandlerFunc, IAzureFunctionResponse, IAzureFunctionsTimer } from "./AzureFunctionTypes";
 import { HttpBindingTriggerFactory } from "../generators/Bindings/HttpBinding";
-import { IApiHandlerIdentifier } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
-import { AzureFunctionParams } from "..";
+import { AzFuncBinding } from "../metadata/AzFuncBindings";
+import { TimerBindingTriggerFactory } from "../generators/Bindings/TimerBinding";
+
 
 export interface IAzureFunctionManagedApiContext {
 	context: Context;
+	timer?: IAzureFunctionsTimer;
 }
 
 export interface IAzureFunctionTriggerDescriptor {
@@ -126,8 +123,11 @@ export class ManagedApi extends BaseManagedApi<IAzureFunctionManagedApiContext> 
 	
 	private resolveInvocationParamsForContext(triggerType: string, context: Context): { method: ApiMethod, invocationParams: IApiInvocationParams<IAzureFunctionManagedApiContext> } {
 		switch (triggerType) {
-			case HttpBindingTriggerFactory.TriggerType:
+			case AzFuncBinding.HttpTrigger:
 				return HttpBindingTriggerFactory.GetInvocationParams(context);
+
+			case AzFuncBinding.TimerTrigger:
+				return TimerBindingTriggerFactory.GetInvocationParams(context);
 
 			default:
 				throw new Error(`Unknown Azure trigger type: ${triggerType}`);

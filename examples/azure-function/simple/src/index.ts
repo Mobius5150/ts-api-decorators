@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam } from 'ts-api-decorators-azure-function';
+import { Api, ApiGetMethod, ApiQueryParam, AzFuncTimerTrigger } from 'ts-api-decorators-azure-function';
 
 @Api
 class MyApi {
@@ -11,5 +11,10 @@ class MyApi {
 		}
 
 		return 'Hello World!';
+	}
+
+	@AzFuncTimerTrigger('*/20 * * * * *')
+	timer() {
+		console.log('This timer works!');
 	}
 }

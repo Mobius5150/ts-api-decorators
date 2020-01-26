@@ -19,7 +19,8 @@
   "dependencies": {
     "@azure/functions": "^1.0.3",
     "commander": "^4.0.1",
-    "ts-api-decorators": "^0.1.3"
+    "ts-api-decorators": "^0.1.3",
+    "uuid": "^3.4.0"
   },
   "devDependencies": {
     "@types/chai": "^4.2.0",

@@ -150,6 +150,10 @@ export class TypeSerializer {
 		}
 	}
 
+	public compileExpressionToBooleanConstant(expression: ts.Expression): boolean {
+		return !!this.compileExpressionToConstant(expression);
+	}
+
 	public  compileExpressionToStringConstant(expression: ts.Expression): string {
 		const compiled = this.compileExpressionToConstant(expression);
 		if (typeof compiled === 'number' || typeof compiled === 'bigint') {
@@ -170,6 +174,12 @@ export class TypeSerializer {
 			switch (expression.kind) {
 				case ts.SyntaxKind.StringLiteral:
 					return expression.text;
+
+				case ts.SyntaxKind.TrueKeyword:
+					return true;
+
+				case ts.SyntaxKind.FalseKeyword:
+					return false;
 
 				case ts.SyntaxKind.NumericLiteral:
 					return Number(expression.text);

@@ -74,11 +74,16 @@ export class OutputFileGenerator {
 		}
 
 		const dirName = path.dirname(outPath);
+		const outBuffer = await file.generatorFunc(outPath);
+		if (!outBuffer) {
+			return false;
+		}
+
 		if (!fs.existsSync(dirName)) {
 			await this.createPath(dirName);
 		}
 
-		await fs.writeFile(outPath, await file.generatorFunc(outPath));
+		await fs.writeFile(outPath, outBuffer);
 
 		return true;
 	}
