@@ -1,4 +1,4 @@
-import { IBindingTrigger, ITimerTriggerBinding } from "./Bindings";
+import { IBindingTrigger } from "./Bindings";
 import { ApiMethod, IApiInvocationParams } from "ts-api-decorators";
 import { IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
@@ -6,6 +6,7 @@ import { AzFuncBinding } from "../../metadata/AzFuncBindings";
 import { IHandlerTreeNodeHandler } from "ts-api-decorators/dist/transformer/HandlerTree";
 import { getMetadataValueByDescriptor } from "ts-api-decorators/dist/transformer/TransformerMetadata";
 import { AzFuncMetadata } from "../../metadata/AzFuncMetadata";
+import { ITimerTriggerBinding } from "../../decorators/ExtensionDecorators/TimerTrigger/TimerTriggerBinding";
 
 export class TimerBindingTriggerFactory {
 	public static GetBinding(): IBindingTrigger {

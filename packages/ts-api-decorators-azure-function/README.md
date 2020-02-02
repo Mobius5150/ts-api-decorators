@@ -55,7 +55,7 @@ You can also define functions that use non-HTTP triggers and input/output bindin
 | [Cosmos DB](../articles/azure-functions/functions-bindings-documentdb.md)               |❌|❌|❌|
 | [Event Grid](../articles/azure-functions/functions-bindings-event-grid.md)              |❌| | |
 | [Event Hubs](../articles/azure-functions/functions-bindings-event-hubs.md)              |❌| |❌|
-| [HTTP & webhooks](../articles/azure-functions/functions-bindings-http-webhook.md)             |❌| |❌|
+| [HTTP & webhooks](../articles/azure-functions/functions-bindings-http-webhook.md)             |✅| |✅|
 | [IoT Hub](../articles/azure-functions/functions-bindings-event-iot.md)             |❌| |❌|
 | [Microsoft Graph<br/>Excel tables](../articles/azure-functions/functions-bindings-microsoft-graph.md)   | |❌|❌|
 | [Microsoft Graph<br/>OneDrive files](../articles/azure-functions/functions-bindings-microsoft-graph.md) | |❌|❌|
@@ -69,7 +69,7 @@ You can also define functions that use non-HTTP triggers and input/output bindin
 | [Service Bus](../articles/azure-functions/functions-bindings-service-bus.md)             |❌| |❌|
 | [SignalR](../articles/azure-functions/functions-bindings-signalr-service.md)              ||❌|❌|
 | [Table storage](../articles/azure-functions/functions-bindings-storage-table.md)         | |❌|❌|
-| [Timer](../articles/azure-functions/functions-bindings-timer.md)                         |❌| | |
+| [Timer](./docs/bindings/timer.md)                         |✅| | |
 | [Twilio](../articles/azure-functions/functions-bindings-twilio.md)                       | | |❌|
 
 

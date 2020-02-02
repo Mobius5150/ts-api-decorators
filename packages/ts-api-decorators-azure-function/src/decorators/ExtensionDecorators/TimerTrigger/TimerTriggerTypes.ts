@@ -2,7 +2,7 @@ export interface IAzureFunctionsTimer {
     Schedule: {
         AdjustForDST: boolean;
     };
-    ScheduleStatus: {
+    ScheduleStatus?: {
         Last: Date;
         LastUpdated: Date;
         Next: Date;

@@ -22,21 +22,6 @@ export interface IHttpOutputBinding extends IBinding {
 	name: string;
 }
 
-export interface ITimerTriggerBinding extends IBinding {
-	type: AzFuncBinding.TimerTrigger;
-	direction: 'in';
-	name: 'timer';
-	schedule: string;
-	runOnStartup?: boolean;
-	useMonitor?: boolean;
-}
-
-export type Binding =
-	IHttpTriggerBinding
-	| IHttpOutputBinding
-	| ITimerTriggerBinding
-;
-
 export interface IBindingTrigger<T extends IBinding = IBinding> {
 	triggerType: string;
 	triggerMethod: string;
