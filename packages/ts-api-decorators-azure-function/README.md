@@ -18,7 +18,7 @@ class MyApi {
 }
 ```
 
-This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. To call the API, build your project and then us `tsapi` to generate the Azure Function binding files:
+This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. To call the API, build your project and then use `tsapi` to generate the Azure Function binding files:
 ```
 tsc
 npx tsapi azfunc-generate . functions
@@ -44,7 +44,13 @@ cd functions
 func start
 ```
 
-For complete documentation on functionality, [see the README at the root of the repo.](../../). Continue reading for Azure Functions-specific features.
+For complete documentation on `ts-api-decorators` functionality, [see the README at the root of the repo](../../). Continue reading for Azure Functions-specific features and examples.
+
+### Examples
+
+See the [examples](/examples/azure-function) directory for the following examples:
+
+- [Simple Azure Functions example](/examples/azure-function/simple)
 
 ## Non-Http Triggers and Bindings
 You can also define functions that use non-HTTP triggers and input/output bindings. The table below shows the list of supported triggers and bindings:
