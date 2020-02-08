@@ -5,8 +5,8 @@ import { IBinding, IBindingParam, IBindingTrigger } from '../Bindings';
 import { ParsedCommandLine } from 'typescript';
 import * as path from 'path';
 import { GeneratorUtil } from 'ts-api-decorators/dist/Util/GeneratorUtil';
-import { IHandlerTreeNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
-import { AzFuncExtension } from '../../metadata/AzFuncExtension';
+import { IHandlerTreeNode, WalkTree } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { AzFuncExtension, IAzureFunctionExtensionInformation } from '../../metadata/AzFuncExtension';
 import { getMetadataValueByDescriptor } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
 import { AzFuncMetadata } from '../../metadata/AzFuncMetadata';
 
@@ -68,18 +68,36 @@ export class FunctionHostFileGenerator implements IGenerator {
 			hostfile.watchDirectories = this.getWatchedDirectories(currentFile);
 		}
 
-		if (this.usesExtensionBundle(routes)) {
+		const extensions = this.getExtensionsForRoutes(routes);
+		if (extensions) {
 			hostfile.extensionBundle = AzFuncExtension.ExtensionBundle;
 		}
 
 		return JSON.stringify(hostfile, undefined, FunctionHostFileGenerator.JSON_PRETTY_PRINT_SPACE);
 	}
 
-	private usesExtensionBundle(routes: IHandlerTreeNode[]) {
+	private getExtensionsForRoutes(routes: IHandlerTreeNode[]): IAzureFunctionExtensionInformation[] {
+		const extensionIds = new Set<string>();
 		for (const route of routes) {
-			if (getMetadataValueByDescriptor(route.metadata, AzFuncMetadata.ExtensionBundle)) {
-				return true;
+			this.addExtensionIds(route, extensionIds);
+			for (const node of WalkTree(route)) {
+				this.addExtensionIds(node, extensionIds);
 			}
+		}
+
+		return Array.from(extensionIds).map(id => {
+			const ext = AzFuncExtension.GetExtensionForId(id);
+			return {
+				id: ext.id,
+				version: ext.version,
+			};
+		});
+	}
+
+	private addExtensionIds(route: IHandlerTreeNode, extensionIds: Set<string>) {
+		const meta = getMetadataValueByDescriptor(route.metadata, AzFuncMetadata.ExtensionBundle);
+		if (meta && !extensionIds.has(meta)) {
+			extensionIds.add(meta);
 		}
 	}
 

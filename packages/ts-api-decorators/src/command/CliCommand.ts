@@ -58,7 +58,6 @@ export abstract class CliCommand {
             options.tsconfig = CliCommand.DEFAULT_TSCONFIG;
         }
 
-        // this.disableConsoleOutput();
         let compilationResult = null;
         let tsConfig: ParsedCommandLine;
         let tsConfigPath: string;
@@ -83,7 +82,6 @@ export abstract class CliCommand {
                     noEmit: true,
                 }, transformers);
         }
-        // this.enableConsoleOutput();
 
         return {
             tsConfig,

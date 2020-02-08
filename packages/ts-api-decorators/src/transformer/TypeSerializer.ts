@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId } from './TransformerUtil';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -33,7 +33,11 @@ export class TypeSerializer {
 		}
 		else if (type.symbol && isSymbolWithId(type.symbol)) {
 			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
-			for (const symbol of this.generator.getSymbols(name)) {
+			const symbols = [
+				...this.generator.getSymbols(name),
+				...this.generator.getSymbols(type.symbol.name),
+			];
+			for (const symbol of symbols) {
 				if (isSymbolWithId(symbol.symbol) && symbol.symbol.id === type.symbol.id) {
 					return {
 						...base,
@@ -43,6 +47,15 @@ export class TypeSerializer {
 						uniqueTypename: symbol.name,
 					};
 				}
+			}
+		}
+		else if (type.symbol && isBuiltinSymbol(type.symbol)) {
+			switch (type.symbol.name) {
+				case 'Buffer':
+					return {
+						...base,
+						type: 'Buffer'
+					};
 			}
 		}
 		else if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {

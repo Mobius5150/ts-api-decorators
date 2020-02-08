@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
+import { InternalTypeDefinition, BuiltinTypeNames } from '../apiManagement/InternalTypes';
 
 export interface SymbolWithId extends ts.Symbol {
     id: number;
@@ -29,12 +29,20 @@ export interface NamedNode extends ts.Node {
     name: ts.PropertyName;
 }
 
+export interface BuiltinSymbol extends ts.Symbol {
+    name: BuiltinTypeNames;
+}
+
 export function isNamedNode(n: ts.Node & Partial<NamedNode>): n is NamedNode {
     return typeof n.name !== 'undefined';
 }
 
 export function isSymbolWithId(s: ts.Symbol & Partial<SymbolWithId>): s is SymbolWithId {
     return typeof s.id === 'number';
+}
+
+export function isBuiltinSymbol(s: ts.Symbol): s is BuiltinSymbol {
+    return s.name === Buffer.name;
 }
 
 export function isIntrinsicType(s: ts.Type & Partial<IntrinsicType>): s is IntrinsicType {

@@ -10,7 +10,7 @@ export class HttpBindingTriggerFactory {
 		return {
 			triggerMethod: method,
 			triggerType: AzFuncBinding.HttpTrigger,
-			getTriggerForRoutes: routes => ([
+			getBindingForRoutes: routes => ([
 				// Input trigger binding
 				{
 					type: AzFuncBinding.HttpTrigger,

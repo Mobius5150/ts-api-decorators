@@ -3,6 +3,8 @@ import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
 import { ITransformerMetadata, IMetadataDescriptor } from './TransformerMetadata';
 import { ITransformContext } from './ITransformContext';
 import { ApiParamType } from '../apiManagement/ApiDefinition';
+import { Func1 } from '../Util/Func';
+import { IHandlerTreeNode } from './HandlerTree';
 
 export enum DecoratorType {
 	Class,
@@ -22,7 +24,7 @@ export interface IDecorationFunctionTransformInfoBase {
 
 export interface IDecoratorDefinitionBase extends IDecorationFunctionTransformInfoBase {
 	decoratorType: DecoratorType;
-	dependencies: IDecoratorDependency[];
+	dependencies: Array<IDecoratorDependency | Func1<IHandlerTreeNode, IDecoratorDependency[] | void>>;
 	arguments: IDecoratorArgument[];
 	metadata?: ITransformerMetadata[];
 	

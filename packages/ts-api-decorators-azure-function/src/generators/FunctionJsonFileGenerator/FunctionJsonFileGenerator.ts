@@ -56,7 +56,7 @@ export class FunctionJsonFileGenerator implements IGenerator {
 
 		return {
 			bindings: [
-				...triggers[0].getTriggerForRoutes(routes),
+				...triggers[0].getBindingForRoutes(routes),
 				...this.getParamBindings(routes),
 			],
 
@@ -74,9 +74,14 @@ export class FunctionJsonFileGenerator implements IGenerator {
 						throw new Error('Param binding not registered for param: ' + param.paramDef.transportTypeId);
 					}
 
-					const binding = this.params.get(param.paramDef.transportTypeId).getBindingForParam(param.paramDef, route);
-					if (binding) {
-						bindings.push(binding);
+					const bindingDef = this.params.get(param.paramDef.transportTypeId);
+					if (bindingDef.getBindingForParam) {
+						const binding = bindingDef.getBindingForParam(param.paramDef, route);
+						if (Array.isArray(binding)) {
+							bindings.push(...binding);
+						} else if (binding) {
+							bindings.push(binding);
+						}
 					}
 				}
 			}

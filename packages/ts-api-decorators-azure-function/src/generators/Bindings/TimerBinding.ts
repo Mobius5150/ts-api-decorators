@@ -1,4 +1,4 @@
-import { IBindingTrigger } from "./Bindings";
+import { IBindingTrigger, IBindingParam } from "./Bindings";
 import { ApiMethod, IApiInvocationParams } from "ts-api-decorators";
 import { IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
@@ -13,7 +13,7 @@ export class TimerBindingTriggerFactory {
 		return {
 			triggerMethod: AzFuncBinding.TimerTrigger,
 			triggerType: AzFuncBinding.TimerTrigger,
-			getTriggerForRoutes: routes => ([
+			getBindingForRoutes: routes => ([
 				<ITimerTriggerBinding>{
 					type: AzFuncBinding.TimerTrigger,
 					direction: 'in',
@@ -22,6 +22,12 @@ export class TimerBindingTriggerFactory {
 				},
 			])
 		};
+	}
+
+	public static GetParamBinding(): IBindingParam {
+		return {
+			paramTypeId: 'timer',
+		}
 	}
 
 	private static getTriggerParamsForRoutes(routes: IHandlerTreeNodeHandler[]): {schedule: string; runOnStartup?: boolean; useMonitor?: boolean;} {

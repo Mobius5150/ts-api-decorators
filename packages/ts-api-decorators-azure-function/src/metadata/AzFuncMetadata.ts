@@ -29,11 +29,19 @@ export abstract class AzFuncMetadata {
 		key: 'azftimerusermonitor',
 	}
 
-	public static ExtensionBundleMetadata(extension: IAzureFunctionExtensionDefinition): ITransformerMetadata {
-		return {
-			...AzFuncMetadata.ExtensionBundle,
-			value: extension.id,
-		};
+	public static readonly BlobStorageConnection: IMetadataDescriptor = {
+		type: IMetadataType.Plugin,
+		component: AzFuncMetadata.Component,
+		key: 'azfblobstorconn',
+	}
+
+	public static ExtensionBundleMetadata(extension: IAzureFunctionExtensionDefinition): ITransformerMetadata[] {
+		return [
+			{
+				...AzFuncMetadata.ExtensionBundle,
+				value: extension.id,
+			}
+		];
 	}
 
 	public static ApiMethodMetadataForBinding(binding: AzFuncBinding): ITransformerMetadata[] {

@@ -3,6 +3,7 @@ import transformer, { ITransformerArguments } from 'ts-api-decorators/dist/trans
 import { DecoratorResolver } from 'ts-api-decorators/dist/transformer/DecoratorResolver';
 import { AzFuncApiRequestParam, AzFuncParamDecorator, AzFuncApiResponseParam, AzFuncTimerTrigger, AzFuncTimerParam } from './decorators';
 import { AzFuncTimerMethodDecorator, AzFuncTimerParamDecorator } from './decorators/ExtensionDecorators/TimerTrigger/TimerTrigger';
+import { AzFuncBlobMethodDecorator, AzFuncBlob, AzFuncBlobParamDecorator, AzFuncBlobParam, AzFuncBlobPropertiesParam } from './decorators/ExtensionDecorators/BlobStorage/BlobStorageTrigger';
 
 export function getTransformerArguments(): ITransformerArguments {
 	const decoratorResolver = new DecoratorResolver([
@@ -10,6 +11,9 @@ export function getTransformerArguments(): ITransformerArguments {
 		AzFuncParamDecorator(AzFuncApiResponseParam),
 		AzFuncTimerMethodDecorator(AzFuncTimerTrigger),
 		AzFuncTimerParamDecorator(AzFuncTimerParam),
+		AzFuncBlobMethodDecorator(AzFuncBlob),
+		AzFuncBlobParamDecorator(AzFuncBlobParam),
+		AzFuncBlobParamDecorator(AzFuncBlobPropertiesParam),
 	]);
 	
 	return {

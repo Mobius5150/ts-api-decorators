@@ -25,10 +25,10 @@ export interface IHttpOutputBinding extends IBinding {
 export interface IBindingTrigger<T extends IBinding = IBinding> {
 	triggerType: string;
 	triggerMethod: string;
-	getTriggerForRoutes(routes: IHandlerTreeNodeHandler[]): T[];
+	getBindingForRoutes(routes: IHandlerTreeNodeHandler[]): T[];
 }
 
 export interface IBindingParam<T extends IBinding = IBinding> {
 	paramTypeId: string;
-	getBindingForParam(param: IApiTransportTypeParamDefinition, route: IHandlerTreeNodeHandler): T | undefined;
+	getBindingForParam?: (param: IApiTransportTypeParamDefinition, route: IHandlerTreeNodeHandler) => T[] | undefined;
 }

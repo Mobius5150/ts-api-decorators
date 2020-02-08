@@ -16,6 +16,7 @@ import { getMetadataValueByDescriptor, BuiltinMetadata } from 'ts-api-decorators
 import { FunctionExtensionJsonFileGenerator } from '../generators/FunctionExtensionJsonFileGenerator';
 import { TimerBindingTriggerFactory } from '../generators/Bindings/TimerBinding';
 import { getTransformerArguments } from '../transformer';
+import { BlobStorageBindingTriggerFactory, BlobStorageBindingParamFactory } from '../generators/Bindings/BlobStorageBinding';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -62,8 +63,12 @@ export class AzureFunctionGenerateCommand extends CliCommand {
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.POST),
                 HttpBindingTriggerFactory.GetBindingForMethod(ApiMethod.DELETE),
                 TimerBindingTriggerFactory.GetBinding(),
+                BlobStorageBindingTriggerFactory.GetTriggerBinding(),
             ],
-            params: [],
+            params: [
+                TimerBindingTriggerFactory.GetParamBinding(),
+                ...BlobStorageBindingParamFactory.GetParamBindings(),
+            ],
         };
         const outGenerator = new OutputFileGenerator(options.outDir);
         const hostGen = new FunctionHostFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig });

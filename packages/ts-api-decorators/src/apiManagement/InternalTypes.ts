@@ -18,6 +18,8 @@ export interface __ApiParamArgsFuncs {
 	typeref?: ClassConstructor;
 }
 
+export type BuiltinTypeNames = 'Buffer';
+
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
 }
 
@@ -46,6 +48,7 @@ export type InternalTypeDefinition =
 	| IntrinsicTypeDefinitionString
 	| IntrinsicTypeDefinitionNumber
 	| InternalObjectTypeDefinition
+	| InternalBuiltinObjectTypeDefinition
 	| InternalUnionTypeDefinition
 	| InternalIntersectionTypeDefinition
 	| InternalArrayTypeDefinition
@@ -64,6 +67,10 @@ export interface InternalDateTypeDefinition extends IntrinsicNamedType {
 export interface InternalObjectTypeDefinition extends IntrinsicNamedType {
 	type: 'object';
 	schema?: IJsonSchemaWithRefs;
+}
+
+export interface InternalBuiltinObjectTypeDefinition extends IntrinsicNamedType {
+	type: BuiltinTypeNames;
 }
 
 export interface InternalUnionTypeDefinition extends IntrinsicNamedType {
@@ -113,5 +120,13 @@ export abstract class InternalTypeUtil {
 
 	public static readonly TypeAnyFunction: InternalFunctionTypeDefinition = {
 		type: 'function',
+	};
+
+	public static readonly TypeAny: IntrinsicTypeDefinition = {
+		type: 'any',
+	};
+
+	public static readonly TypeBuffer: InternalBuiltinObjectTypeDefinition = {
+		type: 'Buffer',
 	};
 }

@@ -1,4 +1,4 @@
-import { HttpRequest, AzureFunction, Context } from "@azure/functions";
+import { Context } from "@azure/functions";
 import {
 	ManagedApi as BaseManagedApi,
 	IApiHandlerInstance,
@@ -6,15 +6,19 @@ import {
 	ApiHeadersDict,
 	IApiInvocationParams
 } from 'ts-api-decorators';
-import { AzureFunctionHandlerFunc, IAzureFunctionResponse, IAzureFunctionsTimer } from "./AzureFunctionTypes";
+import { AzureFunctionHandlerFunc, IAzureFunctionsTimer } from "./AzureFunctionTypes";
 import { HttpBindingTriggerFactory } from "../generators/Bindings/HttpBinding";
 import { AzFuncBinding } from "../metadata/AzFuncBindings";
 import { TimerBindingTriggerFactory } from "../generators/Bindings/TimerBinding";
+import { BlobStorageBindingTriggerFactory } from "../generators/Bindings/BlobStorageBinding";
+import { IAzureStorageBlobProperties } from "../decorators";
 
 
 export interface IAzureFunctionManagedApiContext {
 	context: Context;
 	timer?: IAzureFunctionsTimer;
+	inputBlob?: Buffer;
+	inputBlobProps?: IAzureStorageBlobProperties;
 }
 
 export interface IAzureFunctionTriggerDescriptor {
@@ -128,6 +132,9 @@ export class ManagedApi extends BaseManagedApi<IAzureFunctionManagedApiContext> 
 
 			case AzFuncBinding.TimerTrigger:
 				return TimerBindingTriggerFactory.GetInvocationParams(context);
+
+			case AzFuncBinding.BlobTrigger:
+				return BlobStorageBindingTriggerFactory.GetInvocationParams(context);
 
 			default:
 				throw new Error(`Unknown Azure trigger type: ${triggerType}`);

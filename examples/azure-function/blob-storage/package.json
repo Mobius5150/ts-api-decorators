@@ -1,0 +1,23 @@
+{
+  "name": "ts-api-decorators-examples-azure-function-blob-storage",
+  "version": "1.0.0",
+  "description": "A blob storage sample for ts-api-decorators-azure-function",
+  "main": "index.js",
+  "scripts": {
+    "build": "ttsc && npm run build:azfunc_files",
+    "build:azfunc_files": "tsapi azfunc-generate src function --tsconfig ./tsconfig.json",
+    "start": "cd function && func start"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "azure-functions-core-tools": "^2.7.1948",
+    "ttypescript": "^1.5.8"
+  },
+  "dependencies": {
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5",
+    "ts-api-decorators": "^0.1.4",
+    "ts-api-decorators-azure-function": "^0.1.3"
+  }
+}

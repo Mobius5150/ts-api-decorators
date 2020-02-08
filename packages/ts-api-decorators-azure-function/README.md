@@ -57,7 +57,7 @@ You can also define functions that use non-HTTP triggers and input/output bindin
 
 | Type | Trigger | Input | Output |
 | ---- | :------: | :---: | :----: |
-| [Blob storage](../articles/azure-functions/functions-bindings-storage-blob.md)          |❌|❌|❌|
+| [Blob storage](./docs/bindings/blob-storage.md)          |❌|❌|❌|
 | [Cosmos DB](../articles/azure-functions/functions-bindings-documentdb.md)               |❌|❌|❌|
 | [Event Grid](../articles/azure-functions/functions-bindings-event-grid.md)              |❌| | |
 | [Event Hubs](../articles/azure-functions/functions-bindings-event-hubs.md)              |❌| |❌|

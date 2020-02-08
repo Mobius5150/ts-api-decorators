@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import { IParameterDecoratorDefinition, DecoratorType, IDecoratorMagicFuncAssignment } from './DecoratorDefinition';
 import { ITransformedTreeElement, HandlerTreeNodeType, IHandlerTreeNodeParameter, IHandlerTreeNode } from './HandlerTree';
-import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
+import { InternalTypeDefinition, InternalTypeUtil } from '../apiManagement/InternalTypes';
 import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, getMetadataValueByDescriptor, BuiltinMetadata } from './TransformerMetadata';
 import { Decorator, DecoratorNodeType } from './Decorator';
@@ -81,9 +81,12 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		if (node.type) {
 			const type = context.typeChecker.getTypeFromTypeNode(node.type);
 			internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);
+			if (!internalType) {
+				internalType = InternalTypeUtil.TypeAny;
+			}
 			if (this.parameterTypeRestrictions
 				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error('Invalid type for decorator: ' + internalType.type);
+				throw new Error(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`);
 			}
 		}
 
@@ -97,9 +100,12 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		if (node.type) {
 			const type = context.typeChecker.getTypeFromTypeNode(node.type);
 			let internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);
+			if (!internalType) {
+				internalType = InternalTypeUtil.TypeAny;
+			}
 			if (this.parameterTypeRestrictions
 				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error('Invalid type for decorator: ' + internalType.type);
+				throw new Error(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`);
 			}
 
 			if (internalType.type === 'object' && type.isClass() && ts.isTypeReferenceNode(node.type)) {

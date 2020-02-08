@@ -46,6 +46,9 @@ export class TsApiCommandLine {
 		const peerLibs = ['azure-function', 'express'];
 		const paths = [
 			path.join(__dirname, '../../../'),
+			path.join(__dirname, '../../'),
+			path.join(__dirname, '../'),
+			path.join(__dirname, './'),
 		];
 		let outLibs: CommandConstructor[] = [];
 		for (const libName of peerLibs) {

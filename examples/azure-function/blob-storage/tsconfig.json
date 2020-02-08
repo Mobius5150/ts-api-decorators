@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "es6",
+		"outDir": "dist",
+		"rootDir": "src",
+		"experimentalDecorators": true,
+		"sourceMap": true,
+		"plugins": [
+			{
+				"transform": "ts-api-decorators-azure-function/dist/transformer"
+			}
+		]
+	},
+	"exclude": [
+		"node_modules",
+		"dist"
+	]
+}
