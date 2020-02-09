@@ -8,6 +8,7 @@ import { IProgramInfo } from "./IProgramInfo";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from "../apiManagement/InternalTypes";
 import { IExtractedTag } from "../transformer/IExtractedTag";
 import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode } from "../transformer/HandlerTree";
+import { ManagedApi } from "../apiManagement";
 
 export interface ISwagger2Opts {
     disableTryInferSchemes?: boolean;
@@ -16,6 +17,7 @@ export interface ISwagger2Opts {
 
 export class Swagger2Extractor implements IExtractor {
     public static readonly SwaggerVersion = '2.0';
+    private static readonly RouteSeperator = '/';
 
     private tags = new Map<string, IExtractedTag>();
     private definitions = new Map<string, OpenAPIV2.SchemaObject>();
@@ -103,18 +105,39 @@ export class Swagger2Extractor implements IExtractor {
         const paths: OpenAPIV2.PathsObject = {};
         // Array.from(WalkChildrenByType(api, isHandlerParameterNode)).forEach(api => {
         for (const api of WalkTreeByType(this.apiTree, isHandlerNode)) {
-            if (!paths[api.route]) {
-                paths[api.route] = {};
+            const route = this.swaggerizeRoute(api.route);
+            if (!paths[route]) {
+                paths[route] = {};
             }
 
-            if (!paths[api.route][api.apiMethod.toLowerCase()]) {
-                paths[api.route][api.apiMethod.toLowerCase()] = this.getOperationObject(api);
+            if (!paths[route][api.apiMethod.toLowerCase()]) {
+                paths[route][api.apiMethod.toLowerCase()] = this.getOperationObject(api);
             } else {
-                throw new Error(`Multiple APIs for route: [${api.apiMethod}]: ${api.route}`);
+                throw new Error(`Multiple APIs for route: [${api.apiMethod}]: ${route}`);
             }
         };
 
         return paths;
+    }
+
+    private swaggerizeRoute(route: string): string {
+        return ManagedApi.GetRouteTokens(route)
+            .map(t => {
+                if (typeof t === 'string') {
+                    return t;
+                }
+
+                let outStr = t.prefix ? t.prefix : '';
+                if (t.modifier && t.modifier !== '?') {
+                    console.warn('Unhandled modifier: ' + t.modifier);
+                }
+                outStr += `{${t.name}${t.modifier ? t.modifier : ''}}`;
+                if (t.suffix) {
+                    outStr += t.suffix;
+                }
+                return outStr;
+            })
+            .join('')
     }
     
     private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV2.OperationObject {
@@ -126,7 +149,7 @@ export class Swagger2Extractor implements IExtractor {
             parameters: Array.from(WalkChildrenByType(api, isHandlerParameterNode)).map(p => this.getParametersObject(p)),
             responses: {
                 default: {
-                    schema: this.getInlineTypeSchema(getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema).returnType),
+                    schema: this.getInlineTypeSchema(getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema)),
                     description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.ResponseDescription),
                 }
             }
@@ -136,7 +159,11 @@ export class Swagger2Extractor implements IExtractor {
     private getInlineTypeSchema(returnType: InternalTypeDefinition): Partial<OpenAPIV2.Schema> {
         switch (returnType.type) {
             case 'object':
-                return this.getInternalSchemaToOutputSchema(returnType.schema);
+                if (returnType.schema) {
+                    return this.getInternalSchemaToOutputSchema(returnType.schema);
+                }
+
+                // Fall through to next case is intentional
 
             case 'number':
             case 'string':
@@ -215,7 +242,7 @@ export class Swagger2Extractor implements IExtractor {
         return {
             name: p.paramDef.propertyKey.toString(),
             in: inStr,
-            required: !p.paramDef.args.optional,
+            required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
             description: p.paramDef.args.description,
             type: p.paramDef.args.typedef.type,
             schema,

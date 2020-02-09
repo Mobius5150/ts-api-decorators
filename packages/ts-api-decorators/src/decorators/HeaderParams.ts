@@ -67,6 +67,7 @@ abstract class HeaderParams {
 			InternalTypeUtil.TypeNumber,
 			InternalTypeUtil.TypeString,
 			InternalTypeUtil.TypeDate,
+			InternalTypeUtil.TypeEnum,
 		],
 		provider: BuiltinMetadata.BuiltinComponent,
 		transformArgumentsToObject: true,

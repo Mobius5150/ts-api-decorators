@@ -35,12 +35,16 @@ export interface IntrinsicNamedType {
 export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType{
 	type: 'string';
 	validationRegex?: RegExp;
+	schema?: { enum?: string[]; };
+	typename?: string;
 }
 
 export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType{
 	type: 'number';
 	minVal?: number;
 	maxVal?: number;
+	schema?: { enum?: number[]; };
+	typename?: string;
 }
 
 export type InternalTypeDefinition =
@@ -53,7 +57,8 @@ export type InternalTypeDefinition =
 	| InternalIntersectionTypeDefinition
 	| InternalArrayTypeDefinition
 	| InternalDateTypeDefinition
-	| InternalFunctionTypeDefinition;
+	| InternalFunctionTypeDefinition
+	| InternalEnumTypeDefinition;
 
 export interface InternalFunctionTypeDefinition extends IntrinsicNamedType {
 	type: 'function';
@@ -67,6 +72,12 @@ export interface InternalDateTypeDefinition extends IntrinsicNamedType {
 export interface InternalObjectTypeDefinition extends IntrinsicNamedType {
 	type: 'object';
 	schema?: IJsonSchemaWithRefs;
+}
+
+export interface InternalEnumTypeDefinition extends IntrinsicNamedType {
+	type: 'enum';
+	schema?: { enum?: Array<string | number>; };
+	typename?: string;
 }
 
 export interface InternalBuiltinObjectTypeDefinition extends IntrinsicNamedType {
@@ -100,6 +111,10 @@ export abstract class InternalTypeUtil {
 
 	public static readonly TypeNumber: IntrinsicTypeDefinitionNumber = {
 		type: 'number',
+	};
+
+	public static readonly TypeEnum: InternalEnumTypeDefinition = {
+		type: 'enum',
 	};
 
 	public static readonly TypeRegex: IntrinsicTypeDefinition = {

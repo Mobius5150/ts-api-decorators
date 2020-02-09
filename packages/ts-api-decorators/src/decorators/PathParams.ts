@@ -68,6 +68,7 @@ abstract class PathParams {
 			InternalTypeUtil.TypeString,
 			InternalTypeUtil.TypeDate,
 			InternalTypeUtil.TypeBoolean,
+			InternalTypeUtil.TypeEnum,
 		],
 		provider: BuiltinMetadata.BuiltinComponent,
 		transformArgumentsToObject: true,

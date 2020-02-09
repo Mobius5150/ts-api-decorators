@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
-import { InternalTypeDefinition, IJsonSchemaWithRefs } from '../apiManagement/InternalTypes';
+import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil } from '../apiManagement/InternalTypes';
 import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
@@ -61,10 +61,24 @@ export class TypeSerializer {
 			];
 			for (const symbol of symbols) {
 				if (isSymbolWithId(symbol.symbol) && symbol.symbol.id === type.symbol.id) {
+					let schema = this.generator.getSchemaForSymbol(symbol.name, true);
+					let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;
+					if (schema.$ref && schema.definitions) {
+						const refDefParts = schema.$ref.split('/');
+						const refDefName = refDefParts[refDefParts.length - 1];
+						const def = schema.definitions[refDefName];
+						if (def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
+							type = def.type || InternalTypeUtil.TypeEnum.type;
+							schema = {
+								...def,
+								...schema,
+							};
+						}
+					}
 					return {
 						...base,
-						type: 'object',
-						schema: this.generator.getSchemaForSymbol(symbol.name, true),
+						type,
+						schema,
 						typename: symbol.typeName,
 						uniqueTypename: symbol.name,
 					};
