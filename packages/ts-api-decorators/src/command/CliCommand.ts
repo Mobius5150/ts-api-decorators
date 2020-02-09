@@ -8,7 +8,7 @@ import { IProgramInfo } from './IProgramInfo';
 import { IParseOptions } from './ProgramOptions';
 import { ApiMethod } from '..';
 import transformer, { ITransformerArguments } from '../transformer';
-import { IHandlerTreeNodeRoot, WalkTreeByType, isHandlerNode, IHandlerTreeNodeHandler } from '../transformer/HandlerTree';
+import { IHandlerTreeNodeRoot, WalkTreeByType, isHandlerNode, IHandlerTreeNodeHandler, MergeHandlerTreeRoots } from '../transformer/HandlerTree';
 
 export interface IParseApiResult {
     compilationResult: { [path: string]: ts.TransformationResult<ts.Node> };
@@ -93,7 +93,7 @@ export abstract class CliCommand {
     }
     
     private onTreeExtracted(tree: IHandlerTreeNodeRoot): void {
-        this.tree = tree;
+        this.tree = MergeHandlerTreeRoots(this.tree, tree);
     }
 
     private loadTsConfig(tsConfig: string | undefined, resolvedRootDir: string): { tsConfig: ParsedCommandLine, path: string } {

@@ -136,3 +136,25 @@ export function* WalkChildrenByType<T extends any>(node: IHandlerTreeNode, check
 		}
 	}
 }
+
+export function MergeHandlerTreeRoots(a: IHandlerTreeNodeRoot, b: IHandlerTreeNodeRoot): IHandlerTreeNodeRoot {
+	if (!a) {
+		return b;
+	}
+
+	if (!b) {
+		return a;
+	}
+
+	return {
+		type: HandlerTreeNodeType.Root,
+		children: [
+			...a.children,
+			...b.children,
+		],
+		metadata: [
+			...a.metadata,
+			...b.metadata,
+		],
+	};
+}
