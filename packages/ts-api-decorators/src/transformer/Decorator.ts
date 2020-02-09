@@ -167,7 +167,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		const exprArguments: IExprWithMetadata[] = [];
 		for (let index = 0; index < this.arguments.length; ++index) {
 			const argDef = this.arguments[index];
-			const arg = decorator.expression.arguments[index];
+			const arg = this.getUnparenthesizedExpression(decorator.expression.arguments[index]);
 			exprArguments[index] = {expression: arg};
 			const isUndefined =
 				typeof arg === 'undefined'
@@ -177,7 +177,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 			if (isUndefined) {
 				if (argDef.optional) {
 					if (!argDef.transformer) {
-						break;
+						continue;
 					}
 				} else if (!argDef.optional) {
 					throw new Error('Expected argument');
@@ -224,6 +224,18 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 			metadata,
 			decorator: ts.createDecorator(this.getOutputDecoratorArgs(decorator.expression, exprArguments, metadata, context)),
 		}
+	}
+	
+	private getUnparenthesizedExpression(arg0: ts.Expression) {
+		if (!arg0) {
+			return arg0;
+		}
+		
+		while (ts.isParenthesizedExpression(arg0)) {
+			arg0 = arg0.expression;
+		}
+
+		return arg0;
 	}
 
 	private checkTypeCompatibility(argDef: IDecoratorArgument, arg: ts.Expression, context: ITransformContext) {

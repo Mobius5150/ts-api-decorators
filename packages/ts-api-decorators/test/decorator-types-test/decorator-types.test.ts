@@ -132,83 +132,103 @@ describe('transformer', () => {
 
 		// Expected parameters
 		const expectedChildren = [
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times0',
-				args: {
-					name: 'times0',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-					}
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times0',
+					args: {
+						name: 'times0',
+						typedef: {
+							...InternalTypeUtil.TypeNumber,
+						}
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times1',
+					args: {
+						name: 'times1',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times1',
-				args: {
-					name: 'times1',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						minVal: 0,
-					}
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMin, 0),
+				]
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times2',
+					args: {
+						name: 'times2',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times2',
-				args: {
-					name: 'times2',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						minVal: 0,
-					}
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMin, 0),
+				]
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times3',
+					args: {
+						name: 'times3',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times3',
-				args: {
-					name: 'times3',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						minVal: 0,
-					}
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMin, 0),
+				]
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times4',
+					args: {
+						name: 'times4',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times4',
-				args: {
-					name: 'times4',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						minVal: 0,
-						maxVal: 100,
-					}
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMin, 0),
+					treeNodeMetadata(BuiltinMetadata.NumberMax, 100),
+				]
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times5',
+					args: {
+						name: 'times5',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times5',
-				args: {
-					name: 'times5',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						maxVal: 100,
-					}
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMax, 100),
+				]
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'times6',
+					args: {
+						name: 'times6',
+						typedef: InternalTypeUtil.TypeNumber,
+					},
 				},
-			}),
-			treeHandlerParameterNode({
-				type: ApiParamType.Query,
-				propertyKey: 'times6',
-				args: {
-					name: 'times6',
-					typedef: {
-						...InternalTypeUtil.TypeNumber,
-						maxVal: 100,
-					}
-				},
-			}),
+				undefined,
+				[
+					treeNodeMetadata(BuiltinMetadata.NumberMax, 100),
+				]
+			),
 			treeHandlerParameterNode({
 				type: ApiParamType.Query,
 				propertyKey: 'times7',
