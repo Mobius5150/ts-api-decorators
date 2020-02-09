@@ -105,6 +105,15 @@ export class HttpNumberParamOutOfBoundsError extends HttpBadRequestError {
     }
 }
 
+export class HttpEnumParamInvalidValueError extends HttpBadRequestError {
+    constructor(paramName: string, values: any[]) {
+        super(`Invalid value for parameter '${paramName}'. Value must be one of [${values.join(', ')}]`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpEnumParamInvalidValueError.prototype);
+    }
+}
+
 export class HttpParamInvalidError extends HttpBadRequestError {
     constructor(paramName: string) {
         super(`Invalid value for parameter '${paramName}'.`);

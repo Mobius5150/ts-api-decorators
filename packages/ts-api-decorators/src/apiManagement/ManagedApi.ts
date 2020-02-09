@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
@@ -236,11 +236,12 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				return parsed;
 			}
 
+			this.validateEnumParam(def.args, parsed);
 			if (def.args.regexp) {
 				this.validateRegExpParam(def.args, parsed);
 			}
 			if (def.args.typedef.type === 'number') {
-				this.validateNumberParamr(def.args, parsed);
+				this.validateNumberParam(def.args, parsed);
 			}
 			if (def.args.validationFunction) {
 				try {
@@ -263,10 +264,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 	}
 	
-	protected validateNumberParamr({typedef, name}: __ApiParamArgs, parsed: any) {
+	protected validateNumberParam({typedef, name}: __ApiParamArgs, parsed: any) {
 		if (typedef.type === 'number') {
 			if ((typedef.minVal && parsed < typedef.minVal) || (typedef.maxVal && parsed > typedef.maxVal)) {
 				throw new HttpNumberParamOutOfBoundsError(name, typedef.minVal, typedef.maxVal);
+			}
+		}
+	}
+
+	protected validateEnumParam({typedef, name}: __ApiParamArgs, parsed: any) {
+		if (typedef.type === 'number' || typedef.type === 'string' || typedef.type === 'enum') {
+			if (typedef.schema && typedef.schema.enum && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
+				throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)
 			}
 		}
 	}
