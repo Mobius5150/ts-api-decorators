@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as ts from 'typescript';
-import { TransformerFuncType, getDefaultCompilerOptions, parseTsConfig, compileSources } from '../Util/CompilationUtil';
+import { getDefaultCompilerOptions, parseTsConfig, compileSources, TransformerType } from '../Util/CompilationUtil';
 import { ParsedCommandLine } from 'typescript';
 import { PackageJson, getPackageJsonAuthor } from './CommandUtil';
 import { IProgramInfo } from './IProgramInfo';
@@ -46,7 +46,7 @@ export abstract class CliCommand {
         const rootDirStat = fs.lstatSync(resolvedRootDir);
         options.isDir = rootDirStat.isDirectory();
 
-        const transformers: TransformerFuncType[] = [
+        const transformers: TransformerType[] = [
             program => transformer(program, {
                 ...transformerArgs,
                 onTreeExtracted: (err, tree) => this.onTreeExtracted(tree)
