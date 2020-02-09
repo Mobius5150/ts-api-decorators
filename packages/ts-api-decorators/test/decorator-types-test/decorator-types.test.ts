@@ -114,7 +114,6 @@ describe('transformer', () => {
 		]));
 	});
 
-
 	it('should perform deep number parameter validation', async () => {
 		loadBasicTree();
 
@@ -262,6 +261,128 @@ describe('transformer', () => {
 		}
 	});
 
+	it('should perform deep string parameter validation', async () => {
+		loadBasicTree();
+
+		// Find the node for this handler
+		const handlerNode = tree.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloTypedStringQueryParam');
+
+		// Assert that the handler looks right
+		assertRealInclude(handlerNode,
+			// greetWithStringParamValidation()
+			treeHandlerMethodNode(ApiMethod.GET, '/helloTypedStringQueryParam', undefined,
+			[
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, InternalTypeUtil.TypeString),
+			]),
+		);
+
+		// Expected parameters
+		const expectedChildren = [
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name0',
+					args: {
+						name: 'name0',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name1',
+					args: {
+						name: 'name1',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name2',
+					args: {
+						name: 'name2',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name3',
+					args: {
+						name: 'name3',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name4',
+					args: {
+						name: 'name4',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name5',
+					args: {
+						name: 'name5',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+			treeHandlerParameterNode(
+				{
+					type: ApiParamType.Query,
+					propertyKey: 'name6',
+					args: {
+						name: 'name6',
+						typedef: InternalTypeUtil.TypeString,
+					},
+				}
+			),
+		];
+
+		for (const childIndex in expectedChildren) {
+			const child = expectedChildren[childIndex];
+			assertRealInclude(handlerNode.children[childIndex], child, `$.${childIndex}`);
+		}
+	});
+
+	it('should parse body params and body responses', async () => {
+		loadBasicTree();
+		assertRealInclude(tree, treeRootNode([
+			// greetObject()
+			treeHandlerMethodNode(ApiMethod.POST, '/hello', [
+				treeHandlerParameterNode({
+					propertyKey: 'body',
+					type: ApiParamType.Body,
+					parameterIndex: 0,
+					args: {
+						typedef: {
+							...InternalTypeUtil.TypeAnyObject,
+							typename: 'IGreetArgs',
+						},
+					}
+				})
+			], [
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, {
+					...InternalTypeUtil.TypeAnyObject,
+					typename: 'IGreetResponse',
+					schema: {
+						'$ref': '#/definitions/IGreetResponse',
+					}
+				}),
+			]),
+		]));
+	});
 	
 	it('should parse object return types with promises', async () => {
 		loadBasicTree();
