@@ -4,9 +4,10 @@ import * as ts from 'typescript';
 import * as fs from 'fs';
 import * as path from 'path';
 import { readFileSync } from "fs";
+import { ITransformerArguments } from "../transformer";
 
-export type TransformerType = ts.TransformerFactory<ts.SourceFile>;
-export type TransformerFuncType = (p: ts.Program) => TransformerType;
+export type TransformerType = (program: ts.Program, args?: ITransformerArguments) => ts.TransformerFactory<ts.SourceFile>;
+// export type TransformerFuncType = (p: ts.Program) => TransformerType;
 
 interface TsConfigFileRaw {
 	compilerOptions: ts.CompilerOptions;
@@ -73,7 +74,7 @@ export function parseTsConfig(basePath: string, tsconfigPath: string): ts.Parsed
 	return ts.parseJsonSourceFileConfigFileContent(sourcefile, new TsConfigParserHost(), basePath);	
 }
 
-export async function compileSourcesFromTsConfigFile(basePath: string, tsconfigPath: string, transformers: TransformerFuncType[]) {
+export async function compileSourcesFromTsConfigFile(basePath: string, tsconfigPath: string, transformers: TransformerType[]) {
 	// console.log({basePath, tsconfigPath});
 	const config = parseTsConfig(basePath, tsconfigPath);
 	// console.log({config});
@@ -88,7 +89,7 @@ function resolveFilePathArray(files: string[], basePath: string): string[] {
 	return files.map(f => path.resolve(f, basePath));
 }
 
-export async function compileSourcesDir(path: string, options: ts.CompilerOptions, transformers: TransformerFuncType[]): Promise<{
+export async function compileSourcesDir(path: string, options: ts.CompilerOptions, transformers: TransformerType[]): Promise<{
 	[path: string]: ts.TransformationResult<ts.Node>;
 }> {
 	const matches = await asyncGlob(path);
@@ -100,7 +101,7 @@ export async function compileSourcesDir(path: string, options: ts.CompilerOption
 	}
 }
 
-export function compileSources(matches: string[], options: ts.CompilerOptions, transformers: TransformerFuncType[]) {
+export function compileSources(matches: string[], options: ts.CompilerOptions, transformers: TransformerType[]) {
 	const program = ts.createProgram(matches, options);
 	const results: {
 		[path: string]: ts.TransformationResult<ts.Node>;
@@ -111,7 +112,7 @@ export function compileSources(matches: string[], options: ts.CompilerOptions, t
 	return results;
 }
 
-export function compileSourceFile(path: string, options: ts.CompilerOptions, transformers: TransformerFuncType[], program?: ts.Program): ts.TransformationResult<ts.SourceFile> {
+export function compileSourceFile(path: string, options: ts.CompilerOptions, transformers: TransformerType[], program?: ts.Program): ts.TransformationResult<ts.SourceFile> {
 	if (!program) {
 		program = ts.createProgram([path], options);
 	}

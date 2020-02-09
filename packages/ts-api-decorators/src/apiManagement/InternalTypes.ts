@@ -18,7 +18,7 @@ export interface __ApiParamArgsFuncs {
 	typeref?: ClassConstructor;
 }
 
-export type BuiltinTypeNames = 'Buffer';
+export type BuiltinTypeNames = 'Buffer' | 'Promise';
 
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
 }

@@ -1,4 +1,5 @@
 import { __ApiParamArgs, InternalTypeDefinition } from "./InternalTypes";
+import { ApiProcessorTime, IApiPreProcessor, IApiPostProcessor } from "./ApiProcessing/ApiProcessing";
 
 export const enum ApiMethod {
 	GET = 'GET',
@@ -28,6 +29,11 @@ export type PromiseRejectionTypes = undefined | null | string | Error;
 
 export type ApiMethodCallbackFunction<T> = (err: PromiseRejectionTypes, result?: T) => void;
 
+export interface IApiProcessors<T extends object> {
+	[ApiProcessorTime.StagePreInvoke]: IApiPreProcessor<T>[];
+	[ApiProcessorTime.StagePostInvoke]: IApiPostProcessor[];
+}
+
 export interface IApiHandlerIdentifier {
 	method: ApiMethod;
 	route: string;
@@ -40,6 +46,10 @@ export interface IApiDefinitionBase extends IApiHandlerIdentifier {
 
 export interface IApiDefinition extends IApiDefinitionBase {
 	handler: ApiMethodFunction;
+}
+
+export interface IApiDefinitionWithProcessors<TransportType extends object> extends IApiDefinition {
+	processors: IApiProcessors<TransportType>;
 }
 
 interface IApiParamDefinitionBase {

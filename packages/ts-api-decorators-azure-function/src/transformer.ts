@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import transformer, { ITransformerArguments } from 'ts-api-decorators/dist/transformer';
+import transformer, { ITransformerArguments, registerDefaultDecorators } from 'ts-api-decorators/dist/transformer';
 import { DecoratorResolver } from 'ts-api-decorators/dist/transformer/DecoratorResolver';
 import { AzFuncApiRequestParam, AzFuncParamDecorator, AzFuncApiResponseParam, AzFuncTimerTrigger, AzFuncTimerParam } from './decorators';
 import { AzFuncTimerMethodDecorator, AzFuncTimerParamDecorator } from './decorators/ExtensionDecorators/TimerTrigger/TimerTrigger';
@@ -15,10 +15,12 @@ export function getTransformerArguments(): ITransformerArguments {
 		AzFuncBlobParamDecorator(AzFuncBlobParam),
 		AzFuncBlobParamDecorator(AzFuncBlobPropertiesParam),
 	]);
+
+	registerDefaultDecorators(decoratorResolver);
 	
 	return {
 		decoratorResolver,
-		registerBuiltindecorators: true,
+		registerBuiltindecorators: false,
 	};
 }
 

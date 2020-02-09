@@ -4,7 +4,9 @@ import {
 	IApiHandlerInstance,
 	ApiMethod,
 	ApiHeadersDict,
-	IApiInvocationParams
+	IApiInvocationParams,
+	IApiInvocationResult,
+	ManagedApiInternal
 } from 'ts-api-decorators';
 import { AzureFunctionHandlerFunc, IAzureFunctionsTimer } from "./AzureFunctionTypes";
 import { HttpBindingTriggerFactory } from "../generators/Bindings/HttpBinding";
@@ -12,7 +14,11 @@ import { AzFuncBinding } from "../metadata/AzFuncBindings";
 import { TimerBindingTriggerFactory } from "../generators/Bindings/TimerBinding";
 import { BlobStorageBindingTriggerFactory } from "../generators/Bindings/BlobStorageBinding";
 import { IAzureStorageBlobProperties } from "../decorators";
+import { IApiProcessor } from "ts-api-decorators/dist/apiManagement/ApiProcessing/ApiProcessing";
 
+export function registerApiProcessorsOnHandler(handlerMethod: object, processors: IApiProcessor<IApiInvocationParams<IAzureFunctionManagedApiContext> | IApiInvocationResult>[]): void {
+	ManagedApiInternal.AddApiProcessorsToObject(processors, handlerMethod);
+}
 
 export interface IAzureFunctionManagedApiContext {
 	context: Context;

@@ -1,7 +1,9 @@
-import { IApiDefinition, ApiMethod, IApiParamDefinition } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, IApiProcessors } from "./ApiDefinition";
 import 'reflect-metadata';
 import { IDependency, IDependencyParam } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
+import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor } from "./ApiProcessing/ApiProcessing";
+import { IApiInvocationParams, IApiInvocationResult } from "./ManagedApi";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
 
@@ -26,6 +28,7 @@ export interface IApiClassDefinition {
 export class ManagedApiInternal {
 	public static readonly ApiMetadataKey = 'managedapi:api';
 	public static readonly ApiMethodMetadataKey = 'managedapi:apimethod';
+	public static readonly ApiMethodProcessorsMetadataKey = 'managedapi:apiprocessors';
 	public static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
 	public static readonly DependencyMetadataKey = 'managedapi:dependency';
 	public static readonly DependencyParamMetadataKey = 'managedapi:dependencyparams';
@@ -97,6 +100,12 @@ export class ManagedApiInternal {
 		Reflect.defineMetadata(this.ApiMethodMetadataKey, apis, target);
 	}
 
+	public static AddApiProcessorsToObject(processors: IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[], target: object): void {
+		const apis: IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] = ManagedApiInternal.GetApiProcessorsOnObject(target);
+		apis.push(...processors);
+		Reflect.defineMetadata(this.ApiMethodProcessorsMetadataKey, apis, target);
+	}
+
 	public static AddApiHandlerParamMetadataToObject(metadata: IApiParamDefinition, target: object): void {
 		const apis: IApiParamDefinition[] = ManagedApiInternal.GetHandlerParamDefinitionsOnObject(target, metadata.propertyKey);
 		apis.push(metadata);
@@ -141,8 +150,25 @@ export class ManagedApiInternal {
 		return params;
 	}
 
+	public static GetApiHandlerProcessors<T extends object>(target: object): IApiProcessors<T> {
+		const processors: IApiProcessors<T> = {
+			[ApiProcessorTime.StagePreInvoke]: [],
+			[ApiProcessorTime.StagePostInvoke]:[],
+		};
+
+		for (const processor of ManagedApiInternal.GetApiProcessorsOnObject(target)) {
+			processors[processor.stage].push(<any>processor);
+		}
+
+		return processors;
+	}
+
 	private static GetApiDefinitionsOnObject(target: object): IApiDefinition[] {
 		return Reflect.getMetadata(this.ApiMethodMetadataKey, target) || [];
+	}
+
+	private static GetApiProcessorsOnObject(target: object): IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] {
+		return Reflect.getMetadata(this.ApiMethodProcessorsMetadataKey, target) || [];
 	}
 
 	private static GetHandlerParamDefinitionsOnObject(target: object, key: string | symbol): IApiParamDefinition[] {

@@ -31,11 +31,9 @@ abstract class ApiClassDecorators {
 export const Api = ApiClassDecorators.Api;
 
 abstract class ApiMethodDecorators {
-	public static ApiGetMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T>;
+	public static ApiGetMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	public static ApiGetMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiGetMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiGetMethod<T extends Promise<string>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiGetMethod<T extends Promise<object>>(route: string): ApiMethodDecoratorReturnType<T>;
+	public static ApiGetMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],

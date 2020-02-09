@@ -141,4 +141,24 @@ class MyApi {
 		};
 	}
 
+	/**
+	 * Returns a string via a promise
+	 */
+	@ApiGetMethod('/helloPromiseString')
+	greetWithPromise() {
+		return new Promise<string>((resolve, ) => {
+			resolve(this.greet('Default'));
+		});
+	}
+
+	/**
+	 * Returns an object via a promise
+	 */
+	@ApiGetMethod<IGreetResponse>('/helloPromiseObject')
+	greetObjectWithPromise() {
+		return new Promise<IGreetResponse>((resolve, ) => {
+			resolve({ response: this.greet('Default') });
+		});
+	}
+
 }

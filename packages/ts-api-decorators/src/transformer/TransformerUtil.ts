@@ -33,6 +33,11 @@ export interface BuiltinSymbol extends ts.Symbol {
     name: BuiltinTypeNames;
 }
 
+export interface ParameterizedType extends ts.Type {
+    resolvedTypeArguments: ts.Type[];
+    typeArguments: ts.Type[];
+}
+
 export function isNamedNode(n: ts.Node & Partial<NamedNode>): n is NamedNode {
     return typeof n.name !== 'undefined';
 }
@@ -42,7 +47,7 @@ export function isSymbolWithId(s: ts.Symbol & Partial<SymbolWithId>): s is Symbo
 }
 
 export function isBuiltinSymbol(s: ts.Symbol): s is BuiltinSymbol {
-    return s.name === Buffer.name;
+    return s.name === Buffer.name || s.name === Promise.name;
 }
 
 export function isIntrinsicType(s: ts.Type & Partial<IntrinsicType>): s is IntrinsicType {
@@ -55,6 +60,14 @@ export function isUnionType(n: ts.TypeNode, s: ts.Type & Partial<UnionType>): s 
     }
     
     return Array.isArray(s.types);
+}
+
+export function isParameterizedType(t: ts.Type & Partial<ParameterizedType>): t is ParameterizedType {
+    if (t) {
+        return Array.isArray(t.resolvedTypeArguments);
+    }
+    
+    return false;
 }
 
 export function isIntersectionType(n: ts.TypeNode, s: ts.Type & Partial<IntersectionType>): s is IntersectionType {

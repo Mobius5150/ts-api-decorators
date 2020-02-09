@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol } from './TransformerUtil';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -25,11 +25,33 @@ export class TypeSerializer {
 				type: <any>type.intrinsicName,
 			};
 		}
-		else if (ts.isRegularExpressionLiteral(node) || node.getText() === RegExp.name) {
+		else if (node && (ts.isRegularExpressionLiteral(node) || node.getText() === RegExp.name)) {
 			return {
 				...base,
 				type: 'regex',
 			};
+		}
+		else if (type.symbol && isBuiltinSymbol(type.symbol)) {
+			switch (type.symbol.name) {
+				case 'Buffer':
+					return {
+						...base,
+						type: 'Buffer'
+					};
+
+				case 'Promise':
+					if (isParameterizedType(type)) {
+						return {
+							...base,
+							...this.getInternalTypeRepresentation(undefined, type.resolvedTypeArguments[0]),
+						};
+					} else {
+						return {
+							...base,
+							type: 'Promise'
+						};
+					}
+			}
 		}
 		else if (type.symbol && isSymbolWithId(type.symbol)) {
 			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
@@ -47,15 +69,6 @@ export class TypeSerializer {
 						uniqueTypename: symbol.name,
 					};
 				}
-			}
-		}
-		else if (type.symbol && isBuiltinSymbol(type.symbol)) {
-			switch (type.symbol.name) {
-				case 'Buffer':
-					return {
-						...base,
-						type: 'Buffer'
-					};
 			}
 		}
 		else if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {

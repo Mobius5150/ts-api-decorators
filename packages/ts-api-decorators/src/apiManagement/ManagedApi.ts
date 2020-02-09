@@ -1,5 +1,5 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
-import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
 import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError } from "../Errors";
 import { Readable } from "stream";
@@ -10,6 +10,7 @@ import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
 import * as p2r from 'path-to-regexp';
 import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
+import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -138,7 +139,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					const handlerArgs = ManagedApiInternal.GetApiHandlerParams(handlerClass.constructor, definition.handlerKey);
 					handlerMethodCollection.set(route, {
 						parent: instance,
-						wrappedHandler: this.getWrappedHandler(definition, handlerArgs, instance),
+						wrappedHandler: this.getWrappedHandler({
+							...definition,
+							processors: ManagedApiInternal.GetApiHandlerProcessors(definition.handler),
+						}, handlerArgs, instance),
 						handlerArgs,
 						routeTokens,
 						...definition
@@ -154,18 +158,19 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return p2r.parse(route);
 	}
 
-	private getWrappedHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object): WrappedApiHandler<TransportParamsType> {
+	private getWrappedHandler(def: IApiDefinitionWithProcessors<TransportParamsType>, handlerArgs: IApiParamDefinition[], instance: object): WrappedApiHandler<TransportParamsType> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
-				ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
 				try {
+					invocationParams = await this.preProcessInvocationParams(invocationParams, def.processors);
+					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
 					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);
 
-					const result: IApiInvocationResult = {
+					const result: IApiInvocationResult = await this.postProcessInvocationResult({
 						statusCode: 200,
 						body: handlerResult,
 						headers: {},
-					};
+					}, def.processors);
 
 					return result;
 				} catch (e) {
@@ -185,6 +190,22 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				}
 			});
 		};
+	}
+
+	protected async preProcessInvocationParams(invocationParams: IApiInvocationParams<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationParams<TransportParamsType>> {
+		for (const processor of processors[ApiProcessorTime.StagePreInvoke]) {
+			invocationParams = await processor.processor(invocationParams);
+		}
+
+		return invocationParams;
+	}
+
+	protected async postProcessInvocationResult(invocationResult: IApiInvocationResult, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationResult> {
+		for (const processor of processors[ApiProcessorTime.StagePostInvoke]) {
+			invocationResult = await processor.processor(invocationResult);
+		}
+
+		return invocationResult;
 	}
 
 	private isHttpErrorLike(e: any) {
