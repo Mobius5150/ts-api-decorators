@@ -46,7 +46,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 					initializer: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.Initializer),
 					regexp: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationRegExp),
 					typeref: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.Typeref),
-					validationFunction: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationFunction),
+					validationFunc: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationFunction),
 				},
 				parameterIndex: node.parent.parameters.indexOf(node),
 				propertyKey: this.getParameterName(node),

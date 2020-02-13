@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiBodyParam, ApiQueryParamNumber, ApiQueryParamString } from "../../../src";
+import { Api, ApiGetMethod, ApiBodyParam, ApiQueryParamNumber, ApiQueryParamString, ApiQueryParam, HttpBadRequestError } from "../../../src";
 import { ApiInjectedDependencyParam, ApiInjectedDependency } from "../../../src/decorators/DependencyParams";
 import { TestManagedApi } from "../../TestTransport";
 
@@ -28,6 +28,17 @@ class MyApi {
 	@ApiGetMethod('/stringRegex')
 	string(
 		@ApiQueryParamString(undefined, /^[a-z]+$/) str: string
+	) {
+		return str;
+	}
+
+	@ApiGetMethod('/validationFunc')
+	validationFunc(
+		@ApiQueryParam(undefined, (_, i) => {
+			if (i !== 'valid') {
+				throw new HttpBadRequestError('Expected str to be valid');
+			}
+		}) str: string
 	) {
 		return str;
 	}

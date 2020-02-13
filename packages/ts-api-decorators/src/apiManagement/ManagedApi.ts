@@ -237,15 +237,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			}
 
 			this.validateEnumParam(def.args, parsed);
+			if (def.args.validationFunc) {
+				this.applyValidationFunction(def.args, parsed);
+			}
 			if (def.args.regexp) {
 				this.validateRegExpParam(def.args, parsed);
 			}
 			if (def.args.typedef.type === 'number') {
 				this.validateNumberParam(def.args, parsed);
 			}
-			if (def.args.validationFunction) {
+			if (def.args.validationFunc) {
 				try {
-					def.args.validationFunction(def.args.name, parsed);
+					def.args.validationFunc(def.args.name, parsed);
 				} catch (e) {
 					if (this.isHttpErrorLike(e)) {
 						throw e;
@@ -261,6 +264,12 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			return useCallback.execute(() => def.handler.apply(instance, args));
 		} else {
 			return def.handler.apply(instance, args);
+		}
+	}
+	
+	private applyValidationFunction({name, validationFunc}: __ApiParamArgs, parsed: any) {
+		if (validationFunc) {
+			validationFunc(name, parsed);
 		}
 	}
 	
@@ -448,8 +457,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			}
 		}
 
-		if (args.validationFunction) {
-			args.validationFunction(args.name, contents);
+		if (args.validationFunc) {
+			args.validationFunc(args.name, contents);
 		}
 	}
 

@@ -13,7 +13,7 @@ export interface __ApiParamArgsBase {
 type Func<T1, R> = (t1: T1) => R;
 export interface __ApiParamArgsFuncs {
 	initializer?: () => any;
-	validationFunction?: ApiParamValidationFunction;
+	validationFunc?: ApiParamValidationFunction;
 	regexp?: RegExp | Func<string, RegExp>;
 	typeref?: ClassConstructor;
 	numberMin?: number;

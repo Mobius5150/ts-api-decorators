@@ -2,10 +2,8 @@ import { assert } from 'chai';
 import * as path from 'path';
 import 'mocha';
 import { getCompiledProgram } from '../TestUtil';
-import { ManagedApi, ApiMethod } from '../../src';
+import { ApiMethod } from '../../src';
 import { TestManagedApi } from '../TestTransport';
-
-
 
 describe('Query Param Runtime', () => {
     let api: TestManagedApi;
@@ -79,6 +77,21 @@ describe('Query Param Runtime', () => {
             ['6', 400],
             ['I', 400],
             ['i', 200],
+        ]);
+    });
+
+    it('should call validation functions', async () => {
+        await testApiMethodInput('/validationFunc', 'str', [
+            ['valid', 200],
+            ['a', 400],
+            [5, 400],
+            ['', 400],
+            [true, 400],
+            [false, 400],
+            ['6', 400],
+            ['I', 400],
+            ['i', 400],
+            ['valid', 200],
         ]);
     });
 });
