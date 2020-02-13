@@ -16,6 +16,8 @@ export interface __ApiParamArgsFuncs {
 	validationFunction?: ApiParamValidationFunction;
 	regexp?: RegExp | Func<string, RegExp>;
 	typeref?: ClassConstructor;
+	numberMin?: number;
+	numberMax?: number;
 }
 
 export type BuiltinTypeNames = 'Buffer' | 'Promise';
@@ -41,8 +43,6 @@ export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType{
 
 export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType{
 	type: 'number';
-	minVal?: number;
-	maxVal?: number;
 	schema?: { enum?: number[]; };
 	typename?: string;
 }

@@ -264,10 +264,13 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 	}
 	
-	protected validateNumberParam({typedef, name}: __ApiParamArgs, parsed: any) {
+	protected validateNumberParam({typedef, name, numberMin, numberMax}: __ApiParamArgs, parsed: any) {
 		if (typedef.type === 'number') {
-			if ((typedef.minVal && parsed < typedef.minVal) || (typedef.maxVal && parsed > typedef.maxVal)) {
-				throw new HttpNumberParamOutOfBoundsError(name, typedef.minVal, typedef.maxVal);
+			if (
+				(typeof numberMin === 'number' && parsed < numberMin)
+				|| (typeof numberMax === 'number' && parsed > numberMax)
+			) {
+				throw new HttpNumberParamOutOfBoundsError(name, numberMin, numberMax);
 			}
 		}
 	}
