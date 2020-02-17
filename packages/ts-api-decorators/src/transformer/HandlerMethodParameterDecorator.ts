@@ -29,6 +29,10 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		return this.definition.transportTypeId;
 	}
 
+	public get paramId() {
+		return this.definition.paramId;
+	}
+
 	public getDecoratorTreeElement(parent: IHandlerTreeNode | undefined, node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformedTreeElement<ts.Decorator> {
 		const argumentResult = this.applyArguments(node, decorator, context);
 		const decoratorTreeNode: IHandlerTreeNodeParameter = {
@@ -52,6 +56,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 				propertyKey: this.getParameterName(node),
 				type: this.definition.parameterType,
 				transportTypeId: this.transportTypeId,
+				paramId: this.paramId,
 			},
 			metadata: argumentResult.metadata,
 		};

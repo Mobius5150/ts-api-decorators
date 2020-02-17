@@ -2,7 +2,7 @@ import { IApiDefinition, ApiMethod, IApiParamDefinition, IApiProcessors } from "
 import 'reflect-metadata';
 import { IDependency, IDependencyParam } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
-import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor } from "./ApiProcessing/ApiProcessing";
+import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor, IApiGlobalProcessor } from "./ApiProcessing/ApiProcessing";
 import { IApiInvocationParams, IApiInvocationResult } from "./ManagedApi";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
@@ -32,6 +32,7 @@ export class ManagedApiInternal {
 	public static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
 	public static readonly DependencyMetadataKey = 'managedapi:dependency';
 	public static readonly DependencyParamMetadataKey = 'managedapi:dependencyparams';
+	public static readonly GlobalApiProcessorMetadataKey = 'managedapi:globalapiprocessor';
 
 	public static ResetRegisteredApis() {
 		Apis.apis.clear();
@@ -100,6 +101,12 @@ export class ManagedApiInternal {
 		Reflect.defineMetadata(this.ApiMethodMetadataKey, apis, target);
 	}
 
+	public static AddGlobalApiProcessorMetadataToObject(metadata: IApiGlobalProcessor, target: object): void {
+		const apis: IApiGlobalProcessor[] = ManagedApiInternal.GetGlobalApiProcessorOnObject(target);
+		apis.push(metadata);
+		Reflect.defineMetadata(this.GlobalApiProcessorMetadataKey, apis, target);
+	}
+
 	public static AddApiProcessorsToObject(processors: IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[], target: object): void {
 		const apis: IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] = ManagedApiInternal.GetApiProcessorsOnObject(target);
 		apis.push(...processors);
@@ -165,6 +172,10 @@ export class ManagedApiInternal {
 
 	private static GetApiDefinitionsOnObject(target: object): IApiDefinition[] {
 		return Reflect.getMetadata(this.ApiMethodMetadataKey, target) || [];
+	}
+
+	private static GetGlobalApiProcessorOnObject(target: object): IApiGlobalProcessor[] {
+		return Reflect.getMetadata(this.GlobalApiProcessorMetadataKey, target) || [];
 	}
 
 	private static GetApiProcessorsOnObject(target: object): IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] {

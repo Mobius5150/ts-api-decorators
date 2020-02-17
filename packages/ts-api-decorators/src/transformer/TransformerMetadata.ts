@@ -108,6 +108,18 @@ export abstract class BuiltinMetadata {
         key: 'route',
     }
 
+    public static readonly ApiProcessorStage: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'apiprocessorstage',
+    }
+
+    public static readonly ApiProcessorScope: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'apiprocessorscope',
+    }
+
     public static readonly DependencyScope: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,

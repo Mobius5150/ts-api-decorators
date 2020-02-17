@@ -20,6 +20,12 @@ export class DecoratorResolver implements IDecoratorResolver {
 		CollectionUtil.addToMapSet(this.nodeTypeMap, decorator.nodeType, decorator);
 	}
 
+	public addDecorators(decorators: IDecorator[]): void {
+		for (const decorator of decorators) {
+			this.addDecorator(decorator);
+		}
+	}
+
 	public getDecoratorsForNodeType(type: DecoratorNodeType, parent?: IHandlerTreeNode): IDecorator[] {
 		return Array.from(CollectionUtil.getSet(this.nodeTypeMap, type) || []);
 	}
