@@ -20,6 +20,8 @@ import { DecoratorResolver } from '../DecoratorResolver';
 import { Api, GetApiDecorator } from '../../decorators';
 import { TreeTransformer } from '../TreeTransformer';
 import { IHandlerTreeNodeRoot } from '../HandlerTree';
+import { TransformerOpts } from '../TransformerOpts';
+import { GetApiProcessorDecorator, ApiProcessor } from '../../decorators/ApiProcessing';
 
 export type OnTreeExtractedHandler = (error: any, treeRoot: IHandlerTreeNodeRoot) => void;
 
@@ -43,6 +45,11 @@ export interface ITransformerArguments {
 	 * A method to be called when the Handler Tree is extracted.
 	 */
 	onTreeExtracted?: OnTreeExtractedHandler;
+
+	/**
+	 * Program-specified options for the transformer.
+	 */
+	transformerOpts?: TransformerOpts;
 }
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
@@ -55,6 +62,11 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 		args.decoratorResolver = getDefaultDecoratorResolver();
 	} else if (args.registerBuiltindecorators) {
 		registerDefaultDecorators(args.decoratorResolver);
+	}
+
+	if (!args.transformerOpts) {
+		args.transformerOpts = loadTransformerOpts(program.getCompilerOptions().rootDir);
+		args.decoratorResolver.addDecorators(args.transformerOpts.loadCustomDecorators());
 	}
 
 	if (typeof args.applyTransformation !== 'boolean') {
@@ -85,6 +97,9 @@ export function getDefaultDecoratorResolver() {
 	return resolver;
 }
 
+export function loadTransformerOpts(rootDir: string): TransformerOpts {
+	return TransformerOpts.ParseTransformerOpts(rootDir);
+}
 
 export function registerDefaultDecorators(resolver: IDecoratorResolver) {
 	const decorators = [
@@ -113,6 +128,8 @@ export function registerDefaultDecorators(resolver: IDecoratorResolver) {
 		GetDependencyParamDecorator(ApiDependency),
 		GetDependencyParamDecorator(ApiInjectedDependency),
 		GetDependencyParamDecorator(ApiInjectedDependencyParam),
+
+		GetApiProcessorDecorator(ApiProcessor),
 	];
 	
 	for (const decorator of decorators) {

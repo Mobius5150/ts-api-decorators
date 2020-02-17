@@ -4,12 +4,36 @@ import { InternalTypeUtil, InternalTypeDefinition } from "../apiManagement/Inter
 import { BuiltinMetadata } from "./TransformerMetadata";
 import { ITransformContext } from './ITransformContext';
 import { ExpressionWrapper } from './ExpressionWrapper';
+import { ApiProcessorTime, ApiProcessorScope } from '../apiManagement/ApiProcessing/ApiProcessing';
 
 export abstract class BuiltinArgumentExtractors {
 	public static readonly RouteArgument: IDecoratorArgument = {
 		type: InternalTypeUtil.TypeString,
 		metadataExtractor: (args) => ({
 			...BuiltinMetadata.Route,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly ApiProcessorStageArgument: IDecoratorArgument = {
+		type: {
+			...InternalTypeUtil.TypeEnum,
+			schema: { enum: [ ApiProcessorTime.StagePreInvoke, ApiProcessorTime.StagePostInvoke ] },
+		},
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.ApiProcessorStage,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly ApiProcessorScopeArgument: IDecoratorArgument = {
+		optional: true,
+		type: {
+			...InternalTypeUtil.TypeEnum,
+			schema: { enum: [ ApiProcessorScope.ScopeGlobal, ApiProcessorScope.ScopeClass ] },
+		},
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.ApiProcessorScope,
 			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
 		}),
 	};

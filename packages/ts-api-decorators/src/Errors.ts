@@ -33,6 +33,24 @@ export class HttpBadRequestError extends HttpError {
     }
 }
 
+export class HttpUnauthorizedRequestError extends HttpError {
+    constructor(m: string = 'Unauthorized') {
+        super(m, 401, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpUnauthorizedRequestError.prototype);
+    }
+}
+
+export class HttpForbiddenError extends HttpError {
+    constructor(m: string = 'Forbidden') {
+        super(m, 403, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpForbiddenError.prototype);
+    }
+}
+
 export class HttpRequiredQueryParamMissingError extends HttpBadRequestError {
     constructor(queryParamName: string) {
         super(`Missing required query parameter '${queryParamName}'`);

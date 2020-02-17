@@ -48,6 +48,11 @@ export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase 
 	transportTypeId?: string;
 
 	/**
+	 * If the parameterType is `Custom`, the param id
+	 */
+	paramId?: string;
+
+	/**
 	 * If set, parameter type must match at least one of the type restrictions
 	 */
 	parameterTypeRestrictions?: InternalTypeDefinition[];
