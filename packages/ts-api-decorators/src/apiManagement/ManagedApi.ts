@@ -141,7 +141,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						parent: instance,
 						wrappedHandler: this.getWrappedHandler({
 							...definition,
-							processors: ManagedApiInternal.GetApiHandlerProcessors(definition.handler),
+							processors: this.getApiProcessorsForHandler(handlerClass.constructor, definition.handler),
 						}, handlerArgs, instance),
 						handlerArgs,
 						routeTokens,
@@ -153,6 +153,25 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 		return handlers;
 	}
+
+	private getApiProcessorsForHandler(constructor: ClassConstructor<{}>, handler: import("./ApiDefinition").ApiMethodFunction): IApiProcessors<TransportParamsType> {
+		const processors = [
+			ManagedApiInternal.GetApiHandlerProcessors(handler),
+			ManagedApiInternal.GetApiHandlerProcessors(constructor),
+		];
+
+		return <IApiProcessors<TransportParamsType>> processors.reduce((p: IApiProcessors<object>, c: IApiProcessors<object>) => {
+			if (!p) {
+				return c;
+			}
+
+			for (const key in Object.keys(c)) {
+				p[key] = p[key].concat(c[key]);
+			}
+
+			return p;
+		});
+	}
 	
 	public static GetRouteTokens(route: string) {
 		return p2r.parse(route);
@@ -162,6 +181,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
 				try {
+					// TODO: Include the global processors that apply to the set of APIs that are instantiated by calling GetGlobalApiHandlerOnObject
+					// on all instantiated API classes, which will work in and out of global mode
 					invocationParams = await this.preProcessInvocationParams(invocationParams, def.processors);
 					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
 					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);

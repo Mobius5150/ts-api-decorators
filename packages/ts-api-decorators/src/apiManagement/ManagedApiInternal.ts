@@ -2,7 +2,7 @@ import { IApiDefinition, ApiMethod, IApiParamDefinition, IApiProcessors } from "
 import 'reflect-metadata';
 import { IDependency, IDependencyParam } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
-import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor, IApiGlobalProcessor } from "./ApiProcessing/ApiProcessing";
+import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor, IApiGlobalProcessor, ApiProcessorScope } from "./ApiProcessing/ApiProcessing";
 import { IApiInvocationParams, IApiInvocationResult } from "./ManagedApi";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
@@ -164,10 +164,28 @@ export class ManagedApiInternal {
 		};
 
 		for (const processor of ManagedApiInternal.GetApiProcessorsOnObject(target)) {
+			if ((<Partial<IApiGlobalProcessor>>processor).scope === ApiProcessorScope.ScopeGlobal) {
+				continue;
+			}
+			
 			processors[processor.stage].push(<any>processor);
 		}
 
 		return processors;
+	}
+
+	public static GetGlobalApiHandlerOnObject<T extends object>(apiConstructor: ClassConstructor): IApiProcessors<T> {
+		const apiProcessors = this.GetApiHandlerProcessors<T>(apiConstructor);
+		ManagedApiInternal.filterProcessorsToScope<T>(apiProcessors, ApiProcessorScope.ScopeGlobal);
+		return apiProcessors;
+	}
+
+	private static filterProcessorsToScope<T extends object>(apiProcessors: IApiProcessors<T>, scope: ApiProcessorScope) {
+		for (const key in Object.keys(apiProcessors)) {
+			if (apiProcessors.postinvoke.length > 0 || apiProcessors.preinvoke.length > 0) {
+				apiProcessors[key] = apiProcessors[key].filter((a: Partial<IApiGlobalProcessor>) => a.scope === scope);
+			}
+		}
 	}
 
 	private static GetApiDefinitionsOnObject(target: object): IApiDefinition[] {

@@ -27,18 +27,18 @@ abstract class ApiProcessingDecorators {
 		metadata: [],
 		transformArgumentsToObject: false,
 	})
-	public static ApiProcessor(stage: ApiProcessorTime, scope: ApiProcessorScope = ApiProcessorScope.ScopeGlobal): ApiMethodDecoratorReturnType<never, IApiGlobalProcessor['handler']> {
+	public static ApiProcessor(stage: ApiProcessorTime, scope: ApiProcessorScope = ApiProcessorScope.ScopeGlobal): ApiMethodDecoratorReturnType<never, IApiGlobalProcessor['processor']> {
 		return (
 			target: object,
 			propertyKey: string,
-			descriptor: TypedPropertyDescriptor<IApiGlobalProcessor['handler']>
+			descriptor: TypedPropertyDescriptor<IApiGlobalProcessor['processor']>
 		) => {
 			ManagedApiInternal.AddGlobalApiProcessorMetadataToObject(
 				{
 					stage,
 					scope,
-					handlerKey: propertyKey,
-					handler: descriptor.value,
+					processorKey: propertyKey,
+					processor: descriptor.value,
 				},
 				target.constructor);
 		}

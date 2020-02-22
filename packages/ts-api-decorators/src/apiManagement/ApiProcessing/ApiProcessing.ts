@@ -27,6 +27,6 @@ export interface IApiPostProcessor extends IApiProcessor<IApiInvocationResult> {
 export interface IApiGlobalProcessor {
 	stage: ApiProcessorTime;
 	scope: ApiProcessorScope;
-	handler: (IApiPreProcessor | IApiPostProcessor)['processor'];
-	handlerKey: string | symbol;
+	processor: (IApiPreProcessor | IApiPostProcessor)['processor'];
+	processorKey: string | symbol;
 }
