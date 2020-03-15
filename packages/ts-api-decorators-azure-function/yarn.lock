@@ -7,6 +7,11 @@
   resolved "https://registry.yarnpkg.com/@azure/functions/-/functions-1.0.3.tgz#1b51d58f188903f59f39bd093fe6f7b8d88deb11"
   integrity sha512-/D+sz6LgWT+A6RRW2zhwlwhKqqDSxL6HCF1Q1lN0iXolD2FfNFZpzrOxGyGYEEXp/5Dtjp12bcRTBhMH1cBi2Q==
 
+"@octetstream/promisify@2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@octetstream/promisify/-/promisify-2.0.2.tgz#29ac3bd7aefba646db670227f895d812c1a19615"
+  integrity sha512-7XHoRB61hxsz8lBQrjC1tq/3OEIgpvGWg6DKAdwi7WRzruwkmsdwmOoUXbU4Dtd4RSOMDwed0SkP3y8UlMt1Bg==
+
 "@types/chai@^4.2.0":
   version "4.2.8"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.2.8.tgz#c8d645506db0d15f4aafd4dfa873f443ad87ea59"
@@ -53,9 +58,9 @@ acorn-walk@^7.0.0:
   integrity sha512-7Bv1We7ZGuU79zZbb6rRqcpxo3OY+zrdtloZWoyD8fmGX+FeXRjE+iuGkZjSXLVovLzrsvMGMy0EkwA0E0umxg==
 
 acorn@^7.0.0:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.1.0.tgz#949d36f2c292535da602283586c2477c57eb2d6c"
-  integrity sha512-kL5CuoXA/dgxlBbVrflsflzQ3PAas7RYZB52NOm/6839iVYJgKMJ3cQJD+t2i5+qFa8h3MDpEOJiS64E8JLnSQ==
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/acorn/-/acorn-7.1.1.tgz#e35668de0b402f359de515c5482a1ab9f89a69bf"
+  integrity sha512-add7dgA5ppRPxCFJoAGfMDi7PIBXq1RtGo7BhbLaxwrXPOmw8gq48Y9ozT01hUKy9byMjlR20EJhu5zlkErEkg==
 
 ajv@^6.5.5:
   version "6.11.0"
@@ -384,6 +389,11 @@ delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
   integrity sha1-3zrhmayt+31ECqrgsp4icrJOxhk=
+
+dependency-graph@^0.8.1:
+  version "0.8.1"
+  resolved "https://registry.yarnpkg.com/dependency-graph/-/dependency-graph-0.8.1.tgz#9b8cae3aa2c7bd95ccb3347a09a2d1047a6c3c5a"
+  integrity sha512-g213uqF8fyk40W8SBjm079n3CZB4qSpCrA2ye1fLGzH/4HEgB6tzuW2CbLE7leb4t45/6h44Ud59Su1/ROTfqw==
 
 diff@3.5.0:
   version "3.5.0"
@@ -948,6 +958,11 @@ ms@^2.1.1:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
 
+mustache@^3.2.1:
+  version "3.2.1"
+  resolved "https://registry.yarnpkg.com/mustache/-/mustache-3.2.1.tgz#89e78a9d207d78f2799b1e95764a25bf71a28322"
+  integrity sha512-RERvMFdLpaFfSRIEe632yDm5nsd0SDKn8hGmcUwswnyiE5mtdZLDybtHAz6hjJhawokF0hXvGLtx9mrQfm6FkA==
+
 neo-async@^2.6.0:
   version "2.6.1"
   resolved "https://registry.yarnpkg.com/neo-async/-/neo-async-2.6.1.tgz#ac27ada66167fa8849a6addd837f6b189ad2081c"
@@ -1090,6 +1105,11 @@ path-is-absolute@^1.0.0:
   resolved "https://registry.yarnpkg.com/path-is-absolute/-/path-is-absolute-1.0.1.tgz#174b9268735534ffbc7ace6bf53a5a9e1b5c5f5f"
   integrity sha1-F0uSaHNVNP+8es5r9TpanhtcX18=
 
+path-to-regexp@^6.1.0:
+  version "6.1.0"
+  resolved "https://registry.yarnpkg.com/path-to-regexp/-/path-to-regexp-6.1.0.tgz#0b18f88b7a0ce0bfae6a25990c909ab86f512427"
+  integrity sha512-h9DqehX3zZZDCEm+xbfU0ZmwCGFCAAraPJWMXJ4+v32NjZJilVg3k1TcKsRgIb8IQ/izZSaydDc1OhJCZvs2Dw==
+
 pathval@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/pathval/-/pathval-1.1.0.tgz#b942e6d4bde653005ef6b71361def8727d0645e0"
@@ -1104,6 +1124,13 @@ process-nextick-args@~2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
   integrity sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==
+
+promise-fs@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/promise-fs/-/promise-fs-2.1.1.tgz#0b725a592c165ff16157d1f13640ba390637e557"
+  integrity sha512-43p7e4QzAQ3w6eyN0+gbBL7jXiZFWLWYITg9wIObqkBySu/a5K1EDcQ/S6UyB/bmiZWDA4NjTbcopKLTaKcGSw==
+  dependencies:
+    "@octetstream/promisify" "2.0.2"
 
 psl@^1.1.24, psl@^1.1.28:
   version "1.7.0"
@@ -1484,10 +1511,20 @@ tough-cookie@~2.4.3:
     psl "^1.1.24"
     punycode "^1.4.1"
 
-ts-api-decorators@^0.1.3:
+ts-api-decorators-azure-function@^0.1.3:
   version "0.1.4"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.4.tgz#d5119b8b510f6bd0f991cfb46507a53acc791657"
-  integrity sha512-X9lauzOLzihtxkxnvYIcKlpg0ZHeVnLahUC4edF2Djc5C+U2VfhqZRfe2hXeRtnCP5dwsLEDgdHf7Mkb7Cnfgg==
+  resolved "https://registry.yarnpkg.com/ts-api-decorators-azure-function/-/ts-api-decorators-azure-function-0.1.4.tgz#0ed879901ec06fae259149b84b25d630b788a79c"
+  integrity sha512-gaqS/9QxlKHDsKJwQxsmYurxHa3ASuFwMhmzxEtT+Z/JlWhcjn6MGOA1YohHkiaFDGUB9hymUs8nsORHNdyVbw==
+  dependencies:
+    "@azure/functions" "^1.0.3"
+    commander "^4.0.1"
+    ts-api-decorators "^0.1.5"
+    uuid "^3.4.0"
+
+ts-api-decorators@^0.1.5:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.5.tgz#bfcdec5c37542f18874c1e86c86b3b78e740cc12"
+  integrity sha512-iRk11VLV69wbefQNbGkHZX+cwzRpxZSo1wnhU+LL8Kn9wVkyFBd+8iQ8ZPF3UWT5USJe+WggeFzTEC+9TMTE8g==
   dependencies:
     "@azure/functions" "^1.0.3"
     acorn "^7.0.0"
@@ -1495,13 +1532,20 @@ ts-api-decorators@^0.1.3:
     cli-table "^0.3.1"
     cls-hooked "^4.2.2"
     commander "^3.0.2"
+    dependency-graph "^0.8.1"
     fast-deep-equal "^2.0.1"
     js-yaml "^3.13.1"
     jsonschema "^1.2.4"
+    mustache "^3.2.1"
+    path-to-regexp "^6.1.0"
+    promise-fs "^2.1.1"
     reflect-metadata "^0.1.13"
+    strip-dirs "^3.0.0"
     swagger-parser "^8.0.3"
     swagger-ts-client "^0.9.6"
     typescript-json-schema "^0.39.0"
+  optionalDependencies:
+    ts-api-decorators-azure-function "^0.1.3"
 
 ts-node@^8.3.0:
   version "8.6.2"
