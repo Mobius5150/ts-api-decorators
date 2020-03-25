@@ -1,11 +1,11 @@
 {
   "name": "ts-api-decorators-express",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "API Decorators for typescript and Express",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json",
     "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
     "prepublishOnly": "yarn run build"
   },
@@ -27,7 +27,7 @@
     "mocha": "^6.2.0",
     "supertest": "^4.0.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.8.3"
   },
   "peerDependencies": {
     "express": "^4.17.1",
