@@ -1,13 +1,13 @@
 {
   "name": "ts-api-decorators-express",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "API Decorators for typescript and Express",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "yarn run build"
   },
   "author": "Mike Blouin <ts-api-decorators@michaelblouin.ca> (michaelblouin.ca)",
   "license": "Apache-2.0",
