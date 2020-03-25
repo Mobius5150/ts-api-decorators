@@ -26,7 +26,7 @@ export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs 
 }
 
 export interface IntrinsicTypeDefinition extends IntrinsicNamedType {
-	type: 'regex' | 'boolean' | 'any';
+	type: 'regex' | 'boolean' | 'void' | 'any';
 }
 
 export interface IntrinsicNamedType {

@@ -1,7 +1,10 @@
-import { ManagedApiInternal } from "ts-api-decorators";
+import { ManagedApiInternal, Api } from "ts-api-decorators";
 import { ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
 import { ApplicationRequestHandler } from "express-serve-static-core";
-import { __ApiParamArgs } from "ts-api-decorators/dist/apiManagement/InternalTypes";
+import { __ApiParamArgs, InternalTypeUtil } from "ts-api-decorators/dist/apiManagement/InternalTypes";
+import { ApiDecorator, DecoratorParentNameDependency } from "ts-api-decorators/dist/decorators/DecoratorUtil";
+import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
+import { ExpressMetadata } from "../metadata/ExpressMetadata";
 
 export function ApiExpressMiddleware(...handlers: ApplicationRequestHandler<Express.Application>[]) {
 	return (
@@ -19,6 +22,17 @@ export abstract class ExpressParams {
 	public static readonly TransportTypeResponseParam = 'express.response';
 
 	public static ExpressApiRequestParam(): ParameterDecorator;
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Transport,
+		parameterTypeRestrictions: [
+			InternalTypeUtil.TypeAnyObject,
+		],
+		provider: ExpressMetadata.Component,
+		arguments: [],
+		transportTypeId: ExpressParams.TransportTypeRequestParam,
+	})
 	public static ExpressApiRequestParam(a?: any): ParameterDecorator {
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
 			const args = <__ApiParamArgs>a;
@@ -35,6 +49,17 @@ export abstract class ExpressParams {
 	}
 
 	public static ExpressApiResponseParam(): ParameterDecorator;
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Transport,
+		parameterTypeRestrictions: [
+			InternalTypeUtil.TypeAnyObject,
+		],
+		provider: ExpressMetadata.Component,
+		arguments: [],
+		transportTypeId: ExpressParams.TransportTypeResponseParam,
+	})
 	public static ExpressApiResponseParam(a?: any): ParameterDecorator {
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
 			const args = <__ApiParamArgs>a;

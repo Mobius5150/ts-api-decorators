@@ -21,8 +21,8 @@ abstract class ApiProcessingDecorators {
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
-			BuiltinArgumentExtractors.RouteArgument,
-			BuiltinArgumentExtractors.ReturnSchemaArgument,
+			BuiltinArgumentExtractors.ApiProcessorStageArgument,
+			BuiltinArgumentExtractors.ApiProcessorScopeArgument,
 		],
 		metadata: [],
 		transformArgumentsToObject: false,

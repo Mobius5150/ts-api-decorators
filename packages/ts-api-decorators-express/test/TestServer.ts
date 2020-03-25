@@ -1,5 +1,6 @@
 import * as http from 'http';
 import * as ts from 'typescript';
+import transformer from '../src/transformer';
 import {compileSourceFile, getDefaultCompilerOptions, getTransformer} from 'ts-api-decorators/test/TestUtil';
 
 export interface ITestServer {
@@ -22,7 +23,7 @@ export class TestServer {
 		const program = ts.createProgram([this.moduleName], options);
 		// const sourceFile = compileSourceFile(this.moduleName, options, [getTransformer()]);
 		program.emit(program.getSourceFile(this.moduleName), undefined, undefined, false, {
-			before: [getTransformer()(program)]
+			before: [transformer(program)]
 		});
 		this.module = require(this.jsModuleName).default;
 		return new Promise((resolve, reject) => {
