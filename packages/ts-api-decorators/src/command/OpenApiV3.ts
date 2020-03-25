@@ -1,36 +1,38 @@
 import { IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
 import { IExtractor } from "./IExtractor";
-import { OpenAPIV2, IJsonSchema } from 'openapi-types';
+import { OpenAPIV3, IJsonSchema } from 'openapi-types';
 import { getMetadataValue, IMetadataType, getAllMetadataValues, getMetadataValueByDescriptor, BuiltinMetadata } from "../transformer/TransformerMetadata";
 import { OpenApiMetadataType } from "../transformer/OpenApi";
 import * as yaml from 'js-yaml';
 import { IProgramInfo } from "./IProgramInfo";
-import { InternalTypeDefinition, IJsonSchemaWithRefs } from "../apiManagement/InternalTypes";
+import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalEnumTypeDefinition } from "../apiManagement/InternalTypes";
 import { IExtractedTag } from "../transformer/IExtractedTag";
 import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode } from "../transformer/HandlerTree";
 import { ManagedApi } from "../apiManagement";
 
-export interface ISwagger2Opts {
+export interface IOpenApiV3Opts {
     disableTryInferSchemes?: boolean;
     yamlOpts?: yaml.DumpOptions;
 }
 
-export class Swagger2Extractor implements IExtractor {
-    public static readonly SwaggerVersion = '2.0';
+export class OpenApiV3Extractor implements IExtractor {
+    public static readonly SwaggerVersion = '3.0.1';
     private static readonly RouteSeperator = '/';
+    private static readonly MimeTypeText = 'text/plain';
+    private static readonly MimeTypeJson = 'application/json';
 
     private tags = new Map<string, IExtractedTag>();
-    private definitions = new Map<string, OpenAPIV2.SchemaObject>();
+    private definitions = new Map<string, OpenAPIV3.SchemaObject>();
 
     constructor(
         private readonly apiTree: IHandlerTreeNodeRoot,
         private readonly apiInfo: IProgramInfo,
-        private readonly opts: ISwagger2Opts,
+        private readonly opts: IOpenApiV3Opts,
     ) {}
 
-    protected getDocument(): OpenAPIV2.Document {
-        const doc: OpenAPIV2.Document = {
-            swagger: Swagger2Extractor.SwaggerVersion,
+    protected getDocument(): OpenAPIV3.Document {
+        const doc: OpenAPIV3.Document = {
+            openapi: OpenApiV3Extractor.SwaggerVersion,
             info: {
                 title: this.apiInfo.title,
                 version: this.apiInfo.version,
@@ -39,9 +41,7 @@ export class Swagger2Extractor implements IExtractor {
                 termsOfService: this.apiInfo.termsOfService,
                 contact: this.apiInfo.contact,
             },
-            host: this.validHost(this.apiInfo.host || this.apiInfo.homepage),
-            basePath: this.apiInfo.basePath,
-            schemes: this.apiInfo.schemes || this.tryInferSchemes(),
+            servers: this.getApiServers(),
             paths: this.getPaths(),
         };
 
@@ -53,18 +53,53 @@ export class Swagger2Extractor implements IExtractor {
         }
 
         if (this.definitions.size > 0) {
-            doc.definitions = this.getDefinitions();
+            doc.components = this.getComponents();
         }
 
         return doc;
     }
 
-    private getDefinitions(): OpenAPIV2.DefinitionsObject {
+    private getApiServers(): OpenAPIV3.ServerObject[] {
+        const schemes = this.apiInfo.schemes || this.tryInferSchemes() || [];
+        if (schemes.length === 0) {
+            schemes.push('');
+        }
+
+        let host = this.validHost(this.apiInfo.host || this.apiInfo.homepage) || '';
+        while (host.endsWith('/')) {
+            host = host.substr(0, host.length - 1);
+        }
+
+        let basePath = this.apiInfo.basePath;
+        if (!basePath.startsWith('/')) {
+            basePath = '/' + basePath;
+        }
+
+        const servers: OpenAPIV3.ServerObject[] = [];
+        for (const scheme of schemes) {
+            let url = host + this.apiInfo.basePath;
+            
+            if (scheme.length > 0) {
+                url = `${scheme}://${url}`;
+            }
+
+            servers.push({
+                url: url,
+            })
+        }
+
+        return servers;
+    }
+
+    private getComponents(): OpenAPIV3.ComponentsObject {
         const defKeys = Array.from(this.definitions.keys());
         defKeys.sort();
-        const definitions: OpenAPIV2.DefinitionsObject = {};
+        const definitions: OpenAPIV3.ComponentsObject = {
+            schemas: {},
+        };
+
         defKeys.forEach(defName => {
-            definitions[defName] = <OpenAPIV2.SchemaObject>this.definitions.get(defName);
+            definitions.schemas[defName] = <OpenAPIV3.SchemaObject>this.definitions.get(defName);
         });
 
         return definitions;
@@ -101,8 +136,8 @@ export class Swagger2Extractor implements IExtractor {
         return host;
     }
 
-    private getPaths(): OpenAPIV2.PathsObject {
-        const paths: OpenAPIV2.PathsObject = {};
+    private getPaths(): OpenAPIV3.PathsObject {
+        const paths: OpenAPIV3.PathsObject = {};
         // Array.from(WalkChildrenByType(api, isHandlerParameterNode)).forEach(api => {
         for (const api of WalkTreeByType(this.apiTree, isHandlerNode)) {
             const route = this.swaggerizeRoute(api.route);
@@ -140,7 +175,7 @@ export class Swagger2Extractor implements IExtractor {
             .join('')
     }
     
-    private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV2.OperationObject {
+    private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV3.OperationObject {
         return {
             operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
@@ -148,21 +183,41 @@ export class Swagger2Extractor implements IExtractor {
             tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
             parameters: Array.from(WalkChildrenByType(api, isHandlerParameterNode)).map(p => this.getParametersObject(p)),
             responses: {
-                default: {
-                    schema: this.getInlineTypeSchema(getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema)),
-                    description: this.getOperationResponseDescription(api),
-                }
+                default: this.getResponseObject(api),
             }
         };
     }
 
-    private getOperationResponseDescription(api: IHandlerTreeNodeHandler): string {
+    private getResponseObject(api: IHandlerTreeNodeHandler): OpenAPIV3.ResponseObject {
+        const schema: InternalTypeDefinition = getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema);
+        let mimeType = OpenApiV3Extractor.MimeTypeText;
+        switch (schema.type) {
+            case 'object':
+            case 'array':
+            case 'intersection':
+            case 'union':
+                mimeType = OpenApiV3Extractor.MimeTypeJson;
+                break;
+        }
+
+        const response: OpenAPIV3.ResponseObject = {
+            description: this.getOperationResponseDescription(api, schema),
+            content: {
+                [mimeType]: {
+                    schema: this.getInlineTypeSchema(schema),
+                }
+            }
+        };
+
+        return response;
+    }
+
+    private getOperationResponseDescription(api: IHandlerTreeNodeHandler, schema: InternalTypeDefinition): string {
         const metadata = getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.ResponseDescription);
         if (metadata) {
             return metadata;
         }
 
-        const schema: InternalTypeDefinition = getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema);
         if (schema) {
             if (schema.typename) {
                 return schema.typename;
@@ -174,7 +229,7 @@ export class Swagger2Extractor implements IExtractor {
         return 'Default response';
     }
 
-    private getInlineTypeSchema(returnType: InternalTypeDefinition): Partial<OpenAPIV2.Schema> {
+    private getInlineTypeSchema(returnType: InternalTypeDefinition): OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject {
         switch (returnType.type) {
             case 'object':
                 if (returnType.schema) {
@@ -185,20 +240,79 @@ export class Swagger2Extractor implements IExtractor {
 
             case 'number':
             case 'string':
+                return {
+                    type: returnType.type,
+                    enum: (returnType.schema && returnType.schema.enum) ? returnType.schema.enum : undefined,
+                };
+
+            case 'enum':
+                return this.getEnumTypeInline(returnType);
+
             case 'boolean':
                 return {
                     type: returnType.type,
                 };
 
             case 'void':
-                return {};
+                return <OpenAPIV3.SchemaObject>{};
 
             default:
                 throw new Error(`Unable to serialize inline type: ${returnType.typename} (type: ${returnType.type})`);
         }
     }
+
+    private getEnumTypeInline(returnType: InternalEnumTypeDefinition): OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject {
+        if (!returnType.schema || !returnType.schema.enum || returnType.schema.enum.length === 0) {
+            // TODO: this has issues for named types and otehr scenarios
+            return {
+                type: 'string',
+            };
+        }
+
+        if (returnType.typename) {
+            this.addDefinitions({
+                [returnType.typename]: {
+                    enum: returnType.schema.enum,
+                }
+            })
+
+            return {
+                $ref: `#/components/schemas/${returnType.typename}`,
+            };
+        }
+
+        const types = new Map<string, any[]>();
+        for (const val of returnType.schema.enum) {
+            const type = typeof val;
+            if (!types.has(type)) {
+                types.set(type, []);
+            }
+
+            types.get(type).push(val);
+        }
+
+        if (types.size === 1) {
+            return {
+                type: <'string' | 'number'>typeof returnType.schema.enum[0],
+                enum: returnType.schema.enum,
+            }
+        }
+
+        const enumType: OpenAPIV3.SchemaObject = {
+            type: 'string',
+            anyOf: [],
+        }
+        types.forEach((values, type: 'string' | 'number') => {
+            enumType.anyOf.push({
+                type: type,
+                enum: values,
+            });
+        });
+
+        return enumType;
+    }
     
-    private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): Partial<OpenAPIV2.SchemaObject> | Partial<OpenAPIV2.ReferenceObject> {
+    private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject {
         if (schema.definitions) {
             this.addDefinitions(schema.definitions);
 
@@ -210,15 +324,54 @@ export class Swagger2Extractor implements IExtractor {
             delete schema.$schema;
         }
 
-        return <OpenAPIV2.SchemaObject>schema;
+        if (schema.$ref) {
+            schema.$ref = this.replaceRefStr(schema.$ref);
+        }
+
+        return <OpenAPIV3.SchemaObject>schema;
     }
 
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {
         for (const definition of Object.keys(definitions)) {
             if (!this.definitions.has(definition)) {
-                this.definitions.set(definition, <OpenAPIV2.SchemaObject>definitions[definition]);
+                this.definitions.set(definition, <OpenAPIV3.SchemaObject>this.fixDefinitionRefs(definitions[definition]));
             }
         }
+    }
+
+    private fixDefinitionRefs<T extends object>(def: T): T {
+        for (const property of Object.keys(def)) {
+            if (property === '$ref') {
+                def[property] = this.replaceRefStr(def[property]);
+            } else {
+                const val = def[property];
+                if (typeof val === 'object') {
+                    if (Array.isArray(val)) {
+                        this.fixArrayDefinitionRefs<T>(val);
+                    } else {
+                        this.fixDefinitionRefs(val);
+                    }
+                }
+            }
+        }
+
+        return def;
+    }
+
+    private fixArrayDefinitionRefs<T extends object>(val: any[]) {
+        val.forEach(v => {
+            if (typeof v === 'object') {
+                if (Array.isArray(v)) {
+                    this.fixArrayDefinitionRefs(v);
+                } else {
+                    this.fixDefinitionRefs(v);
+                }
+            }
+        });
+    }
+
+    private replaceRefStr(refStr: string): string {
+        return refStr.replace('#/definitions', '#/components/schemas')
     }
 
     private recordTagObject(t: IExtractedTag): string {
@@ -229,14 +382,14 @@ export class Swagger2Extractor implements IExtractor {
         return t.name;
     }
 
-    private getTagObject(t: IExtractedTag): OpenAPIV2.TagObject {
+    private getTagObject(t: IExtractedTag): OpenAPIV3.TagObject {
         return {
             name: t.name,
             description: t.description,
         };
     }
     
-    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV2.Parameter {
+    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject {
         let inStr: string;
         switch (p.paramDef.type) {
             case ApiParamType.Body:
@@ -255,11 +408,7 @@ export class Swagger2Extractor implements IExtractor {
                 throw new Error(`Unknown Api Parameter Type: ${p.type}`);
         }
 
-        let schema: OpenAPIV2.SchemaObject;
-        if (p.paramDef.args.typedef.type === 'object') {
-            schema = this.getInlineTypeSchema(p.paramDef.args.typedef);
-        }
-        
+        let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject = this.getInlineTypeSchema(p.paramDef.args.typedef);
         let enumVals: any[];
         if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
             if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
@@ -272,9 +421,7 @@ export class Swagger2Extractor implements IExtractor {
             in: inStr,
             required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
             description: p.paramDef.args.description,
-            type: p.paramDef.args.typedef.type,
             schema,
-            enum: enumVals,
         };
     }
 
@@ -288,7 +435,7 @@ export class Swagger2Extractor implements IExtractor {
     }
 }
 
-export class Swagger2JsonExtractor extends Swagger2Extractor {
+export class OpenApiV3JsonExtractor extends OpenApiV3Extractor {
     public toString(): string {
         return JSON.stringify(this.getDocument(), undefined, 4);
     }

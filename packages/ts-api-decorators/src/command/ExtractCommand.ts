@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { Swagger2Extractor } from './Swagger2Extractor';
 import { CliCommand, IParseApiResult } from './CliCommand';
 import { IParseOptions } from './ProgramOptions';
+import { OpenApiV3Extractor } from './OpenApiV3';
 
 export interface IProgramOptions extends IParseOptions {
     type: string;
@@ -23,7 +24,7 @@ export class ExtractCommand extends CliCommand {
                 }
             )
             .option('--tsconfig <file>', 'The tsconfig.json file to use when compiling')
-            .option('--type <type>', 'The type of output to generate', (d,v) => this.validateProgramOutputType(d, v), 'swagger2')
+            .option('--type <type>', 'The type of output to generate', (d,v) => this.validateProgramOutputType(d, v), 'openapiv3')
             .option('--outFile', 'The file to write output to')
             .option('--silent', 'Don\'t output information', false)
             .option('--apiInfo <file>', 'File containing information for the API', 'package.json')
@@ -43,6 +44,10 @@ export class ExtractCommand extends CliCommand {
 
             case 'swagger2':
                 summary = this.getSwaggerSummary(options, api);
+                break;
+
+            case 'openapiv3':
+                summary = this.getOpenApiV3Summary(options, api);
                 break;
 
             case 'json':
@@ -69,11 +74,17 @@ export class ExtractCommand extends CliCommand {
         return extractor.toString();
     }
 
+    private getOpenApiV3Summary(options: IProgramOptions, api: IParseApiResult) {
+        const extractor = new OpenApiV3Extractor(api.tree, api.programInfo, {});
+        return extractor.toString();
+    }
+
     protected validateProgramOutputType(value: string, defaultValue: string) {
         switch (value) {
             case 'summary':
             case 'json':
             case 'swagger2':
+            case 'openapiv3':
                 return value;
 
             case undefined:
