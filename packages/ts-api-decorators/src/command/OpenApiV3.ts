@@ -71,7 +71,7 @@ export class OpenApiV3Extractor implements IExtractor {
         }
 
         let basePath = this.apiInfo.basePath;
-        if (!basePath.startsWith('/')) {
+        if (basePath && !basePath.startsWith('/')) {
             basePath = '/' + basePath;
         }
 

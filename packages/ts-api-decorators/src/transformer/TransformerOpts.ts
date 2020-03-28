@@ -35,6 +35,8 @@ export class TransformerOpts implements ITransformerOpts {
 				customDecorators: contents.customDecorators,
 			});
 		}
+
+		return new TransformerOpts(rootDir, {});
 	}
 
 	public constructor(

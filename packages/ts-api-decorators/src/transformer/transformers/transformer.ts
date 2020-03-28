@@ -68,7 +68,10 @@ export default function transformer(program: ts.Program, args: ITransformerArgum
 		const {rootDir} = program.getCompilerOptions();
 		if (rootDir) {
 			args.transformerOpts = loadTransformerOpts(rootDir);
-			args.decoratorResolver.addDecorators(args.transformerOpts.loadCustomDecorators());
+
+			if (args.transformerOpts.loadCustomDecorators) {
+				args.decoratorResolver.addDecorators(args.transformerOpts.loadCustomDecorators());
+			}
 		}
 	}
 

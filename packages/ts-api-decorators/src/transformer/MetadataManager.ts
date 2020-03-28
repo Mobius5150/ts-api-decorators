@@ -106,7 +106,7 @@ export class MetadataManager implements IMetadataManager, IMetadataResolver {
         if (a === b) {
             return true;
         } else if (a === null || b === null) {
-            return false;
+            return true;
         }
 
         return a.magicFunctionName === b.magicFunctionName && a.indexTs === b.indexTs && a.provider === b.provider;

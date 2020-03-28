@@ -42,6 +42,9 @@ export class HandlerMethodDecorator extends Decorator<ts.MethodDeclaration, IMet
 			parent,
 			metadata: argumentResult.metadata,
 		};
+
+		decoratorTreeNode.metadata = decoratorTreeNode.metadata.concat(
+			context.metadataManager.getApiMetadataForApiMethod(decoratorTreeNode, node, this));
 		
 		return {
 			decoratorTreeNode,
