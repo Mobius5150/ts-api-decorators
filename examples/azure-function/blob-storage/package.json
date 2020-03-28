@@ -17,7 +17,9 @@
   "dependencies": {
     "ts-node": "^8.6.2",
     "typescript": "^3.7.5",
-    "ts-api-decorators": "^0.1.4",
+    "ts-api-decorators": "^0.1.4"
+  },
+  "peerDependencies": {
     "ts-api-decorators-azure-function": "^0.1.3"
   }
 }

@@ -1812,7 +1812,7 @@ ts-api-decorators-azure-function@^0.1.3:
     ts-api-decorators "^0.1.5"
     uuid "^3.4.0"
 
-ts-api-decorators@^0.1.5, ts-api-decorators@^0.1.6:
+ts-api-decorators@^0.1.5:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.7.tgz#c9157024c905a10251ad36822457d42381e991f0"
   integrity sha512-oKdXT2Zvdty123/K7nniHJJJQcmiL0PP5dtMtBndhSJJpJ9nnru9sirfZwFls91Kqxway04LRit4pGdpeqpePw==
@@ -1835,6 +1835,32 @@ ts-api-decorators@^0.1.5, ts-api-decorators@^0.1.6:
     swagger-parser "^8.0.3"
     swagger-ts-client "^0.9.6"
     typescript "^3.8.3"
+    typescript-json-schema "^0.39.0"
+  optionalDependencies:
+    ts-api-decorators-azure-function "^0.1.3"
+
+ts-api-decorators@^0.1.8:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.8.tgz#49fbf75325a436d7b5e9647c3f59286e67476d48"
+  integrity sha512-mPd/u4lsJp2UJUTfXvg0C4PtusVTOj/RNa+290f6XUODLrU1b/SISPkiajeAq7yihiY6q0rCwNvRFo8OSAbB+Q==
+  dependencies:
+    "@azure/functions" "^1.0.3"
+    acorn "^7.0.0"
+    acorn-walk "^7.0.0"
+    cli-table "^0.3.1"
+    cls-hooked "^4.2.2"
+    commander "^3.0.2"
+    dependency-graph "^0.8.1"
+    fast-deep-equal "^2.0.1"
+    js-yaml "^3.13.1"
+    jsonschema "^1.2.4"
+    mustache "^3.2.1"
+    path-to-regexp "^6.1.0"
+    promise-fs "^2.1.1"
+    reflect-metadata "^0.1.13"
+    strip-dirs "^3.0.0"
+    swagger-parser "^8.0.3"
+    swagger-ts-client "^0.9.6"
     typescript-json-schema "^0.39.0"
   optionalDependencies:
     ts-api-decorators-azure-function "^0.1.3"
@@ -1885,10 +1911,10 @@ typescript-json-schema@^0.39.0:
     typescript "^3.5.1"
     yargs "^13.2.4"
 
-typescript@^3.5.1, typescript@^3.8.3:
-  version "3.8.3"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.8.3.tgz#409eb8544ea0335711205869ec458ab109ee1061"
-  integrity sha512-MYlEfn5VrLNsgudQTVJeNaQFUAI7DkhnOjdpAp4T+ku1TfQClewlbSuTVHiA+8skNBgaf02TL/kLOvig4y3G8w==
+typescript@^3.5.1, "typescript@^3.7 < 3.8", typescript@^3.8.3:
+  version "3.7.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.7.5.tgz#0692e21f65fd4108b9330238aac11dd2e177a1ae"
+  integrity sha512-/P5lkRXkWHNAbcJIiHPfRoKqyd7bsyCma1hZNUGfn20qm64T6ZBlrzprymeu918H+mB/0rIg2gGK/BXkhhYgBw==
 
 uglify-js@^3.1.4:
   version "3.8.0"

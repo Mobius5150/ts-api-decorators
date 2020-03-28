@@ -60,12 +60,10 @@ abstract class ApiMethodDecorators {
 		}
 	}
 
-	public static ApiPostMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T>;
+	public static ApiPostMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	public static ApiPostMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiPostMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPostMethod<T extends Promise<string>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPostMethod<T extends Promise<object>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPostMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void>;
+	public static ApiPostMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPostMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
@@ -91,12 +89,10 @@ abstract class ApiMethodDecorators {
 		}
 	}
 
-	public static ApiPutMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T>;
+	public static ApiPutMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	public static ApiPutMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiPutMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPutMethod<T extends Promise<string>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPutMethod<T extends Promise<object>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiPutMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void>;
+	public static ApiPutMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPutMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
@@ -122,12 +118,10 @@ abstract class ApiMethodDecorators {
 		}
 	}
 
-	public static ApiDeleteMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T>;
+	public static ApiDeleteMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	public static ApiDeleteMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiDeleteMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiDeleteMethod<T extends Promise<string>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiDeleteMethod<T extends Promise<object>>(route: string): ApiMethodDecoratorReturnType<T>;
-	public static ApiDeleteMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void>;
+	public static ApiDeleteMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiDeleteMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
