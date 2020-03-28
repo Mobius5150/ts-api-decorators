@@ -76,7 +76,13 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				},
 			})
 				.then(result => {
-					res.status(result.statusCode).send(result.body);
+					if (!res.writableEnded) {
+						if (result.body) {
+							res.status(result.statusCode).send(result.body);
+						} else {
+							res.sendStatus(result.statusCode);
+						}
+					}
 				})
 				.catch(e => {
 					next(e)

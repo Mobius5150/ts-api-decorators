@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "description": "API Decorators for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -41,6 +41,7 @@
     "strip-dirs": "^3.0.0",
     "swagger-parser": "^8.0.3",
     "swagger-ts-client": "^0.9.6",
+    "typescript": "^3.8.3",
     "typescript-json-schema": "^0.39.0"
   },
   "devDependencies": {

@@ -17,6 +17,7 @@ export const enum ApiParamType {
 	Callback,
 	Transport,
 	Dependency,
+	Custom,
 }
 
 export type ApiMethodReturnTypePrimitives = void | string | object;
@@ -67,4 +68,9 @@ export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBas
 	transportTypeId: string;
 }
 
-export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition;
+export interface IApiCustomTypeParamDefinition extends IApiParamDefinitionBase {
+	type: ApiParamType.Custom;
+	paramId: string;
+}
+
+export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition;

@@ -3,7 +3,7 @@ import { ValidationError } from "jsonschema";
 export class HttpError<T extends object = {}> extends Error {
     public responseBody: { message: string } & T;
 
-    constructor(m: string, public readonly statusCode: number, bodyContents: T) {
+    constructor(m: string, public readonly statusCode: number, bodyContents: T = <T>{}) {
         super(m);
         this.responseBody = {
             message: m,
@@ -30,6 +30,24 @@ export class HttpBadRequestError extends HttpError {
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, HttpBadRequestError.prototype);
+    }
+}
+
+export class HttpUnauthorizedRequestError extends HttpError {
+    constructor(m: string = 'Unauthorized') {
+        super(m, 401, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpUnauthorizedRequestError.prototype);
+    }
+}
+
+export class HttpForbiddenError extends HttpError {
+    constructor(m: string = 'Forbidden') {
+        super(m, 403, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpForbiddenError.prototype);
     }
 }
 
