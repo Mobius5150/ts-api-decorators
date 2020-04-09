@@ -7,9 +7,11 @@ import {
 	parseApiMimeType,
 	ApiStdHeaderName,
 	ApiHeadersDict,
-	ApiParamsDict
+	ApiParamsDict,
+	ManagedApiInternal
 } from 'ts-api-decorators';
 import * as Express from 'express';
+import { ExpressMiddlewareArgument } from './ApiTypes';
 
 export interface IExpressManagedApiContext {
 	'express.request': Express.Request;
@@ -25,21 +27,26 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		for (const handlerMethod of handlers) {
 			const routes = handlerMethod[1];
 			for (const route of routes) {
+				const middlewares = 
+					ManagedApiInternal.GetApiModifierDefinitionsOnObject<ExpressMiddlewareArgument>(
+						route[1].parent.constructor, route[1].handlerKey)
+						.map(d => d.arguments.middleware);
+
 				switch (handlerMethod[0]) {
 					case ApiMethod.GET:
-						router.get(route[0], this.getHandlerWrapper(route[1]));
+						router.get(route[0], ...middlewares, this.getHandlerWrapper(route[1]));
 						break;
 
 					case ApiMethod.POST:
-						router.post(route[0], this.getHandlerWrapper(route[1]));
+						router.post(route[0], ...middlewares, this.getHandlerWrapper(route[1]));
 						break;
 
 					case ApiMethod.PUT:
-						router.put(route[0], this.getHandlerWrapper(route[1]));
+						router.put(route[0], ...middlewares, this.getHandlerWrapper(route[1]));
 						break;
 
 					case ApiMethod.DELETE:
-						router.delete(route[0], this.getHandlerWrapper(route[1]));
+						router.delete(route[0], ...middlewares, this.getHandlerWrapper(route[1]));
 						break;
 				}
 			}

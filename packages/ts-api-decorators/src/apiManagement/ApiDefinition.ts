@@ -1,5 +1,6 @@
 import { __ApiParamArgs, InternalTypeDefinition } from "./InternalTypes";
 import { ApiProcessorTime, IApiPreProcessor, IApiPostProcessor } from "./ApiProcessing/ApiProcessing";
+import { IMetadataDescriptor } from "../transformer/TransformerMetadata";
 
 export const enum ApiMethod {
 	GET = 'GET',
@@ -74,3 +75,9 @@ export interface IApiCustomTypeParamDefinition extends IApiParamDefinitionBase {
 }
 
 export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition;
+
+export interface IApiModifierDefinition<T = object> {
+	propertyKey: string | symbol;
+	metadata: IMetadataDescriptor;
+	arguments: T;
+}

@@ -1,23 +1,15 @@
-import { ManagedApiInternal, Api } from "ts-api-decorators";
+import { ManagedApiInternal, Api, ApiMethodDecoratorReturnType } from "ts-api-decorators";
 import { ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
-import { ApplicationRequestHandler } from "express-serve-static-core";
 import { __ApiParamArgs, InternalTypeUtil } from "ts-api-decorators/dist/apiManagement/InternalTypes";
-import { ApiDecorator, DecoratorParentNameDependency } from "ts-api-decorators/dist/decorators/DecoratorUtil";
+import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction, DecoratorPeerDependency } from "ts-api-decorators/dist/decorators/DecoratorUtil";
 import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
 import { ExpressMetadata } from "../metadata/ExpressMetadata";
+import { HandlerMethodModifierDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodModifierDecorator";
+import * as Express from 'express';
+import { ExpressArgumentExtractors } from "../metadata/ExpressArgumentExtractors";
+import { ExpressMiddlewareArgument } from "../apiManagement/ApiTypes";
 
-export function ApiExpressMiddleware(...handlers: ApplicationRequestHandler<Express.Application>[]) {
-	return (
-		target: object,
-		propertyKey: string,
-		descriptor: TypedPropertyDescriptor<(...args: any[]) => any>
-	) => {
-		// TODO: This decorator will allow users to specify express middleware to execute before a handler
-		throw new Error('Not implemented');
-	}
-}
-
-export abstract class ExpressParams {
+abstract class ExpressParams {
 	public static readonly TransportTypeRequestParam = 'express.request';
 	public static readonly TransportTypeResponseParam = 'express.response';
 
@@ -76,5 +68,39 @@ export abstract class ExpressParams {
 	}
 }
 
+class ExpressModifiers {
+	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<never, Express.Handler>;
+	@ApiDecorator(HandlerMethodModifierDecorator, {
+		indexTs: __filename,
+		dependencies: [
+			DecoratorParentNameDependency(Api.name),
+			// TODO peer dependency
+		],
+		provider: ExpressMetadata.Component,
+		arguments: [
+			ExpressArgumentExtractors.MiddlewareArgument,
+		],
+		transformArgumentsToObject: false,
+	})
+	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<never, Express.Handler> {
+		return (
+			target: object,
+			propertyKey: string,
+			descriptor: TypedPropertyDescriptor<Express.Handler>
+		) => {
+			ManagedApiInternal.AddApiModifierMetadataToObject(
+				{
+					propertyKey,
+					arguments: <ExpressMiddlewareArgument>{ middleware },
+					metadata: ExpressMetadata.MiddlewareArgument,
+				}, target.constructor);
+		}
+	}
+}
+
+export const GetExpressApiModifierDecorator = ApiMethodDecoratorGetFunction<HandlerMethodModifierDecorator>(ExpressModifiers);
+export const GetExpressApiParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(ExpressParams);
+
 export const ExpressApiRequestParam = ExpressParams.ExpressApiRequestParam;
 export const ExpressApiResponseParam = ExpressParams.ExpressApiResponseParam;
+export const ExpressApiMiddleware = ExpressModifiers.ExpressApiMiddleware;

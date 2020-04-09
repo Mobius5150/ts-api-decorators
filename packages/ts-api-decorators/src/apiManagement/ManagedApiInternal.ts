@@ -1,9 +1,10 @@
-import { IApiDefinition, ApiMethod, IApiParamDefinition, IApiProcessors } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, IApiProcessors, IApiModifierDefinition } from "./ApiDefinition";
 import 'reflect-metadata';
 import { IDependency, IDependencyParam } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
 import { IApiProcessor, ApiProcessorTime, IApiPreProcessor, IApiPostProcessor, IApiGlobalProcessor } from "./ApiProcessing/ApiProcessing";
 import { IApiInvocationParams, IApiInvocationResult } from "./ManagedApi";
+import { IParameterDecoratorDefinition } from "../transformer/DecoratorDefinition";
 
 const SINGLETON_KEY = Symbol.for("MB.ts-api-decorators.ManagedApiInternal");
 
@@ -28,6 +29,7 @@ export interface IApiClassDefinition {
 export class ManagedApiInternal {
 	public static readonly ApiMetadataKey = 'managedapi:api';
 	public static readonly ApiMethodMetadataKey = 'managedapi:apimethod';
+	public static readonly ApiMethodModifierMetadataKey = 'managedapi:apimodifier';
 	public static readonly ApiMethodProcessorsMetadataKey = 'managedapi:apiprocessors';
 	public static readonly ApiMethodParamsMetadataKey = 'managedapi:apimethodparams';
 	public static readonly DependencyMetadataKey = 'managedapi:dependency';
@@ -101,6 +103,12 @@ export class ManagedApiInternal {
 		Reflect.defineMetadata(this.ApiMethodMetadataKey, apis, target);
 	}
 
+	public static AddApiModifierMetadataToObject<T = object>(metadata: IApiModifierDefinition<T>, target: object): void {
+		const apis: IApiModifierDefinition<T>[] = ManagedApiInternal.GetApiModifierDefinitionsOnObject<T>(target, metadata.propertyKey);
+		apis.push(metadata);
+		Reflect.defineMetadata(this.ApiMethodModifierMetadataKey, apis, target, metadata.propertyKey);
+	}
+
 	public static AddGlobalApiProcessorMetadataToObject(metadata: IApiGlobalProcessor, target: object): void {
 		const apis: IApiGlobalProcessor[] = ManagedApiInternal.GetGlobalApiProcessorOnObject(target);
 		apis.push(metadata);
@@ -172,6 +180,10 @@ export class ManagedApiInternal {
 
 	private static GetApiDefinitionsOnObject(target: object): IApiDefinition[] {
 		return Reflect.getMetadata(this.ApiMethodMetadataKey, target) || [];
+	}
+
+	public static GetApiModifierDefinitionsOnObject<T = object>(target: object, propertyKey: string | symbol): IApiModifierDefinition<T>[] {
+		return Reflect.getMetadata(this.ApiMethodModifierMetadataKey, target, propertyKey) || [];
 	}
 
 	private static GetGlobalApiProcessorOnObject(target: object): IApiGlobalProcessor[] {
