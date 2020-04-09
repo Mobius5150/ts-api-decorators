@@ -27,6 +27,6 @@ export class DecoratorResolver implements IDecoratorResolver {
 	}
 
 	public getDecoratorsForNodeType(type: DecoratorNodeType, parent?: IHandlerTreeNode): IDecorator[] {
-		return Array.from(CollectionUtil.getSet(this.nodeTypeMap, type) || []);
+		return Array.from(CollectionUtil.iterateSet(this.nodeTypeMap, type) || []);
 	}
 }

@@ -8,6 +8,7 @@ import { ITransformContext } from './ITransformContext';
 import { IMetadataResolver } from './MetadataManager';
 import { IDecoratorResolver } from './IDecoratorResolver';
 import { ITransformer } from './ITransformer';
+import { isNamedDeclaration, isTypeWithSymbol } from './TransformerUtil';
 
 export class TreeTransformer implements ITransformer {
 	protected readonly typeChecker: ts.TypeChecker;
@@ -58,7 +59,7 @@ export class TreeTransformer implements ITransformer {
 	
 	private visitNodeInTreeContext(node: ts.Node, context: ts.TransformationContext, parent: IHandlerTreeNode): ts.Node {
 		const nodeType = this.getTypeForNode(node);
-		if (!nodeType || !this.nodeHasDecorators(node)) {
+		if (typeof nodeType === 'undefined' || !this.nodeHasDecorators(node)) {
 			if (parent) {
 				return this.visitNodeChildrenInTreeContext(node, context, parent);
 			} else {
@@ -71,7 +72,10 @@ export class TreeTransformer implements ITransformer {
 		for (let i = 0; i < node.decorators.length; ++i) {
 			nodeDecorators[i] = node.decorators[i];
 			for (const definition of decorators) {
-				if (this.isArgumentDecoratorCallExpression(nodeDecorators[i].expression, definition)) {
+				if (
+					(definition.isCallExpression && this.isArgumentDecoratorCallExpression(nodeDecorators[i].expression, definition))
+					|| (!definition.isCallExpression && this.isArgumentDecoratorExpression(nodeDecorators[i].expression, definition))
+				) {
 					const treeNode = definition.getDecoratorTreeElement(parent, node, nodeDecorators[i], this.transformContext);
 					parent.children.push(treeNode.decoratorTreeNode);
 
@@ -129,7 +133,10 @@ export class TreeTransformer implements ITransformer {
 			return false;
         }
         
-		const { declaration } = signature;
+		return this.isMatchingDeclaration(signature.declaration, definition);
+	}
+
+	protected isMatchingDeclaration(declaration: ts.NamedDeclaration, definition: IDecorator): boolean {
 		if (!(!!declaration
 			&& !ts.isJSDocSignature(declaration)
 			&& !!declaration.name
@@ -138,5 +145,44 @@ export class TreeTransformer implements ITransformer {
 		}
 		
 		return definition.isSourceFileMatch(declaration.getSourceFile());
+	}
+
+	protected isArgumentDecoratorExpression(decoratorExpression: ts.Decorator['expression'], definition: IDecorator) {
+		if (ts.isCallExpression(decoratorExpression) || !ts.isIdentifier(decoratorExpression)) {
+			return false;
+		}
+
+		// const symbol = this.typeChecker.getSymbolAtLocation(decoratorExpression);
+		// if (!symbol.declarations || symbol.declarations.length === 0) {
+		// 	return false;
+		// }
+
+		// let declaration: ts.NamedDeclaration;
+		// for (const decl of symbol.declarations) {
+		// 	if (isNamedDeclaration(decl)) {
+		// 		declaration = decl;
+		// 		break;
+		// 	}
+		// }
+
+		// if (!declaration) {
+		// 	return false;
+		// }
+		const signatures = [
+			...this.typeChecker.getSignaturesOfType(
+				this.typeChecker.getTypeAtLocation(decoratorExpression),
+				ts.SignatureKind.Call),
+			...this.typeChecker.getSignaturesOfType(
+				this.typeChecker.getTypeAtLocation(decoratorExpression),
+				ts.SignatureKind.Construct),
+		];
+		
+		return signatures.some(signature => {
+			if (!signature || !signature.declaration) {
+				return false;
+			}
+	
+			return this.isMatchingDeclaration(signature.declaration, definition);
+		});
 	}
 }

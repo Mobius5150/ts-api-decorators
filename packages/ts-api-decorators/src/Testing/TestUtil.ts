@@ -1,10 +1,10 @@
 import * as ts from 'typescript';
-import transformer, { ITransformerArguments } from '../src/transformer';
-import { TransformerType, getDefaultCompilerOptions } from '../src/Util/CompilationUtil';
+import transformer, { ITransformerArguments } from '../transformer';
+import { TransformerType, getDefaultCompilerOptions } from '../Util/CompilationUtil';
 import { assert } from 'chai';
 
-export * from '../src/Util/CompilationUtil';
-export * from '../src/Util/AsyncGlob';
+export * from '../Util/CompilationUtil';
+export * from '../Util/AsyncGlob';
 
 export function getTransformer(): TransformerType {
 	return transformer;	

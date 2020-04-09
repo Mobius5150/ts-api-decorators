@@ -1,9 +1,9 @@
 import * as ts from 'typescript';
 import { IMetadataManager } from "./MetadataManager";
 import { ITransformerMetadata, IMetadataType } from './TransformerMetadata';
-import { isNodeWithJsDoc } from './TransformerUtil';
+import { isNodeWithJsDoc, WithJsDoc } from './TransformerUtil';
 import { IExtractedTag } from './IExtractedTag';
-import { IHandlerTreeNodeHandler, HandlerTreeNodeType } from './HandlerTree';
+import { IHandlerTreeNodeHandler, HandlerTreeNodeType, IHandlerTreeNodeHandlerCollection } from './HandlerTree';
 
 export const enum OpenApiMetadataType {
     Summary = 'summary',
@@ -18,15 +18,39 @@ export class OpenApiMetadataExtractors {
     private constructor() {};
 
     public static RegisterMetadataExtractors(mm: IMetadataManager) {
-        mm.addApiMethodMetadataGenerator(this.ExtractJsDocMetadata);
+		mm.addApiMethodMetadataGenerator(this.ExtractMethodJsDocMetadata);
+		mm.addApiMethodCollectionMetadataGenerator(this.ExtractClassJsDocMetadata);
     }
 
-    public static ExtractJsDocMetadata(method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration): ITransformerMetadata[] {
+    public static ExtractClassJsDocMetadata(method: IHandlerTreeNodeHandlerCollection, methodNode: ts.ClassDeclaration): ITransformerMetadata[] {
+		const metadata: ITransformerMetadata[] = [];
+		if (method.type !== HandlerTreeNodeType.HandlerCollection) {
+			return metadata;
+		}
+
+        if (isNodeWithJsDoc(methodNode) && methodNode.jsDoc.length > 0) {
+            // jsdoc tags
+			const firstLine = OpenApiMetadataExtractors.getFirstCommentLine(methodNode);
+			if (firstLine) {
+				OpenApiMetadataExtractors.getJsDocTags(firstLine)
+					.map(t => (<ITransformerMetadata>{
+						type: IMetadataType.OpenApi,
+						key: OpenApiMetadataType.Tag,
+						value: t,
+					}))
+					.forEach(t => metadata.push(t));
+			}
+        }
+        
+        return metadata;
+	}
+	
+	public static ExtractMethodJsDocMetadata(method: IHandlerTreeNodeHandler, methodNode: ts.MethodDeclaration): ITransformerMetadata[] {
 		const metadata: ITransformerMetadata[] = [];
 		if (method.type !== HandlerTreeNodeType.Handler) {
 			return metadata;
 		}
-		
+
         if (isNodeWithJsDoc(methodNode) && methodNode.jsDoc.length > 0) {
             // Method description
 			metadata.push({
@@ -46,7 +70,7 @@ export class OpenApiMetadataExtractors {
             }
 
             // Method summary and jsdoc tags
-			const firstLine = methodNode.jsDoc.find(n => n.comment.length > 0);
+			const firstLine = OpenApiMetadataExtractors.getFirstCommentLine(methodNode);
 			if (firstLine) {
 				metadata.push({
 					type: IMetadataType.OpenApi,
@@ -66,6 +90,10 @@ export class OpenApiMetadataExtractors {
         
         return metadata;
     }
+
+	private static getFirstCommentLine(methodNode: WithJsDoc) {
+		return methodNode.jsDoc.find(n => n && n.comment && n.comment.length > 0);
+	}
 
     private static getJsDocTags(node: ts.JSDoc): IExtractedTag[] {
 		if (node.tags) {

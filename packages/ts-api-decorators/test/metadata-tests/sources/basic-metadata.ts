@@ -1,5 +1,8 @@
 import { Api, ApiGetMethod, ApiQueryParam } from "../../../src";
 
+/**
+ * @tags apis All apis
+ */
 @Api
 class MyApi {
 	/**

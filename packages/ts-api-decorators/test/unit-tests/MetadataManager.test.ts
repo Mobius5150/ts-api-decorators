@@ -44,11 +44,16 @@ describe('MetadataManager', () => {
         assert(generatorFunc.calledOnce);
     });
     
-    it('should call the generator', async () => {
+    it('should call the generator extended', async () => {
         const manager = new MetadataManager();
-        const testObj: ITransformerMetadata = {
+        const testObj1: ITransformerMetadata = {
             type: IMetadataType.OpenApi,
-            value: 'testVal',
+            value: 'testVal1',
+        };
+
+        const testObj2: ITransformerMetadata = {
+            type: IMetadataType.OpenApi,
+            value: 'testVal2',
         };
 
         const callDecorator: IDecorationFunctionTransformInfoBase = {
@@ -63,8 +68,8 @@ describe('MetadataManager', () => {
             provider: BuiltinMetadata.BuiltinComponent,
         };
 
-        const callGeneratorFunc = sinon.spy((method, methodNode) => [testObj]);
-        const noCallGeneratorFunc = sinon.spy((method, methodNode) => [testObj]);
+        const callGeneratorFunc = sinon.spy((method, methodNode) => [testObj1]);
+        const noCallGeneratorFunc = sinon.spy((method, methodNode) => [testObj2]);
         manager.addApiMethodMetadataGenerator(callGeneratorFunc);
         manager.addApiMethodMetadataGenerator(callGeneratorFunc, callDecorator);
         manager.addApiMethodMetadataGenerator(noCallGeneratorFunc, noCallDecorator);
@@ -72,7 +77,7 @@ describe('MetadataManager', () => {
         // Call with a decorator
         let result = manager.getApiMetadataForApiMethod(method, null, callDecorator);
         assert.equal(result.length, 1);
-        assert.equal(result[0], testObj);
+        assert.equal(result[0], testObj1);
 
         assert(callGeneratorFunc.calledOnceWith(method, null));
         assert(noCallGeneratorFunc.notCalled);
@@ -82,21 +87,23 @@ describe('MetadataManager', () => {
 
         // Call without a decorator
         result = manager.getApiMetadataForApiMethod(method, null, null);
-        assert.equal(result.length, 1);
-        assert.equal(result[0], testObj);
+        assert.equal(result.length, 2);
+        assert.include(result, testObj1);
+        assert.include(result, testObj2);
 
         assert(callGeneratorFunc.calledOnceWith(method, null));
-        assert(noCallGeneratorFunc.notCalled);
+        assert(noCallGeneratorFunc.calledOnceWith(method, null));
 
         callGeneratorFunc.resetHistory();
         noCallGeneratorFunc.resetHistory();
 
         // Call the second method
         result = manager.getApiMetadataForApiMethod(method, null, noCallDecorator);
-        assert.equal(result.length, 1);
-        assert.equal(result[0], testObj);
+        assert.equal(result.length, 2);
+        assert.include(result, testObj1);
+        assert.include(result, testObj2);
 
-        assert(callGeneratorFunc.notCalled);
+        assert(callGeneratorFunc.calledOnceWith(method, null));
         assert(noCallGeneratorFunc.calledOnceWith(method, null));
 
         callGeneratorFunc.resetHistory();
@@ -105,9 +112,10 @@ describe('MetadataManager', () => {
         // No result
         manager.removeApiMethodMetadataGenerator(noCallGeneratorFunc, noCallDecorator);
         result = manager.getApiMetadataForApiMethod(method, null, noCallDecorator);
-        assert.equal(result.length, 0);
+        assert.equal(result.length, 1);
+        assert.include(result, testObj1);
 
-        assert(callGeneratorFunc.notCalled);
+        assert(callGeneratorFunc.calledOnceWith(method, null));
         assert(noCallGeneratorFunc.notCalled);
 	});
 });

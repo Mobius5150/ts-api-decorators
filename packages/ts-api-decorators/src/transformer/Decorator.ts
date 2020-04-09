@@ -69,6 +69,14 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		return this.definition.transformArgumentsToObject;
 	}
 
+	public get isCallExpression() {
+		if (typeof this.definition.isCallExpression === 'boolean') {
+			return this.definition.isCallExpression;
+		}
+		
+		return true;
+	}
+
 	constructor(
 		protected definition: DT,
 		public readonly nodeType: DecoratorNodeType,

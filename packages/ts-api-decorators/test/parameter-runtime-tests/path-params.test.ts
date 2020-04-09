@@ -1,9 +1,9 @@
 import { assert } from 'chai';
 import * as path from 'path';
 import 'mocha';
-import { getCompiledProgram } from '../TestUtil';
+import { getCompiledProgram } from '../../src/Testing/TestUtil';
 import { ApiMethod } from '../../src';
-import { TestManagedApi } from '../TestTransport';
+import { TestManagedApi } from '../../src/Testing/TestTransport';
 
 describe('Path Param Runtime', () => {
     let api: TestManagedApi;

@@ -22,6 +22,7 @@ abstract class ApiClassDecorators {
 		dependencies: [],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [],
+		isCallExpression: false,
 	})
 	public static Api<T extends ClassConstructor>(constructor: T) {
 		ManagedApiInternal.RegisterApi(constructor);

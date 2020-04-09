@@ -81,3 +81,11 @@ export function isIntersectionType(n: ts.TypeNode, s: ts.Type & Partial<Intersec
 export function isNodeWithJsDoc(n: ts.Node): n is WithJsDoc {
     return Array.isArray((<WithJsDoc>n).jsDoc);
 }
+
+export function isNamedDeclaration(n: ts.Declaration): n is ts.NamedDeclaration {
+    return typeof (<ts.NamedDeclaration>n).name !== 'undefined';
+}
+
+export function isTypeWithSymbol<T extends object>(t: T): t is T & { symbol: ts.Symbol } {
+    return typeof (<any>t).symbol === 'object';
+}

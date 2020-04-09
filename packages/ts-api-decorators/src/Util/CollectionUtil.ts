@@ -79,18 +79,18 @@ export class CollectionUtil {
         return false;
     }
 
-    public static getSet<K, T>(mapSet: Map<K, Set<T>>, addKey: K, kcompFunc?: (a: K, b: K) => boolean): Set<T> | undefined {
+    public static *iterateSet<K, T>(mapSet: Map<K, Set<T>>, addKey: K, kcompFunc?: (a: K, b: K) => boolean): Generator<T, void, undefined> {
         CollectionUtil.assertMapSet(mapSet);
         CollectionUtil.assertCompFunc(kcompFunc);
         
         if (kcompFunc) {
             for (const k of mapSet.keys()) {
                 if (kcompFunc(k, addKey)) {
-                    return mapSet.get(k);
+                    yield * mapSet.get(k).values();
                 }
             }
         } else if (mapSet.has(addKey)) {
-            return mapSet.get(addKey);
+            yield * mapSet.get(addKey);
         }
     }
 

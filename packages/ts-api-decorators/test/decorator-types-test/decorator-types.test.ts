@@ -2,10 +2,10 @@ import { expect, assert } from 'chai';
 import * as path from 'path';
 import * as ts from 'typescript';
 import 'mocha';
-import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile, getCompiledProgram, assertRealInclude } from '../TestUtil';
-import { IHandlerTreeNodeRoot, HandlerTreeNodeType } from '../../src/transformer/HandlerTree';
+import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile, getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
+import { IHandlerTreeNodeRoot, HandlerTreeNodeType, IHandlerTreeNode } from '../../src/transformer/HandlerTree';
 import { ApiMethod } from '../../src';
-import { treeRootNode, treeHandlerMethodNode, treeHandlerParameterNode, treeNodeMetadata } from '../TreeTestUtil';
+import { treeRootNode, treeHandlerMethodNode, treeHandlerParameterNode, treeNodeMetadata, treeHandlerMethodCollectionNode } from '../../src/Testing/TreeTestUtil';
 import { ApiParamType } from '../../src/apiManagement/ApiDefinition';
 import { InternalTypeUtil } from '../../src/apiManagement/InternalTypes';
 import { BuiltinMetadata } from '../../src/transformer/TransformerMetadata';
@@ -13,7 +13,7 @@ import { BuiltinMetadata } from '../../src/transformer/TransformerMetadata';
 describe('transformer', () => {
 	const defaultOpts = getDefaultCompilerOptions();
 	const transformers = [getTransformer()];
-	let tree: IHandlerTreeNodeRoot;
+	let tree: IHandlerTreeNode;
 	function loadBasicTree() {
 		if (!tree) {
 			assert.doesNotThrow(() => {
@@ -27,9 +27,12 @@ describe('transformer', () => {
 					throw e;
 				}
 			});
-		}
 
-		assert.isObject(tree, 'Expected extracted tree');
+			assert.isObject(tree, 'Expected extracted tree');
+			assert.isObject(tree.children[0], 'Expected children from root');
+			assert.equal(tree.children[0].type, HandlerTreeNodeType.HandlerCollection, 'Expected method collection');
+			tree = tree.children[0];
+		}
 	}
 
 	it('should transform things', async () => {
@@ -38,7 +41,7 @@ describe('transformer', () => {
 
 	it('should parse basic methods', async () => {
 		loadBasicTree();
-		assertRealInclude(tree, treeRootNode([
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
 			// greet()
 			treeHandlerMethodNode(ApiMethod.GET, '/hello', [
 				treeHandlerParameterNode({
@@ -358,7 +361,7 @@ describe('transformer', () => {
 
 	it('should parse body params and body responses', async () => {
 		loadBasicTree();
-		assertRealInclude(tree, treeRootNode([
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
 			// greetObject()
 			treeHandlerMethodNode(ApiMethod.POST, '/hello', [
 				treeHandlerParameterNode({
@@ -386,7 +389,7 @@ describe('transformer', () => {
 	
 	it('should parse object return types with promises', async () => {
 		loadBasicTree();
-		assertRealInclude(tree, treeRootNode([
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
 			// greetObjectWithPromise()
 			treeHandlerMethodNode(ApiMethod.GET, '/helloPromiseObject', undefined, [
 				treeNodeMetadata(BuiltinMetadata.ReturnSchema, {
@@ -402,7 +405,7 @@ describe('transformer', () => {
 
 	it('should parse string return types with promises', async () => {
 		loadBasicTree();
-		assertRealInclude(tree, treeRootNode([
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
 			// greetWithPromise()
 			treeHandlerMethodNode(ApiMethod.GET, '/helloPromiseString', undefined, [
 				treeNodeMetadata(BuiltinMetadata.ReturnSchema, InternalTypeUtil.TypeString),

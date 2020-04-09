@@ -1,6 +1,6 @@
 import { Api, ApiGetMethod, ApiBodyParam, ApiPathParamNumber, ApiPathParamString, ApiPathParam, HttpBadRequestError } from "../../../src";
 import { ApiInjectedDependencyParam, ApiInjectedDependency } from "../../../src/decorators/DependencyParams";
-import { TestManagedApi } from "../../TestTransport";
+import { TestManagedApi } from "../../../src/Testing/TestTransport";
 
 @Api
 class MyApi {

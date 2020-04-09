@@ -1,8 +1,8 @@
-import { ApiMethod } from "../src";
-import { IHandlerTreeNodeHandler, HandlerTreeNodeType, IHandlerTreeNodeParameter, IHandlerTreeNodeRoot } from "../src/transformer/HandlerTree";
-import { IMetadataDescriptor, ITransformerMetadata } from "../src/transformer/TransformerMetadata";
-import { IApiParamDefinition, ApiParamType } from "../src/apiManagement/ApiDefinition";
-import { __ApiParamArgs } from "../src/apiManagement/InternalTypes";
+import { ApiMethod } from "..";
+import { IHandlerTreeNodeHandler, HandlerTreeNodeType, IHandlerTreeNodeParameter, IHandlerTreeNodeRoot, IHandlerTreeNodeHandlerCollection } from "../transformer/HandlerTree";
+import { IMetadataDescriptor, ITransformerMetadata } from "../transformer/TransformerMetadata";
+import { IApiParamDefinition, ApiParamType } from "../apiManagement/ApiDefinition";
+import { __ApiParamArgs } from "../apiManagement/InternalTypes";
 
 type DeepPartial<T> = {
 [P in keyof T]?: T[P] extends Array<infer U>
@@ -15,6 +15,14 @@ type DeepPartial<T> = {
 export function treeRootNode(children?: DeepPartial<IHandlerTreeNodeHandler['children']>, metadata?: DeepPartial<IHandlerTreeNodeHandler['metadata']>): DeepPartial<IHandlerTreeNodeRoot> {
 	return {
 		type: HandlerTreeNodeType.Root,
+		...(children ? { children, } : {}),
+		...(metadata ? { metadata, } : {}),
+	}
+}
+
+export function treeHandlerMethodCollectionNode(children?: DeepPartial<IHandlerTreeNodeHandler['children']>, metadata?: DeepPartial<IHandlerTreeNodeHandler['metadata']>): DeepPartial<IHandlerTreeNodeHandlerCollection> {
+	return {
+		type: HandlerTreeNodeType.HandlerCollection,
 		...(children ? { children, } : {}),
 		...(metadata ? { metadata, } : {}),
 	}

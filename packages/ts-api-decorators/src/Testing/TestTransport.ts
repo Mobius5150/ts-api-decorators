@@ -1,5 +1,5 @@
-import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, ApiHeadersDict, ApiParamsDict, IApiInvocationResult, IApiBodyContents } from '../src';
-import { CollectionUtil } from '../src/Util/CollectionUtil';
+import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, ApiHeadersDict, ApiParamsDict, IApiInvocationResult, IApiBodyContents } from '..';
+import { CollectionUtil } from '../Util/CollectionUtil';
 import * as p2r from 'path-to-regexp';
 
 export interface ITestManagedApiContext {

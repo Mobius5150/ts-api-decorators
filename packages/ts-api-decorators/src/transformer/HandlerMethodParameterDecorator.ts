@@ -61,6 +61,9 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			metadata: argumentResult.metadata,
 		};
 
+		decoratorTreeNode.metadata = decoratorTreeNode.metadata.concat(
+			context.metadataManager.getApiMetadataForApiMethodParam(decoratorTreeNode, node, this));
+		
 		return {
 			decoratorTreeNode,
 			transformedDecorator: argumentResult.decorator,

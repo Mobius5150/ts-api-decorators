@@ -1,7 +1,7 @@
 import { assert, expect } from 'chai';
 import * as path from 'path';
 import 'mocha';
-import { getCompiledProgram, assertRealInclude } from '../TestUtil';
+import { getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
 

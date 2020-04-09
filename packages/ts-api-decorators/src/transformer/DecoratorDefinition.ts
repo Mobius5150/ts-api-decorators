@@ -27,6 +27,7 @@ export interface IDecoratorDefinitionBase extends IDecorationFunctionTransformIn
 	dependencies: Array<IDecoratorDependency | Func1<IHandlerTreeNode, IDecoratorDependency[] | void>>;
 	arguments: IDecoratorArgument[];
 	metadata?: ITransformerMetadata[];
+	isCallExpression?: boolean;
 	
 	/**
 	 * If set, all arguments will be transformed to object keys

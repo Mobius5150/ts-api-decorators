@@ -1,5 +1,5 @@
 import { Api, ApiGetMethod, ApiHeaderParamNumber, ApiHeaderParamString, ApiHeaderParam, HttpBadRequestError } from "../../../src";
-import { TestManagedApi } from "../../TestTransport";
+import { TestManagedApi } from "../../../src/Testing/TestTransport";
 
 @Api
 class MyApi {
