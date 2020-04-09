@@ -1,6 +1,6 @@
 import * as http from 'http';
 import * as ts from 'typescript';
-import {compileSourceFile, getDefaultCompilerOptions, getTransformer} from 'ts-api-decorators/test/TestUtil';
+import {compileSourceFile, getDefaultCompilerOptions, getTransformer} from 'ts-api-decorators/dist/Testing/TestUtil';
 
 export interface ITestServer {
 	start: (portNo: number, started: (err?: any, server?: http.Server) => void) => void;

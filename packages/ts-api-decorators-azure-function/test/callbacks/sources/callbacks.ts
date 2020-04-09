@@ -2,8 +2,8 @@ import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMeth
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
-import { ApiMethodCallbackFunction } from "ts-api-decorators/src/apiManagement/ApiDefinition";
-import { HttpError, HttpTeapotError } from "ts-api-decorators/src";
+import { ApiMethodCallbackFunction } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
+import { HttpError, HttpTeapotError } from "ts-api-decorators/dist";
 
 interface IGreetArgs {
 	name: string;
