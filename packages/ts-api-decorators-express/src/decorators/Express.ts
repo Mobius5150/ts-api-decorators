@@ -69,7 +69,7 @@ abstract class ExpressParams {
 }
 
 class ExpressModifiers {
-	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<never, Express.Handler>;
+	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<any>;
 	@ApiDecorator(HandlerMethodModifierDecorator, {
 		indexTs: __filename,
 		dependencies: [
@@ -82,11 +82,11 @@ class ExpressModifiers {
 		],
 		transformArgumentsToObject: false,
 	})
-	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<never, Express.Handler> {
+	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<any> {
 		return (
 			target: object,
 			propertyKey: string,
-			descriptor: TypedPropertyDescriptor<Express.Handler>
+			descriptor: TypedPropertyDescriptor<any>
 		) => {
 			ManagedApiInternal.AddApiModifierMetadataToObject(
 				{
