@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "API Decorators for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

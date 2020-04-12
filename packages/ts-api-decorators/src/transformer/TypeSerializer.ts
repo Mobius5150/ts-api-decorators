@@ -172,7 +172,15 @@ export class TypeSerializer {
     }
     
 	public objectToLiteral(val: object): ts.ObjectLiteralExpression {
-		return ts.createObjectLiteral(Object.keys(val).map(k => ts.createPropertyAssignment(k, this.valueToLiteral(<any>val[<any>k]))), false);
+		return ts.createObjectLiteral(
+			Object.keys(val).map(k => {
+				let propName: string | ts.StringLiteral = k;
+				if (/[^a-zA-Z0-9_]/.test(<string>k)) {
+					propName = ts.createLiteral(k);
+				}
+
+				return ts.createPropertyAssignment(propName, this.valueToLiteral(<any>val[<any>k]))
+			}), false);
 	}
 	
 	public compileExpressionToNumericConstant(expression: ts.Expression): number {
