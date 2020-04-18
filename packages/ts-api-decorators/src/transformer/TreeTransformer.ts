@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as tjs from 'typescript-json-schema';
 import { TypeSerializer } from './TypeSerializer';
 import { DecoratorNodeType, IDecorator } from './Decorator';
-import { IHandlerTreeNode, IHandlerTreeNodeRoot, HandlerTreeNodeType } from './HandlerTree';
+import { IHandlerTreeNode, IHandlerTreeNodeRoot, HandlerTreeNodeType, ITransformedTreeElement } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
 import { IMetadataResolver } from './MetadataManager';
 import { IDecoratorResolver } from './IDecoratorResolver';
@@ -14,6 +14,8 @@ export class TreeTransformer implements ITransformer {
 	protected readonly typeChecker: ts.TypeChecker;
 	protected readonly typeSerializer: TypeSerializer;
 	protected readonly transformContext: ITransformContext;
+
+	private readonly transformedNodes = new Map<ts.Node, Map<ts.Decorator, ITransformedTreeElement<ts.Decorator>>>();
 
 	private readonly rootNode: IHandlerTreeNodeRoot = {
 		type: HandlerTreeNodeType.Root,
@@ -76,7 +78,7 @@ export class TreeTransformer implements ITransformer {
 					(definition.isCallExpression && this.isArgumentDecoratorCallExpression(nodeDecorators[i].expression, definition))
 					|| (!definition.isCallExpression && this.isArgumentDecoratorExpression(nodeDecorators[i].expression, definition))
 				) {
-					const treeNode = definition.getDecoratorTreeElement(parent, node, nodeDecorators[i], this.transformContext);
+					const treeNode = this.getDecoratorTreeElement(definition, parent, node, nodeDecorators[i]);
 					parent.children.push(treeNode.decoratorTreeNode);
 
 					if (treeNode.transformedDecorator) {
@@ -93,6 +95,19 @@ export class TreeTransformer implements ITransformer {
 		}
 
 		return node;
+	}
+
+	private getDecoratorTreeElement(definition: IDecorator<ts.Node>, parent: IHandlerTreeNode, node: ts.Node, decorator: ts.Decorator): ITransformedTreeElement<ts.Decorator> {
+		if (!this.transformedNodes.has(node)) {
+			this.transformedNodes.set(node, new Map());
+		}
+
+		const set = this.transformedNodes.get(node);
+		if (!set.has(decorator)) {
+			set.set(decorator, definition.getDecoratorTreeElement(parent, node, decorator, this.transformContext));
+		}
+		
+		return set.get(decorator);
 	}
 	
 	private visitNodeChildrenInTreeContext(node: ts.Node, context: ts.TransformationContext, parent?: IHandlerTreeNode): ts.Node {
