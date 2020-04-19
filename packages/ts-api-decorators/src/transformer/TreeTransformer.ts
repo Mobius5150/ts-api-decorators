@@ -83,6 +83,7 @@ export class TreeTransformer implements ITransformer {
 
 					if (treeNode.transformedDecorator) {
 						nodeDecorators[i] = treeNode.transformedDecorator;
+						this.cacheDecoratorTreeElement(node, nodeDecorators[i], treeNode);
 					}
 
 					node = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode);
@@ -104,10 +105,21 @@ export class TreeTransformer implements ITransformer {
 
 		const set = this.transformedNodes.get(node);
 		if (!set.has(decorator)) {
-			set.set(decorator, definition.getDecoratorTreeElement(parent, node, decorator, this.transformContext));
+			this.cacheDecoratorTreeElement(node, decorator, definition.getDecoratorTreeElement(parent, node, decorator, this.transformContext));
 		}
 		
 		return set.get(decorator);
+	}
+
+	private cacheDecoratorTreeElement(node: ts.Node, decorator: ts.Decorator, element: ITransformedTreeElement<ts.Decorator>) {
+		if (!this.transformedNodes.has(node)) {
+			this.transformedNodes.set(node, new Map());
+		}
+
+		const set = this.transformedNodes.get(node);
+		if (!set.has(decorator)) {
+			set.set(decorator, element);
+		}
 	}
 	
 	private visitNodeChildrenInTreeContext(node: ts.Node, context: ts.TransformationContext, parent?: IHandlerTreeNode): ts.Node {

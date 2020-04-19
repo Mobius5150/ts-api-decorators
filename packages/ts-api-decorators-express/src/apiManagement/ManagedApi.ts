@@ -57,43 +57,47 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 
 	private getHandlerWrapper(instance: IApiHandlerInstance<IExpressManagedApiContext>) {
 		return (req: Express.Request, res: Express.Response, next: Function) => {
-			const contentType = req.header(ApiStdHeaderName.ContentType);
-			const contentLength = req.header(ApiStdHeaderName.ContentLength);
-			// TODO: Need to properly parse the body based on the content length
-			instance.wrappedHandler({
-				queryParams: this.getRequestQueryParams(req),
-				pathParams: this.getRequestPathParams(req),
-				headers: this.getRequestHeaderParams(req),
-				bodyContents: (
-					(typeof contentType !== 'undefined' && Number(contentLength) > 0)
-						?
-						{
-							contentsStream: req,
-							// TODO: Add text encoding?
-							readStreamToStringAsync: readStreamToStringUtil(req),
-							readStreamToStringCb: readStreamToStringUtilCb(req),
-							streamContentsMimeRaw: contentType,
-							streamContentsMimeType: parseApiMimeType(contentType),
-						}
-						: undefined
-				),
-				transportParams: {
-					'express.request': req,
-					'express.response': res,
-				},
-			})
-				.then(result => {
-					if (!res.writableEnded) {
-						if (result.body) {
-							res.status(result.statusCode).send(result.body);
-						} else {
-							res.sendStatus(result.statusCode);
-						}
-					}
+			try {
+				const contentType = req.header(ApiStdHeaderName.ContentType);
+				const contentLength = req.header(ApiStdHeaderName.ContentLength);
+				// TODO: Need to properly parse the body based on the content length
+				instance.wrappedHandler({
+					queryParams: this.getRequestQueryParams(req),
+					pathParams: this.getRequestPathParams(req),
+					headers: this.getRequestHeaderParams(req),
+					bodyContents: (
+						(typeof contentType !== 'undefined' && Number(contentLength) > 0)
+							?
+							{
+								contentsStream: req,
+								// TODO: Add text encoding?
+								readStreamToStringAsync: readStreamToStringUtil(req),
+								readStreamToStringCb: readStreamToStringUtilCb(req),
+								streamContentsMimeRaw: contentType,
+								streamContentsMimeType: parseApiMimeType(contentType),
+							}
+							: undefined
+					),
+					transportParams: {
+						'express.request': req,
+						'express.response': res,
+					},
 				})
-				.catch(e => {
-					next(e)
-				});
+					.then(result => {
+						if (!res.writableEnded) {
+							if (result.body) {
+								res.status(result.statusCode).send(result.body);
+							} else {
+								res.sendStatus(result.statusCode);
+							}
+						}
+					})
+					.catch(e => {
+						next(e)
+					});
+			} catch (e) {
+				next(e);
+			}
 		};
 	}
 

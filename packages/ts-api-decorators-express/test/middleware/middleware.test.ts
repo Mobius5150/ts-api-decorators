@@ -27,9 +27,10 @@ describe('Middleware', () => {
 	});
 
 	it(`applies middleware [positive]`, async () => {
+		const name = 'Mike';
 		return request(httpServer)
-			.get(`/hello`)
-			.expect(200, `Hello`);
+			.get(`/hello?name=${name}`)
+			.expect(200, `Hello ${name}`);
 	});
 
 	it(`applies middleware [negative]`, async () => {

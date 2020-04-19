@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware } from "../../../src";
+import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware, ApiQueryParam } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -15,8 +15,10 @@ function middleware(req: express.Request, res: express.Response, next: express.N
 class MyApi {
 	@ApiGetMethod('/hello')
 	@ExpressApiMiddleware(middleware)
-	greet() {
-		return 'Hello';
+	greet(
+		@ApiQueryParam() name: string,
+	) {
+		return `Hello ${name}`;
 	}
 }
 

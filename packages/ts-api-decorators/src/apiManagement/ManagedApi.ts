@@ -263,7 +263,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		if (useCallback) {
 			return useCallback.execute(() => def.handler.apply(instance, args));
 		} else {
-			return def.handler.apply(instance, args);
+			return await def.handler.apply(instance, args);
 		}
 	}
 	

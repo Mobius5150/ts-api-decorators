@@ -24,6 +24,7 @@ abstract class ExpressParams {
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressParams.TransportTypeRequestParam,
+		transformArgumentsToObject: false,
 	})
 	public static ExpressApiRequestParam(a?: any): ParameterDecorator {
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
@@ -51,6 +52,7 @@ abstract class ExpressParams {
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressParams.TransportTypeResponseParam,
+		transformArgumentsToObject: false,
 	})
 	public static ExpressApiResponseParam(a?: any): ParameterDecorator {
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {

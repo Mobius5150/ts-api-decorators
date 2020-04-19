@@ -10,6 +10,12 @@ export function readStreamToStringUtil(stream: Readable, textEncoding: string = 
         } else if (result) {
             resolve(result);
             return;
+        } else if (!stream.readable) {
+            reject(new Error('Unreadable stream'));
+            return;
+        } else if (stream.readableLength === 0) {
+            resolve('');
+            return;
         }
         
         const chunks: (Buffer | string)[] = [];
@@ -35,7 +41,7 @@ export function readStreamToStringUtil(stream: Readable, textEncoding: string = 
                         ? (c.toString(textEncoding))
                         : c);
                     
-                    result = chunkStrs.join();
+                    result = chunkStrs.join('');
                     resolve(result);
                 } catch (e) {
                     if (e instanceof Error) {
