@@ -71,3 +71,10 @@ jobs:
         yarn run test
       env:
         CI: true
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        # Artifact name
+        name: ts-api-decorators-express
+        # Directory containing files to upload
+        path: packages/ts-api-decorators-express/dist
