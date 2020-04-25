@@ -187,6 +187,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 							headers: {},
 						}
 					}
+				} finally {
+					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, null);
 				}
 			});
 		};
@@ -378,6 +380,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					throw new Error('ParsedBody may not be a buffer');
 				}
 			} else {
+				contents = await this.parseRawRequestBody(bodyContents)
 				switch (args.typedef.type) {
 					case 'any':
 					case 'string':
@@ -388,7 +391,6 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 					case 'object':
 					case 'array':
-						contents = await this.parseRawRequestBody(bodyContents);
 						break;
 
 					default:
@@ -431,6 +433,9 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		switch (bodyContents.streamContentsMimeType) {
 			case ApiMimeType.ApplicationJson:
 				return JSON.parse(await bodyContents.readStreamToStringAsync());
+
+			case ApiMimeType.Text:
+				return await bodyContents.readStreamToStringAsync();
 			
 			// TODO: Add a way to register mime type parsers so that you can BYO xml
 

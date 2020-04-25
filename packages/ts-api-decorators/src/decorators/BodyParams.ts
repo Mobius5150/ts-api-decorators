@@ -12,20 +12,20 @@ abstract class BodyParams {
 	 * Decorates a query parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
+	public static ApiBodyParamString(stringValidationRegex?: RegExp);
 	@ApiDecorator(HandlerMethodParameterDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		parameterType: ApiParamType.Body,
 		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
 		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
 			BuiltinArgumentExtractors.RegexpArgument,
 		],
 	})
-	public static ApiBodyParamString(stringValidationRegex?: RegExp) {
-		return BodyParams.ApiBodyParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiBodyParamString(a?: any) {
+		return this.ApiBodyParam(a);
 	}
 
 	/**
@@ -34,21 +34,21 @@ abstract class BodyParams {
 	 * @param numberMax The maximum value, undefined for no maximum.
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
+	public static ApiBodyParamNumber(numberMin?: number, numberMax?: number);
 	@ApiDecorator(HandlerMethodParameterDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		parameterType: ApiParamType.Body,
 		parameterTypeRestrictions: [ InternalTypeUtil.TypeNumber ],
 		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
 		arguments: [
 			BuiltinArgumentExtractors.NumberMinArgument,
 			BuiltinArgumentExtractors.NumberMaxArgument,
 		],
 	})
-	public static ApiBodyParamNumber(numberMin?: number, numberMax?: number) {
-		return BodyParams.ApiBodyParam((name, value) => {
-			throw new Error('Not implemented');
-		});
+	public static ApiBodyParamNumber(a?: any) {
+		return this.ApiBodyParam(a);
 	}
 
 	/**

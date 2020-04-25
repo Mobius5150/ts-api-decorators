@@ -93,24 +93,14 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 								res.sendStatus(result.statusCode);
 							}
 						}
-
-						this.clearInvocationParams(invocationParams);
 					})
 					.catch(e => {
-						this.clearInvocationParams(invocationParams);
 						next(e);
 					});
 			} catch (e) {
 				next(e);
 			}
 		};
-	}
-
-	private clearInvocationParams(invocationParams: object): void {
-		const keys = Object.keys(invocationParams);
-		for (const key of keys) {
-			delete invocationParams[key];
-		}
 	}
 
 	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {

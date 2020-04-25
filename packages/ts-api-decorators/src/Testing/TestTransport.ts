@@ -59,16 +59,20 @@ export class TestManagedApi extends BaseManagedApi<ITestManagedApiContext> imple
 				params.bodyContents
 				?
 					{
-						contentsStream: params.bodyContents.contentsStream || null,
-						readStreamToStringAsync: params.bodyContents.readStreamToStringAsync || null,
-						readStreamToStringCb: params.bodyContents.readStreamToStringCb || null,
-						streamContentsMimeRaw: params.bodyContents.streamContentsMimeRaw || null,
-						streamContentsMimeType: params.bodyContents.streamContentsMimeType || null,
+						contentsStream: this.underfinedOrNull(params.bodyContents.contentsStream),
+						readStreamToStringAsync: this.underfinedOrNull(params.bodyContents.readStreamToStringAsync),
+						readStreamToStringCb: this.underfinedOrNull(params.bodyContents.readStreamToStringCb),
+						streamContentsMimeRaw: this.underfinedOrNull(params.bodyContents.streamContentsMimeRaw),
+						streamContentsMimeType: this.underfinedOrNull(params.bodyContents.streamContentsMimeType),
 						parsedBody: params.bodyContents.parsedBody,
 					}
 				: undefined
 			),
 		});
+	}
+
+	private underfinedOrNull<T>(val: T | undefined): T | null {
+		return typeof val === 'undefined' ? null : val;
 	}
 
 	public getHandlerInstance(method: ApiMethod, route: string): { matchResult: p2r.MatchResult<ApiParamsDict>; instance: IApiHandlerInstance<ITestManagedApiContext>; } | undefined {

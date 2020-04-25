@@ -13,9 +13,6 @@ export function readStreamToStringUtil(stream: Readable, textEncoding: string = 
         } else if (!stream.readable) {
             reject(new Error('Unreadable stream'));
             return;
-        } else if (stream.readableLength === 0) {
-            resolve('');
-            return;
         }
         
         const chunks: (Buffer | string)[] = [];
