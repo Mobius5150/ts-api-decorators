@@ -23,13 +23,13 @@ describe('Body Param Runtime', () => {
     async function testApiMethodInput(url: string, tests: Array<[any, string, number]>) {
         for (const [testVal, testResponse, resultStatus] of tests) {
             let mimeType = ApiMimeType.Text;
-            let testStr = testVal.toString();
+            let testStr = testVal === undefined ? testVal : testVal.toString();
             if (typeof testVal === 'object') {
                 mimeType = ApiMimeType.ApplicationJson;
                 testStr = JSON.stringify(testVal);
             }
 
-            const contentsStream = stringToMemoryStream(testStr);
+            const contentsStream = testStr === undefined ? undefined : stringToMemoryStream(testStr);
             const result = await api.invokeApiCall(ApiMethod.POST, url, {
                 headers: {},
                 bodyContents: {
@@ -132,6 +132,23 @@ describe('Body Param Runtime', () => {
             ['I', null, 400],
             ['i', null, 400],
             ['valid', 'valid', 200],
+        ]);
+    });
+
+    it('should support body streams', async () => {
+        await testApiMethodInput('/bodyStream', [
+            ['valid', 'valid', 200],
+            ['', '', 200],
+            [undefined, null, 500],
+        ]);
+    });
+
+    it('should validate mime types for body streams', async () => {
+        await testApiMethodInput('/objectStreamWithMimeType', [
+            [{ data: 'hello' }, 'hello', 200],
+            ['invalid', null, 415],
+            ['', '', 415],
+            [undefined, null, 500],
         ]);
     });
 });

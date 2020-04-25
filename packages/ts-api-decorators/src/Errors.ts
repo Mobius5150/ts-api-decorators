@@ -51,6 +51,24 @@ export class HttpForbiddenError extends HttpError {
     }
 }
 
+export class HttpUnsupportedMediaTypeError extends HttpError {
+    constructor(expectedType?: string, m: string = 'Unsupported Media Type') {
+        super(m, 415, { expectedType });
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpUnsupportedMediaTypeError.prototype);
+    }
+}
+
+export class HttpTransportConfigurationError extends HttpError {
+    constructor(m: string = 'Internal Server Error') {
+        super(m, 500, {});
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpTransportConfigurationError.prototype);
+    }
+}
+
 export class HttpRequiredQueryParamMissingError extends HttpBadRequestError {
     constructor(queryParamName: string) {
         super(`Missing required query parameter '${queryParamName}'`);

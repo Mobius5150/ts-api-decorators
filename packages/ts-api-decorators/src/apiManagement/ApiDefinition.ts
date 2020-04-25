@@ -12,6 +12,7 @@ export const enum ApiMethod {
 
 export const enum ApiParamType {
 	Body,
+	RawBody,
 	Query,
 	Path,
 	Header,
@@ -64,6 +65,11 @@ export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
 	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback | ApiParamType.Dependency;
 }
 
+export interface IApiRawBodyParamDefinition extends IApiParamDefinitionBase {
+	type: ApiParamType.RawBody;
+	mimeType?: string;
+}
+
 export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBase {
 	type: ApiParamType.Transport;
 	transportTypeId: string;
@@ -74,7 +80,7 @@ export interface IApiCustomTypeParamDefinition extends IApiParamDefinitionBase {
 	paramId: string;
 }
 
-export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition;
+export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition | IApiRawBodyParamDefinition;
 
 export interface IApiModifierDefinition<T = object> {
 	propertyKey: string | symbol;

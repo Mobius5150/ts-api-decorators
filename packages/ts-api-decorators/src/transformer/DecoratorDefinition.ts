@@ -57,6 +57,11 @@ export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase 
 	 * If set, parameter type must match at least one of the type restrictions
 	 */
 	parameterTypeRestrictions?: InternalTypeDefinition[];
+
+	/**
+	 * If true, the library will not output typeref or typedef metadata
+	 */
+	skipOutputTypeDefinitions?: boolean;
 }
 
 export interface IClassPropertyDecoratorDefinition extends IDecoratorDefinitionBase {

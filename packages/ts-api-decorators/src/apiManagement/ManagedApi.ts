@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError } from "../Errors";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";
@@ -245,7 +245,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			if (def.args.regexp) {
 				this.validateRegExpParam(def.args, parsed);
 			}
-			if (def.args.typedef.type === 'number') {
+			if (def.args.typedef?.type === 'number') {
 				this.validateNumberParam(def.args, parsed);
 			}
 			if (def.args.validationFunc) {
@@ -276,7 +276,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	}
 	
 	protected validateNumberParam({typedef, name, numberMin, numberMax}: __ApiParamArgs, parsed: any) {
-		if (typedef.type === 'number') {
+		if (typedef?.type === 'number') {
 			if (
 				(typeof numberMin === 'number' && parsed < numberMin)
 				|| (typeof numberMax === 'number' && parsed > numberMax)
@@ -287,7 +287,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	}
 
 	protected validateEnumParam({typedef, name}: __ApiParamArgs, parsed: any) {
-		if (typedef.type === 'number' || typedef.type === 'string' || typedef.type === 'enum') {
+		if (typedef?.type === 'number' || typedef?.type === 'string' || typedef?.type === 'enum') {
 			if (typedef.schema && typedef.schema.enum && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
 				throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)
 			}
@@ -363,7 +363,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 			// Arg was defined, process it
 			return this.getApiParam(args, isDefined, invocationParams.headers[headerName]);
-		} else if (def.type === ApiParamType.Body) {
+		} else if (def.type === ApiParamType.Body || def.type === ApiParamType.RawBody) {
 			const {bodyContents} = invocationParams;
 			if (!bodyContents) {
 				if (args.initializer) {
@@ -371,6 +371,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				}
 
 				throw new HttpRequiredBodyParamMissingError();
+			}
+
+			if (def.type === ApiParamType.RawBody) {
+				if (!bodyContents.contentsStream) {
+					throw new HttpTransportConfigurationError('Raw body was not available for handler');
+				}
+
+				if (typeof def.mimeType === 'string' && def.mimeType !== bodyContents.streamContentsMimeRaw) {
+					throw new HttpUnsupportedMediaTypeError(def.mimeType);
+				}
+
+				return bodyContents.contentsStream;
 			}
 
 			let contents = null;
@@ -440,7 +452,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			// TODO: Add a way to register mime type parsers so that you can BYO xml
 
 			default:
-				throw new Error('Body contents parser not defined for type: ' + bodyContents.streamContentsMimeRaw);
+				throw new HttpUnsupportedMediaTypeError();
 		}
 	}
 

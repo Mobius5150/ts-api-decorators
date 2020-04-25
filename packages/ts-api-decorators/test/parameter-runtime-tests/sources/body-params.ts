@@ -1,5 +1,7 @@
-import { Api, ApiPostMethod, ApiBodyParam, HttpBadRequestError, ApiBodyParamNumber, ApiBodyParamString } from "../../../src";
+import { Api, ApiPostMethod, ApiBodyParam, HttpBadRequestError, ApiBodyParamNumber, ApiBodyParamString, readStreamToStringUtil } from "../../../src";
 import { TestManagedApi } from "../../../src/Testing/TestTransport";
+import { ApiBodyParamStream } from "../../../src/decorators/BodyParams";
+import { Readable } from "stream";
 
 interface MyBodyData {
 	data: string;
@@ -60,6 +62,21 @@ class MyApi {
 		return str;
 	}
 
+	@ApiPostMethod('/bodyStream')
+	bodyStream(
+		@ApiBodyParamStream() body: Readable,
+	): Promise<string> {
+		return readStreamToStringUtil(body)();
+	}
+
+	@ApiPostMethod('/objectStreamWithMimeType')
+	async objectStreamWithMimeType(
+		@ApiBodyParamStream('application/json') body: Readable,
+	): Promise<string> {
+		const contents = await readStreamToStringUtil(body)();
+		const json = JSON.parse(contents);
+		return json.data.toString();
+	}
 }
 
 const testApi = new TestManagedApi();

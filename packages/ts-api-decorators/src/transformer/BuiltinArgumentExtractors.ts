@@ -51,6 +51,19 @@ export abstract class BuiltinArgumentExtractors {
 		optional: true,
 	};
 
+	public static readonly MimeTypeArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeString,
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.MimeType,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly OptionalMimeTypeArgument: IDecoratorArgument = {
+		...BuiltinArgumentExtractors.MimeTypeArgument,
+		optional: true,
+	};
+
 	public static readonly DependencyScopeArgument: IDecoratorArgument = {
 		type: InternalTypeUtil.TypeString,
 		optional: true,

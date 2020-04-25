@@ -102,6 +102,12 @@ export abstract class BuiltinMetadata {
         key: 'name',
     }
 
+    public static readonly MimeType: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'mimeType',
+    }
+
     public static readonly Route: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,

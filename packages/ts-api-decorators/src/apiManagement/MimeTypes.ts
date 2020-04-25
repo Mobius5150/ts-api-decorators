@@ -10,18 +10,20 @@ export function parseApiMimeType(contentTypeHeader: string): ApiMimeType {
             return ApiMimeType.ApplicationXml;
 
         case 'text':
+        case 'text/plain':
         case 'application/text':
             return ApiMimeType.Text;
 
         default:
-            return ApiMimeType.Other;
+            return ApiMimeType.ApplicationOctetStream;
     }
 }
 
 export enum ApiMimeType {
-    ApplicationJson,
-    ApplicationJavascript,
-    ApplicationXml,
-    Text,
-    Other,
+    ApplicationJson = 'application/json',
+    ApplicationJavascript = 'application/javascript',
+    ApplicationXml = 'application/xml',
+    ApplicationOctetStream = 'application/octet-stream',
+    Text = 'text/plain',
+    TextXml = 'text/xml',
 }

@@ -33,6 +33,10 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		return this.definition.paramId;
 	}
 
+	public get skipOutputTypeDefinitions() {
+		return !!this.definition.skipOutputTypeDefinitions;
+	}
+
 	public getDecoratorTreeElement(parent: IHandlerTreeNode | undefined, node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformedTreeElement<ts.Decorator> {
 		const argumentResult = this.applyArguments(node, decorator, context);
 		const decoratorTreeNode: IHandlerTreeNodeParameter = {
@@ -82,6 +86,10 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 	}
 
 	private getNodeTyperefMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
+		if (this.skipOutputTypeDefinitions) {
+			return;
+		}
+
 		let internalType: InternalTypeDefinition = {
 			type: 'any',
 		};
@@ -105,6 +113,10 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 	}
 
 	private getNodeTypedefMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
+		if (this.skipOutputTypeDefinitions) {
+			return;
+		}
+		
 		if (node.type) {
 			const type = context.typeChecker.getTypeFromTypeNode(node.type);
 			let internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);

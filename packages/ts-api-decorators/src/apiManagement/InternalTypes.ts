@@ -5,7 +5,7 @@ export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
 export interface __ApiParamArgsBase {
 	name: string;
-	typedef: InternalTypeDefinition;
+	typedef?: InternalTypeDefinition;
 	optional?: boolean;
 	description?: string;
 }

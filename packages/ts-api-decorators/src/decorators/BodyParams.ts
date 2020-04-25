@@ -9,7 +9,7 @@ import { Api } from "./API";
 
 abstract class BodyParams {
 	/**
-	 * Decorates a query parameter that should be validated with a regular expression.
+	 * Decorates a body parameter that should be validated with a regular expression.
 	 * @param stringValidationRegex The regular expression to validate the input
 	 */
 	public static ApiBodyParamString(stringValidationRegex?: RegExp);
@@ -29,7 +29,7 @@ abstract class BodyParams {
 	}
 
 	/**
-	 * Decorates a query parameter that should be cast to a number.
+	 * Decorates a body parameter that should be cast to a number.
 	 * @param numberMin The minimum value, undefined for no minimum.
 	 * @param numberMax The maximum value, undefined for no maximum.
 	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
@@ -52,8 +52,41 @@ abstract class BodyParams {
 	}
 
 	/**
-	 * A query parameter.
-	 * @param validator 
+	 * Decorates a body parameter that receives a raw, readable stream for the request
+	 * @param mimeType The valid mime type for the request.
+	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
+	 */
+	public static ApiBodyParamStream(mimeType?: string);
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.RawBody,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeAnyObject ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		skipOutputTypeDefinitions: true,
+		arguments: [
+			BuiltinArgumentExtractors.OptionalMimeTypeArgument,
+		],
+	})
+	public static ApiBodyParamStream(a?: any) {
+		const args = <__ApiParamArgs>a;
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					...a,
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.RawBody,
+				},
+				target.constructor);
+		}
+	}
+
+	/**
+	 * The request body.
+	 * @param validator A validation function to validate the body contents
 	 */
 	public static ApiBodyParam(): ParameterDecorator;
 	public static ApiBodyParam(validator?: ApiParamValidationFunction): ParameterDecorator;
@@ -93,3 +126,4 @@ export const GetBodyParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethod
 export const ApiBodyParam = BodyParams.ApiBodyParam;
 export const ApiBodyParamString = BodyParams.ApiBodyParamString;
 export const ApiBodyParamNumber = BodyParams.ApiBodyParamNumber;
+export const ApiBodyParamStream = BodyParams.ApiBodyParamStream;
