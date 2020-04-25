@@ -60,8 +60,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 			try {
 				const contentType = req.header(ApiStdHeaderName.ContentType);
 				const contentLength = req.header(ApiStdHeaderName.ContentLength);
-				// TODO: Need to properly parse the body based on the content length
-				instance.wrappedHandler({
+				const invocationParams = {
 					queryParams: this.getRequestQueryParams(req),
 					pathParams: this.getRequestPathParams(req),
 					headers: this.getRequestHeaderParams(req),
@@ -82,7 +81,10 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 						'express.request': req,
 						'express.response': res,
 					},
-				})
+				};
+
+				// TODO: Need to properly parse the body based on the content length
+				instance.wrappedHandler(invocationParams)
 					.then(result => {
 						if (!res.writableEnded) {
 							if (result.body) {
@@ -91,14 +93,24 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 								res.sendStatus(result.statusCode);
 							}
 						}
+
+						this.clearInvocationParams(invocationParams);
 					})
 					.catch(e => {
-						next(e)
+						this.clearInvocationParams(invocationParams);
+						next(e);
 					});
 			} catch (e) {
 				next(e);
 			}
 		};
+	}
+
+	private clearInvocationParams(invocationParams: object): void {
+		const keys = Object.keys(invocationParams);
+		for (const key of keys) {
+			delete invocationParams[key];
+		}
 	}
 
 	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {
