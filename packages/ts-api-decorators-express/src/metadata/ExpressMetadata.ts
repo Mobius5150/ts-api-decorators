@@ -8,4 +8,8 @@ export abstract class ExpressMetadata {
         component: ExpressMetadata.Component,
         key: 'middleware',
     }
+
+    public static readonly TransportTypeRequestParam = 'express.request';
+	public static readonly TransportTypeResponseParam = 'express.response';
+	public static readonly TransportTypeRequestUserParam = 'express.request.user';
 }

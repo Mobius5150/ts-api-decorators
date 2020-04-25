@@ -1,11 +1,12 @@
 import * as ts from 'typescript';
 import transformer, { ITransformerArguments, registerDefaultDecorators } from 'ts-api-decorators/dist/transformer';
 import { DecoratorResolver } from 'ts-api-decorators/dist/transformer/DecoratorResolver';
-import { GetExpressApiParamDecorator, ExpressApiRequestParam, ExpressApiResponseParam, ExpressApiMiddleware, GetExpressApiModifierDecorator } from './decorators';
+import { GetExpressApiParamDecorator, ExpressApiRequestParam, ExpressApiResponseParam, ExpressApiMiddleware, GetExpressApiModifierDecorator, ExpressApiRequestUserParam } from './decorators';
 
 export function getTransformerArguments(): ITransformerArguments {
 	const decoratorResolver = new DecoratorResolver([
 		GetExpressApiParamDecorator(ExpressApiRequestParam),
+		GetExpressApiParamDecorator(ExpressApiRequestUserParam),
 		GetExpressApiParamDecorator(ExpressApiResponseParam),
 		GetExpressApiModifierDecorator(ExpressApiMiddleware),
 	]);

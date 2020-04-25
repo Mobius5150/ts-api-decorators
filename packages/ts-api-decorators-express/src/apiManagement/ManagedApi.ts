@@ -12,6 +12,7 @@ import {
 } from 'ts-api-decorators';
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
+import { ExpressMetadata } from '../metadata/ExpressMetadata';
 
 export interface IExpressManagedApiContext {
 	'express.request': Express.Request;
@@ -78,8 +79,9 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 							: undefined
 					),
 					transportParams: {
-						'express.request': req,
-						'express.response': res,
+						[ExpressMetadata.TransportTypeRequestParam]: req,
+						[ExpressMetadata.TransportTypeResponseParam]: res,
+						[ExpressMetadata.TransportTypeRequestUserParam]: (<any>req)?.user,
 					},
 				};
 

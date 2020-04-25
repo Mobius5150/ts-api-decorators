@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ExpressApiRequestParam, ExpressApiResponseParam } from "../../../src";
+import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ExpressApiRequestParam, ExpressApiResponseParam, ExpressApiMiddleware, ExpressApiRequestUserParam } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -68,6 +68,17 @@ class MyApi {
 		}
 		
 		return 'response';
+	}
+	
+	@ApiGetMethod('/helloUser')
+	@ExpressApiMiddleware((req, res, next) => {
+		(<any>req).user = { name: 'Developer' };
+		next();
+	})
+	greetUser(
+		@ExpressApiRequestUserParam() user: { name: string },
+	) {
+        return `Hello ${user.name}!`;
     }
     
 }

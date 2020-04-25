@@ -34,4 +34,10 @@ describe('Express Params', () => {
 				.expect(200, `response`);
 		});
 	}
+
+	it('gets the user from the request', async () => {
+		return request(httpServer)
+				.get(`/helloUser`)
+				.expect(200, `Hello Developer!`);
+	})
 });
