@@ -70,6 +70,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	private readonly dependencies = new ApiDependencyCollection();
 
+	protected handleErrors: boolean = true;
+
 	public constructor(
 		private readonly useGlobal: boolean = false
 	) {
@@ -174,18 +176,22 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 					return result;
 				} catch (e) {
-					if (this.isHttpErrorLike(e)) {
-						return {
-							statusCode: e.statusCode || e.code,
-							body: e.message,
-							headers: {},
-						};
-					} else {
-						return {
-							statusCode: 500,
-							body: '',
-							headers: {},
+					if (this.handleErrors) {
+						if (this.isHttpErrorLike(e)) {
+							return {
+								statusCode: e.statusCode || e.code,
+								body: e.message,
+								headers: {},
+							};
+						} else {
+							return {
+								statusCode: 500,
+								body: '',
+								headers: {},
+							}
 						}
+					} else {
+						throw e;
 					}
 				} finally {
 					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, null);
@@ -210,7 +216,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return invocationResult;
 	}
 
-	private isHttpErrorLike(e: any) {
+	protected isHttpErrorLike(e: any) {
 		return e instanceof HttpError || (typeof e === 'object' && (e.statusCode || e.code) && e.message);
 	}
 

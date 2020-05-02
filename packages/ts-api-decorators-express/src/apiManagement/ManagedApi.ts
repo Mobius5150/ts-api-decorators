@@ -20,6 +20,10 @@ export interface IExpressManagedApiContext {
 }
 
 export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
+	public passErrorsToExpress(pass: boolean): void {
+		this.handleErrors = !pass;
+	}
+	
 	public init(): Express.Router {
 		const handlers = this.initHandlers();
 
