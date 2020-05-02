@@ -5,6 +5,10 @@ export interface SymbolWithId extends ts.Symbol {
     id: number;
 }
 
+export interface SymbolWithParent extends ts.Symbol {
+    parent: ts.Symbol;
+}
+
 export interface IntrinsicType extends ts.Type {
     intrinsicName: InternalTypeDefinition['type'];
 }
@@ -44,6 +48,10 @@ export function isNamedNode(n: ts.Node & Partial<NamedNode>): n is NamedNode {
 
 export function isSymbolWithId(s: ts.Symbol & Partial<SymbolWithId>): s is SymbolWithId {
     return typeof s.id === 'number';
+}
+
+export function isSymbolWithParent(s: ts.Symbol & Partial<SymbolWithParent>): s is SymbolWithParent {
+    return typeof s.parent === 'object';
 }
 
 export function isBuiltinSymbol(s: ts.Symbol): s is BuiltinSymbol {

@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType } from './TransformerUtil';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -59,29 +59,19 @@ export class TypeSerializer {
 				...this.generator.getSymbols(name),
 				...this.generator.getSymbols(type.symbol.name),
 			];
+
+			if (isSymbolWithParent(type.symbol)) {
+				symbols.push(...this.generator.getSymbols(type.symbol.parent.name));
+			}
+
 			for (const symbol of symbols) {
-				if (isSymbolWithId(symbol.symbol) && symbol.symbol.id === type.symbol.id) {
-					let schema = this.generator.getSchemaForSymbol(symbol.name, true);
-					let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;
-					if (schema.$ref && schema.definitions) {
-						const refDefParts = schema.$ref.split('/');
-						const refDefName = refDefParts[refDefParts.length - 1];
-						const def = schema.definitions[refDefName];
-						if (def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
-							type = def.type || InternalTypeUtil.TypeEnum.type;
-							schema = {
-								...def,
-								...schema,
-							};
-						}
-					}
-					return {
-						...base,
-						type,
-						schema,
-						typename: symbol.typeName,
-						uniqueTypename: symbol.name,
-					};
+				if (
+					isSymbolWithId(symbol.symbol) && (
+						symbol.symbol.id === type.symbol.id
+						|| isSymbolWithParent(type.symbol) && isSymbolWithId(type.symbol.parent) && symbol.symbol.id === type.symbol.parent.id
+					)
+				) {
+					return this.getTypeForSymbolWithId(symbol, base);
 				}
 			}
 		}
@@ -129,6 +119,30 @@ export class TypeSerializer {
 		}
 	}
 	
+	private getTypeForSymbolWithId(symbol: any, base: { optional?: boolean; }) {
+		let schema = this.generator.getSchemaForSymbol(symbol.name, true);
+		let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;
+		if (schema.$ref && schema.definitions) {
+			const refDefParts = schema.$ref.split('/');
+			const refDefName = refDefParts[refDefParts.length - 1];
+			const def = schema.definitions[refDefName];
+			if (def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
+				type = def.type || InternalTypeUtil.TypeEnum.type;
+				schema = {
+					...def,
+					...schema,
+				};
+			}
+		}
+		return {
+			...base,
+			type,
+			schema,
+			typename: symbol.typeName,
+			uniqueTypename: symbol.name,
+		};
+	}
+
 	public getReferencedTypeDefinition(reference: IJsonSchemaWithRefs): IJsonSchemaWithRefs {
 		if (!reference.$ref) {
 			throw new Error('Reference did not have a $ref field');

@@ -180,4 +180,51 @@ describe('transformer enum support', () => {
 		]));
 	});
 
+	
+	it('should parse single-value enums', async () => {
+		loadBasicTree();
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
+			// greet()
+			treeHandlerMethodNode(ApiMethod.GET, '/SingleValueStringEnum', [
+				treeHandlerParameterNode({
+					type: ApiParamType.Query,
+					parameterIndex: 0,
+					propertyKey: 'filter',
+					args: {
+						name: 'filter',
+						typedef: {
+							...InternalTypeUtil.TypeString,
+							schema: {
+								enum: ['single']
+							}
+						}
+					},
+				}),
+			],
+			[
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, InternalTypeUtil.TypeString),
+			]),
+
+			// greetConst()
+			treeHandlerMethodNode(ApiMethod.GET, '/SingleValueNumberEnum', [
+				treeHandlerParameterNode({
+					type: ApiParamType.Query,
+					parameterIndex: 0,
+					propertyKey: 'filter',
+					args: {
+						name: 'filter',
+						typedef: {
+							...InternalTypeUtil.TypeNumber,
+							schema: {
+								enum: [0]
+							}
+						}
+					},
+				}),
+			],
+			[
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, InternalTypeUtil.TypeString),
+			]),
+		]));
+	});
 });

@@ -30,6 +30,13 @@ const enum ConstMixedFilterTypes {
 	Top = 'string',
 }
 
+enum SingleValueStringEnum {
+	Single = 'single',
+}
+
+enum SingleValueNumberEnum {
+	Single = 0,
+}
 
 @Api
 class MyApi {
@@ -72,6 +79,20 @@ class MyApi {
 	@ApiGetMethod<string>('/helloConstMixed')
 	greetConstMixed(
 		@ApiQueryParam() filter?: ConstMixedFilterTypes,
+	): string {
+		return filter.toString();
+	}
+
+	@ApiGetMethod<string>('/SingleValueStringEnum')
+	greetSingleValueString(
+		@ApiQueryParam() filter?: SingleValueStringEnum,
+	): string {
+		return filter.toString();
+	}
+
+	@ApiGetMethod<string>('/SingleValueNumberEnum')
+	greetSingleValueNumber(
+		@ApiQueryParam() filter?: SingleValueNumberEnum,
 	): string {
 		return filter.toString();
 	}
