@@ -7,8 +7,8 @@ import * as yaml from 'js-yaml';
 import { IProgramInfo } from "./IProgramInfo";
 import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalEnumTypeDefinition } from "../apiManagement/InternalTypes";
 import { IExtractedTag } from "../transformer/IExtractedTag";
-import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode } from "../transformer/HandlerTree";
-import { ManagedApi } from "../apiManagement";
+import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode, HandlerTreeNodeType } from "../transformer/HandlerTree";
+import { ManagedApi, ApiMimeType } from "../apiManagement";
 
 export interface IOpenApiV3Opts {
     disableTryInferSchemes?: boolean;
@@ -176,12 +176,17 @@ export class OpenApiV3Extractor implements IExtractor {
     }
     
     private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV3.OperationObject {
+        const params = Array.from(WalkChildrenByType(api, isHandlerParameterNode));
+        const bodyParam = params.find(p => p.paramDef.type === ApiParamType.Body || p.paramDef.type === ApiParamType.RawBody);
         return {
             operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
             summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
             tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
-            parameters: Array.from(WalkChildrenByType(api, isHandlerParameterNode)).map(p => this.getParametersObject(p)),
+            parameters: params
+                .filter(p => p.paramDef.type !== ApiParamType.Body && p.paramDef.type !== ApiParamType.RawBody)
+                .map(p => this.getParametersObject(p)),
+            requestBody: bodyParam ? this.getRequestBody(bodyParam) : undefined,
             responses: {
                 default: this.getResponseObject(api),
             }
@@ -422,6 +427,26 @@ export class OpenApiV3Extractor implements IExtractor {
             required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
             description: p.paramDef.args.description,
             schema,
+        };
+    }
+
+    getRequestBody(p: IHandlerTreeNodeParameter): OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject {
+        let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject = this.getInlineTypeSchema(p.paramDef.args.typedef);
+        let enumVals: any[];
+        if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
+            if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
+                enumVals = p.paramDef.args.typedef.schema.enum;
+            }
+        }
+
+        return {
+            required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
+            description: p.paramDef.args.description,
+            content: {
+                [ApiMimeType.ApplicationJson]: {
+                    schema,
+                }
+            }
         };
     }
 
