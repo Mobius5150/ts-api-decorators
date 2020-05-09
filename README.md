@@ -1,4 +1,4 @@
-# Typescript API Decorators
+/# Typescript API Decorators
 This library provides a simple way to use typescript decorators to define APIs. The benefits of this approach are many-fold:
 
 - __Automatic Runtime Type Safety and Validation__: The library automatically checks that inputs you accept comply with the type definitions in your code. Extended validation also supports deep, customizable validation that helps you simplify your handlers while making them robust.
@@ -628,22 +628,22 @@ class MyApi {
 ```
 
 ## Custom Hooks
-> Note! This section details features which may not be fully implemented.
 Custom hooks execute at various points during the execution lifecycle and allow you to run custom code around the invocation of a function. The below example uses a stopwatch to time the execution of a handler:
 
 ```typescript
-function stopWatchStart(context: ManagedApiRequestContext) {
-	context.custom.stopWatchStart = Date.now();
+function stopWatchStart(context: IApiInvocationContext) {
+	context.stopWatchStart = Date.now();
+	return context;
 }
 
-function stopWatchEnd(context: ManagedApiRequestContext) {
-	const elapsed = Date.now() - context.custom.stopWatchStart;
-	console.log(`${context.method} ${context.path} execution took ${elapsed}ms`);
+function stopWatchEnd(context: IApiInvocationContextPostInvoke) {
+	const elapsed = Date.now() - context.stopWatchStart;
+	console.log(`${context.apiDefinition.method} ${context.apiDefinition.path} execution took ${elapsed}ms`);
 }
 
 const api = new ManagedApi();
 api.addHook('handler-preinvoke', stopWatchStart);
-api.addHook('handler-completed', stopWatchEnd);
+api.addHook('handler-postinvoke', stopWatchEnd);
 ```
 
 Sample output:
@@ -654,8 +654,5 @@ DELETE /invoice/456 execution took 17ms
 ```
 
 The following hooks are available:
-> TODO: convert to table
 - handler-preinvoke
-- handler-error
-- handler-success
-- handler-completed
+- handler-postinvoke

@@ -11,9 +11,12 @@ import * as p2r from 'path-to-regexp';
 import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
 import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
+import { Func, OptionalAsyncFunc1 } from "../Util/Func";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
+export type ManagedApiPreInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContext<TransportParamsType>, IApiInvocationContext<TransportParamsType> | undefined>;
+export type ManagedApiPostInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContextPostInvoke<TransportParamsType>, IApiInvocationResult | undefined>;
 
 export interface IApiBodyContents {
 	contentsStream: Readable;
@@ -24,7 +27,7 @@ export interface IApiBodyContents {
 	parsedBody?: any;
 }
 
-export interface IApiInvocationParams<TransportParamsType extends object> {
+export interface IApiInvocationParams<TransportParamsType extends object = {}> {
 	queryParams: ApiParamsDict;
 	pathParams: ApiParamsDict;
 	headers: ApiHeadersDict;
@@ -36,6 +39,15 @@ export interface IApiInvocationResult {
 	statusCode: number;
 	body: string | object;
 	headers: ApiHeadersDict;
+}
+
+export interface IApiInvocationContext<TransportParamsType extends object = {}> {
+	apiDefinition: IApiDefinitionWithProcessors<TransportParamsType>;
+	invocationParams: IApiInvocationParams<TransportParamsType>;
+}
+
+export interface IApiInvocationContextPostInvoke<TransportParamsType extends object = {}> extends IApiInvocationContext<TransportParamsType>{
+	result: IApiInvocationResult;
 }
 
 export type WrappedApiHandler<TransportParamsType extends object> = (params: IApiInvocationParams<TransportParamsType>) => Promise<IApiInvocationResult>;
@@ -60,6 +72,8 @@ export interface IApiHandlerInstance<TransportParamsType extends object> extends
 export abstract class ManagedApi<TransportParamsType extends object> {
 	private static readonly ClsNamespace = 'ManagedApiNamespace';
 	private static readonly InvocationParamsNamespace = 'invocationParams';
+	public readonly HookHandlerPreInvoke = 'handler-preinvoke';
+	public readonly HookHandlerPostInvoke = 'handler-postinvoke';
 
 	private static apis = [];
 	private static namespace: Namespace;
@@ -69,6 +83,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	private classes: IApiClassDefinition[];
 
 	private readonly dependencies = new ApiDependencyCollection();
+
+	protected readonly hooks: Map<string, Func[]> = new Map();
 
 	protected handleErrors: boolean = true;
 
@@ -164,11 +180,14 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
 				try {
-					invocationParams = await this.preProcessInvocationParams(invocationParams, def.processors);
+					const context = await this.preProcessInvocationParams({
+						apiDefinition: def,
+						invocationParams,
+					}, def.processors);
 					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
 					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);
 
-					const result: IApiInvocationResult = await this.postProcessInvocationResult({
+					const result: IApiInvocationResult = await this.postProcessInvocationResult(context, {
 						statusCode: 200,
 						body: handlerResult,
 						headers: {},
@@ -200,17 +219,41 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		};
 	}
 
-	protected async preProcessInvocationParams(invocationParams: IApiInvocationParams<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationParams<TransportParamsType>> {
+	protected async preProcessInvocationParams(context: IApiInvocationContext<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationContext<TransportParamsType>> {
 		for (const processor of processors[ApiProcessorTime.StagePreInvoke]) {
-			invocationParams = await processor.processor(invocationParams);
+			context.invocationParams = await processor.processor(context.invocationParams);
 		}
 
-		return invocationParams;
+		if (this.hooks.has(this.HookHandlerPreInvoke)) {
+			const handlers = <ManagedApiPreInvokeHandlerType<TransportParamsType>[]>this.hooks.get(this.HookHandlerPreInvoke);
+			for (const handler of handlers) {
+				const result = await handler(context);
+				if (typeof result === 'object') {
+					context = result;
+				}
+			}
+		}
+
+		return context;
 	}
 
-	protected async postProcessInvocationResult(invocationResult: IApiInvocationResult, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationResult> {
+	protected async postProcessInvocationResult(context: IApiInvocationContext<TransportParamsType>, invocationResult: IApiInvocationResult, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationResult> {
 		for (const processor of processors[ApiProcessorTime.StagePostInvoke]) {
 			invocationResult = await processor.processor(invocationResult);
+		}
+
+		if (this.hooks.has(this.HookHandlerPostInvoke)) {
+			const handlers = <ManagedApiPostInvokeHandlerType<TransportParamsType>[]>this.hooks.get(this.HookHandlerPostInvoke);
+			for (const handler of handlers) {
+				const result = await handler({
+					...context,
+					result: invocationResult,
+				});
+
+				if (typeof result === 'object') {
+					invocationResult = result;
+				}
+			}
 		}
 
 		return invocationResult;
@@ -597,4 +640,51 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param value The value of the header to set
 	 */
 	public abstract setHeader(name: string, value: string | number): void;
+
+	/**
+	 * Add a hook to be processed during request handling.
+	 * @param hookName The name of the hook event
+	 * @param hookfunction The handler to register
+	 */
+	public addHook(hookName: ManagedApi<TransportParamsType>['HookHandlerPreInvoke'], hookfunction: ManagedApiPreInvokeHandlerType<TransportParamsType>): void;
+	public addHook(hookName: ManagedApi<TransportParamsType>['HookHandlerPostInvoke'], hookfunction: ManagedApiPostInvokeHandlerType<TransportParamsType>): void;
+	public addHook(hookName: string, hookfunction: Func): void {
+		switch (hookName) {
+			case this.HookHandlerPreInvoke:
+			case this.HookHandlerPostInvoke:
+				if (!this.hooks.has(hookName)) {
+					this.hooks.set(hookName, []);
+				}
+
+				this.hooks.get(hookName).push(hookfunction);
+				break;
+			
+			default:
+				throw new Error(`Invalid hook name: ${hookName}`);
+		}
+	}
+
+	/**
+	 * Remove a previously registered hook.
+	 * @param hookName The name of the hook event
+	 * @param hookfunction The handler to remove
+	 * @returns true if the hook was found and removed
+	 */
+	public removeHook(hookName: string, hookfunction: Func): boolean {
+		if (this.hooks.has(hookName)) {
+			const hooks = this.hooks.get(hookName);
+			const index = hooks.indexOf(hookfunction);
+			if (index >= 0) {
+				hooks.splice(index, 1);
+
+				if (hooks.length === 0) {
+					this.hooks.delete(hookName);
+				}
+
+				return true;
+			}
+		}
+
+		return false;
+	}
 }
