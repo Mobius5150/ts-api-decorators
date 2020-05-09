@@ -149,7 +149,8 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 	}
 
 	public setHeader(name: string, value: string): void {
-		const context = this.getExecutionContextInvocationParams();
-		context.transportParams['express.response'].header(name, value);
+		const context = this.getExecutionContext();
+		context.result.headers[name] = value;
+		context.invocationParams.transportParams['express.response'].header(name, value);
 	}
 }

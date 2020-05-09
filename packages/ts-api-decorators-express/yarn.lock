@@ -1314,6 +1314,11 @@ param-case@^2.1.0:
   dependencies:
     no-case "^2.2.0"
 
+parse-gitignore@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/parse-gitignore/-/parse-gitignore-1.0.1.tgz#8b9dc57f17b810d495c5dfa62eb07caffe7758c7"
+  integrity sha512-UGyowyjtx26n65kdAMWhm6/3uy5uSrpcuH7tt+QEVudiBoVS+eqHxD5kbi9oWVRwj7sCzXqwuM+rUGw7earl6A==
+
 parseurl@~1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/parseurl/-/parseurl-1.3.3.tgz#9da19e7bee8d12dff0513ed5b76957793bc2e8d4"
@@ -1819,10 +1824,10 @@ ts-api-decorators-azure-function@^0.1.3:
     ts-api-decorators "^0.1.5"
     uuid "^3.4.0"
 
-ts-api-decorators@^0.1.17:
-  version "0.1.18"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.18.tgz#9ae60ecc4006568c36da951d38fee01360b8220d"
-  integrity sha512-1QlXZqHhzbS/Zcx+FvONkE76HILIAb6kLzpb8+JTFIl9gkCGacMPCaD4UcYpiSTlLWA+S3e5FSEQznAmKMfBdA==
+ts-api-decorators@^0.1.27:
+  version "0.1.27"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.27.tgz#1887e8b85eaba43a7a0b4b2787c397abf199643a"
+  integrity sha512-LWi1a1IZRNT6xHwA8bbFATgl6PFBSMkSe3f1nsXKqXKpE8MQdfcW7FDeS/cj0RYoNY7UDLOW0CnRiIN7tDsb8w==
   dependencies:
     "@azure/functions" "^1.0.3"
     acorn "^7.0.0"
@@ -1835,6 +1840,7 @@ ts-api-decorators@^0.1.17:
     js-yaml "^3.13.1"
     jsonschema "^1.2.4"
     mustache "^3.2.1"
+    parse-gitignore "^1.0.1"
     path-to-regexp "^6.1.0"
     promise-fs "^2.1.1"
     reflect-metadata "^0.1.13"

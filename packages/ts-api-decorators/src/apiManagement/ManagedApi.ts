@@ -71,7 +71,7 @@ export interface IApiHandlerInstance<TransportParamsType extends object> extends
 
 export abstract class ManagedApi<TransportParamsType extends object> {
 	private static readonly ClsNamespace = 'ManagedApiNamespace';
-	private static readonly InvocationParamsNamespace = 'invocationParams';
+	private static readonly ContextNamespace = 'context';
 	public readonly HookHandlerPreInvoke = 'handler-preinvoke';
 	public readonly HookHandlerPostInvoke = 'handler-postinvoke';
 
@@ -180,18 +180,20 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
 				try {
-					const context = await this.preProcessInvocationParams({
-						apiDefinition: def,
-						invocationParams,
-					}, def.processors);
-					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, invocationParams);
-					const handlerResult = await this.invokeHandler(def, handlerArgs, instance, invocationParams);
-
-					const result: IApiInvocationResult = await this.postProcessInvocationResult(context, {
-						statusCode: 200,
-						body: handlerResult,
-						headers: {},
-					}, def.processors);
+					const context: IApiInvocationContextPostInvoke<TransportParamsType> ={
+						...await this.preProcessInvocationParams({
+							apiDefinition: def,
+							invocationParams,
+						}, def.processors),
+						result: {
+							statusCode: 200,
+							body: null,
+							headers: {},
+						}
+					};
+					ManagedApi.namespace.set(ManagedApi.ContextNamespace, context);
+					context.result.body = await this.invokeHandler(def, handlerArgs, instance, context.invocationParams);
+					const {result} = await this.postProcessInvocationResult(context, def.processors);
 
 					return result;
 				} catch (e) {
@@ -213,7 +215,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						throw e;
 					}
 				} finally {
-					ManagedApi.namespace.set(ManagedApi.InvocationParamsNamespace, null);
+					ManagedApi.namespace.set(ManagedApi.ContextNamespace, null);
 				}
 			});
 		};
@@ -237,34 +239,31 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return context;
 	}
 
-	protected async postProcessInvocationResult(context: IApiInvocationContext<TransportParamsType>, invocationResult: IApiInvocationResult, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationResult> {
+	protected async postProcessInvocationResult(context: IApiInvocationContextPostInvoke<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationContextPostInvoke<TransportParamsType>> {
 		for (const processor of processors[ApiProcessorTime.StagePostInvoke]) {
-			invocationResult = await processor.processor(invocationResult);
+			context.result = await processor.processor(context.result);
 		}
 
 		if (this.hooks.has(this.HookHandlerPostInvoke)) {
 			const handlers = <ManagedApiPostInvokeHandlerType<TransportParamsType>[]>this.hooks.get(this.HookHandlerPostInvoke);
 			for (const handler of handlers) {
-				const result = await handler({
-					...context,
-					result: invocationResult,
-				});
+				const result = await handler(context);
 
 				if (typeof result === 'object') {
-					invocationResult = result;
+					context.result = result;
 				}
 			}
 		}
 
-		return invocationResult;
+		return context;
 	}
 
 	protected isHttpErrorLike(e: any) {
 		return e instanceof HttpError || (typeof e === 'object' && (e.statusCode || e.code) && e.message);
 	}
 
-	public getExecutionContextInvocationParams(): IApiInvocationParams<TransportParamsType> {
-		return ManagedApi.namespace.get(ManagedApi.InvocationParamsNamespace);
+	public getExecutionContext(): IApiInvocationContextPostInvoke<TransportParamsType> {
+		return ManagedApi.namespace.get(ManagedApi.ContextNamespace);
 	}
 
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
@@ -625,8 +624,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param name The name of the header to get. Case insensitive.
 	 */
 	public getHeader(name: string): string | string[] | undefined {
-		const context = this.getExecutionContextInvocationParams();
-		const headers = context.headers;
+		const context = this.getExecutionContext();
+		const headers = context.invocationParams.headers;
 		if (!headers) {
 			return;
 		}
