@@ -197,28 +197,32 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 					return result;
 				} catch (e) {
-					if (this.handleErrors) {
-						if (this.isHttpErrorLike(e)) {
-							return {
-								statusCode: e.statusCode || e.code,
-								body: e.message,
-								headers: {},
-							};
-						} else {
-							return {
-								statusCode: 500,
-								body: '',
-								headers: {},
-							}
-						}
-					} else {
-						throw e;
-					}
+					return this.getErrorResponseForException(e);
 				} finally {
 					ManagedApi.namespace.set(ManagedApi.ContextNamespace, null);
 				}
 			});
 		};
+	}
+
+	protected getErrorResponseForException(e: any) {
+		if (this.handleErrors) {
+			if (this.isHttpErrorLike(e)) {
+				return {
+					statusCode: e.statusCode || e.code,
+					body: e.message,
+					headers: {},
+				};
+			} else {
+				return {
+					statusCode: 500,
+					body: '',
+					headers: {},
+				}
+			}
+		} else {
+			throw e;
+		}
 	}
 
 	protected async preProcessInvocationParams(context: IApiInvocationContext<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationContext<TransportParamsType>> {

@@ -96,7 +96,12 @@ abstract class ExpressParams {
 }
 
 class ExpressModifiers {
-	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<any>;
+	/**
+	 * Adds in standard request middleware ahead of execution of the request handler.
+	 * @param middleware The middleware function to add
+	 * @param wrapPromiseForErrors If `middleware` is a Promise-like function, `true` will cause errors thrown to be handled gracefully.
+	 */
+	public static ExpressApiMiddleware(middleware: Express.Handler, wrapPromiseForErrors?: boolean): ApiMethodDecoratorReturnType<any>;
 	@ApiDecorator(HandlerMethodModifierDecorator, {
 		indexTs: __filename,
 		dependencies: [
@@ -106,10 +111,11 @@ class ExpressModifiers {
 		provider: ExpressMetadata.Component,
 		arguments: [
 			ExpressArgumentExtractors.MiddlewareArgument,
+			ExpressArgumentExtractors.OptionalWrapPromiseArgument,
 		],
 		transformArgumentsToObject: false,
 	})
-	public static ExpressApiMiddleware(middleware: Express.Handler): ApiMethodDecoratorReturnType<any> {
+	public static ExpressApiMiddleware(middleware: Express.Handler, wrapPromise: boolean = false): ApiMethodDecoratorReturnType<any> {
 		return (
 			target: object,
 			propertyKey: string,
@@ -118,7 +124,10 @@ class ExpressModifiers {
 			ManagedApiInternal.AddApiModifierMetadataToObject(
 				{
 					propertyKey,
-					arguments: <ExpressMiddlewareArgument>{ middleware },
+					arguments: <ExpressMiddlewareArgument>{
+						middleware,
+						wrapPromise,
+					},
 					metadata: ExpressMetadata.MiddlewareArgument,
 				}, target.constructor);
 		}

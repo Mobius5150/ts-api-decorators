@@ -9,6 +9,12 @@ export abstract class ExpressMetadata {
         key: 'middleware',
     }
 
+    public static readonly WrapPromiseArgument: IMetadataDescriptor = {
+        type: IMetadataType.Plugin,
+        component: ExpressMetadata.Component,
+        key: 'wrapPromise',
+    }
+
     public static readonly TransportTypeRequestParam = 'express.request';
 	public static readonly TransportTypeResponseParam = 'express.response';
 	public static readonly TransportTypeRequestUserParam = 'express.request.user';

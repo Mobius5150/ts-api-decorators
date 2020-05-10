@@ -38,4 +38,16 @@ describe('Middleware', () => {
 			.get(`/hello?goodbye=true`)
 			.expect(200, `Goodbye`);
 	});
+
+	it(`applies async middleware [positive]`, async () => {
+		return request(httpServer)
+			.get(`/asyncMiddleware?exception=1`)
+			.expect(418);
+	});
+
+	it(`applies async middleware [negative]`, async () => {
+		return request(httpServer)
+			.get(`/asyncMiddleware`)
+			.expect(200, `Hello`);
+	});
 });

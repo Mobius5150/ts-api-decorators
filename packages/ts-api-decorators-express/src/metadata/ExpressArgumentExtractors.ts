@@ -11,4 +11,13 @@ export abstract class ExpressArgumentExtractors {
 			value: new ExpressionWrapper(args.argumentExpression),
 		}),
 	};
+
+	public static readonly OptionalWrapPromiseArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeBoolean,
+		optional: true,
+		metadataExtractor: (args) => ({
+			...ExpressMetadata.WrapPromiseArgument,
+			value: new ExpressionWrapper(args.argumentExpression),
+		}),
+	};
 }

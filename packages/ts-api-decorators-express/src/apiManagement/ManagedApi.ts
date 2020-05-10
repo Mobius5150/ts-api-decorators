@@ -8,7 +8,8 @@ import {
 	ApiStdHeaderName,
 	ApiHeadersDict,
 	ApiParamsDict,
-	ManagedApiInternal
+	ManagedApiInternal,
+	IApiInvocationResult
 } from 'ts-api-decorators';
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
@@ -32,11 +33,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		for (const handlerMethod of handlers) {
 			const routes = handlerMethod[1];
 			for (const route of routes) {
-				const middlewares = 
-					ManagedApiInternal.GetApiModifierDefinitionsOnObject<ExpressMiddlewareArgument>(
-						route[1].parent.constructor, route[1].handlerKey)
-						.map(d => d.arguments.middleware);
-
+				const middlewares = this.getMiddlewareForRoute(route);
 				switch (handlerMethod[0]) {
 					case ApiMethod.GET:
 						router.get(route[0], ...middlewares, this.getHandlerWrapper(route[1]));
@@ -60,8 +57,30 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		return router;
 	}
 
+	private getMiddlewareForRoute(route: [string, IApiHandlerInstance<IExpressManagedApiContext>]) {
+		const instance = this;
+		return ManagedApiInternal.GetApiModifierDefinitionsOnObject<ExpressMiddlewareArgument>(route[1].parent.constructor, route[1].handlerKey)
+			.map(d => {
+				if (d.arguments.wrapPromise) {
+					return async function (req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+						try {
+							await d.arguments.middleware.apply(this, arguments);
+						} catch (e) {
+							try {
+								instance.expressResultHandler(res, instance.getErrorResponseForException(e));
+							} catch (e2) {
+								next(e2);
+							}
+						}
+					}
+				}
+				
+				return d.arguments.middleware;
+			});
+	}
+
 	private getHandlerWrapper(instance: IApiHandlerInstance<IExpressManagedApiContext>) {
-		return (req: Express.Request, res: Express.Response, next: Function) => {
+		return (req: Express.Request, res: Express.Response, next: Express.NextFunction) => {
 			try {
 				const contentType = req.header(ApiStdHeaderName.ContentType);
 				const contentLength = req.header(ApiStdHeaderName.ContentLength);
@@ -91,15 +110,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 
 				// TODO: Need to properly parse the body based on the content length
 				instance.wrappedHandler(invocationParams)
-					.then(result => {
-						if (!res.writableEnded) {
-							if (result.body) {
-								res.status(result.statusCode).send(result.body);
-							} else {
-								res.sendStatus(result.statusCode);
-							}
-						}
-					})
+					.then(result => this.expressResultHandler(res, result))
 					.catch(e => {
 						next(e);
 					});
@@ -107,6 +118,16 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				next(e);
 			}
 		};
+	}
+
+	private expressResultHandler(res: Express.Response, result: IApiInvocationResult) {
+		if (!res.writableEnded) {
+			if (result.body) {
+				res.status(result.statusCode).send(result.body);
+			} else {
+				res.sendStatus(result.statusCode);
+			}
+		}
 	}
 
 	private getRequestHeaderParams(req: Express.Request): ApiHeadersDict {

@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware, ApiQueryParam } from "../../../src";
+import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware, ApiQueryParam, HttpTeapotError } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -6,6 +6,16 @@ import * as http from 'http';
 function middleware(req: express.Request, res: express.Response, next: express.NextFunction) {
 	if (req.query['goodbye']) {
 		res.status(200).send('Goodbye');
+	} else {
+		next();
+	}
+}
+
+async function asyncMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+	if (req.query['exception']) {
+		await new Promise((resolve, reject) => {
+			reject(new HttpTeapotError());
+		});
 	} else {
 		next();
 	}
@@ -19,6 +29,14 @@ class MyApi {
 		@ApiQueryParam() name: string,
 	) {
 		return `Hello ${name}`;
+	}
+
+	@ApiGetMethod('/asyncMiddleware')
+	@ExpressApiMiddleware(asyncMiddleware, true)
+	asyncMiddleware(
+		@ApiQueryParam() exception?: boolean,
+	) {
+		return `Hello`;
 	}
 }
 
