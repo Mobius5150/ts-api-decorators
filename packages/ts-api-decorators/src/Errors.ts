@@ -1,64 +1,9 @@
 import { ValidationError } from "jsonschema";
+import { HttpError } from "./HttpError";
+import { HttpBadRequestError } from "./GeneratedErrors";
 
-export class HttpError<T extends object = {}> extends Error {
-    public responseBody: { message: string } & T;
-
-    constructor(m: string, public readonly statusCode: number, bodyContents: T = <T>{}) {
-        super(m);
-        this.responseBody = {
-            message: m,
-            ...bodyContents,
-        };
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpError.prototype);
-    }
-}
-
-export class HttpNotFoundError extends HttpError {
-    constructor(m: string = 'Resource not found') {
-        super(m, 404, {});
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpNotFoundError.prototype);
-    }
-}
-
-export class HttpBadRequestError extends HttpError {
-    constructor(m: string = 'Bad request') {
-        super(m, 400, {});
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpBadRequestError.prototype);
-    }
-}
-
-export class HttpUnauthorizedRequestError extends HttpError {
-    constructor(m: string = 'Unauthorized') {
-        super(m, 401, {});
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpUnauthorizedRequestError.prototype);
-    }
-}
-
-export class HttpForbiddenError extends HttpError {
-    constructor(m: string = 'Forbidden') {
-        super(m, 403, {});
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpForbiddenError.prototype);
-    }
-}
-
-export class HttpUnsupportedMediaTypeError extends HttpError {
-    constructor(expectedType?: string, m: string = 'Unsupported Media Type') {
-        super(m, 415, { expectedType });
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpUnsupportedMediaTypeError.prototype);
-    }
-}
+export * from './HttpError';
+export * from './GeneratedErrors';
 
 export class HttpTransportConfigurationError extends HttpError {
     constructor(m: string = 'Internal Server Error') {
@@ -174,14 +119,5 @@ export class HttpBodyParamValidationError extends HttpBadRequestError {
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, HttpBodyParamValidationError.prototype);
-    }
-}
-
-export class HttpTeapotError extends HttpError {
-    constructor(m: string = "I'm a teapot") {
-        super(m, 418, {});
-
-        // Set the prototype explicitly.
-        Object.setPrototypeOf(this, HttpTeapotError.prototype);
     }
 }

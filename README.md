@@ -335,12 +335,12 @@ You can also create your own exception classes:
 ```typescript
 import {HttpError} from 'ts-api-decorators-*';
 
-class HttpTeapotError extends HttpError {
+class HttpImATeapotError extends HttpError {
     constructor(m: string = "I'm a teapot") {
         super(m, 418, {});
 
         // Must set the prototype explicitly!
-        Object.setPrototypeOf(this, HttpTeapotError.prototype);
+        Object.setPrototypeOf(this, HttpImATeapotError.prototype);
     }
 }
 ```

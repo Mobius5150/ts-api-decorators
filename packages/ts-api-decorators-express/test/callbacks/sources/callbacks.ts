@@ -3,7 +3,7 @@ import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
 import { ApiMethodCallbackFunction } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
-import { HttpError, HttpTeapotError } from "ts-api-decorators/dist";
+import { HttpError, HttpImATeapotError } from "ts-api-decorators";
 
 interface IGreetArgs {
 	name: string;
@@ -41,7 +41,7 @@ class MyApi {
 	) {
 		setTimeout(() => {
 			if (throwError) {
-				callback(new HttpTeapotError());
+				callback(new HttpImATeapotError());
 			} else {
 				callback(null, this.getResult({name, times, optional}));
 			}
@@ -58,7 +58,7 @@ class MyApi {
 	) {
 		setTimeout(() => {
 			if (throwError) {
-				callback(new HttpTeapotError());
+				callback(new HttpImATeapotError());
 			} else {
 				callback(null, this.getResult({name, times, optional}));
 			}
@@ -75,7 +75,7 @@ class MyApi {
 	) {
 		setTimeout(() => {
 			if (throwError) {
-				callback(new HttpTeapotError());
+				callback(new HttpImATeapotError());
 			} else {
 				callback(null, this.getResult({name, times, optional}));
 			}
@@ -92,7 +92,7 @@ class MyApi {
 	) {
 		setTimeout(() => {
 			if (throwError) {
-				callback(new HttpTeapotError());
+				callback(new HttpImATeapotError());
 			} else {
 				callback(null, this.getResult({name, times, optional}));
 			}
@@ -103,28 +103,28 @@ class MyApi {
 	unexpectedError(
 		@ApiCallbackParam() callback: ApiMethodCallbackFunction<string>,
 	) {
-		throw new HttpTeapotError();
+		throw new HttpImATeapotError();
 	}
 
 	@ApiPutMethod<void, string>('/unexpectedError')
 	unexpectedErrorPut(
 		@ApiCallbackParam() callback: ApiMethodCallbackFunction<string>,
 	) {
-		throw new HttpTeapotError();
+		throw new HttpImATeapotError();
 	}
 
 	@ApiPostMethod<void, string>('/unexpectedError')
 	unexpectedErrorPost(
 		@ApiCallbackParam() callback: ApiMethodCallbackFunction<string>,
 	) {
-		throw new HttpTeapotError();
+		throw new HttpImATeapotError();
 	}
 
 	@ApiDeleteMethod<void, string>('/unexpectedError')
 	unexpectedErrorDelete(
 		@ApiCallbackParam() callback: ApiMethodCallbackFunction<string>,
 	) {
-		throw new HttpTeapotError();
+		throw new HttpImATeapotError();
 	}
 
 	@ApiGetMethod<void, IEchoResponse>('/echo')

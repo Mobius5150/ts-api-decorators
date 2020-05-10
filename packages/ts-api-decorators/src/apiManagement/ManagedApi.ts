@@ -1,7 +1,8 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError } from "../Errors";
+import { HttpError } from "../HttpError";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
 import { __ApiParamArgs } from "./InternalTypes";

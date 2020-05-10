@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware, ApiQueryParam, HttpTeapotError } from "../../../src";
+import { Api, ApiGetMethod, ManagedApi, ExpressApiMiddleware, ApiQueryParam, HttpImATeapotError } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -14,7 +14,7 @@ function middleware(req: express.Request, res: express.Response, next: express.N
 async function asyncMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
 	if (req.query['exception']) {
 		await new Promise((resolve, reject) => {
-			reject(new HttpTeapotError());
+			reject(new HttpImATeapotError());
 		});
 	} else {
 		next();
