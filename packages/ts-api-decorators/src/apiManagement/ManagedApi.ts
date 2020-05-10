@@ -1,5 +1,5 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
-import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors } from "./ApiDefinition";
+import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors, ApiRawBodyParamType } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
 import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError } from "../Errors";
 import { HttpError } from "../HttpError";
@@ -26,6 +26,7 @@ export interface IApiBodyContents {
 	readStreamToStringAsync: () => Promise<string>;
 	readStreamToStringCb: (cb: (err: any, contents?: string) => void) => void;
 	parsedBody?: any;
+	contentsString?: string;
 }
 
 export interface IApiInvocationParams<TransportParamsType extends object = {}> {
@@ -427,15 +428,25 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			}
 
 			if (def.type === ApiParamType.RawBody) {
-				if (!bodyContents.contentsStream) {
-					throw new HttpTransportConfigurationError('Raw body was not available for handler');
-				}
-
 				if (typeof def.mimeType === 'string' && def.mimeType !== bodyContents.streamContentsMimeRaw) {
 					throw new HttpUnsupportedMediaTypeError(def.mimeType);
 				}
 
-				return bodyContents.contentsStream;
+				if (def.bodyType === ApiRawBodyParamType.Stream) {
+					if (!bodyContents.contentsStream) {
+						throw new HttpTransportConfigurationError('Raw body was not available for handler');
+					}
+
+					return bodyContents.contentsStream;
+				} else if (def.bodyType === ApiRawBodyParamType.String) {
+					if (!bodyContents.contentsString) {
+						bodyContents.contentsString = await bodyContents.readStreamToStringAsync();
+					}
+
+					return bodyContents.contentsString;
+				} else {
+					throw new HttpTransportConfigurationError('Unknown raw body type requested');
+				}
 			}
 
 			let contents = null;
@@ -445,7 +456,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					throw new Error('ParsedBody may not be a buffer');
 				}
 			} else {
-				contents = await this.parseRawRequestBody(bodyContents)
+				contents = await this.parseRawRequestBody(bodyContents);
 				switch (args.typedef.type) {
 					case 'any':
 					case 'string':
@@ -495,12 +506,16 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	}
 
 	private async parseRawRequestBody(bodyContents: IApiBodyContents) {
+		if (!bodyContents.contentsString) {
+			bodyContents.contentsString = await bodyContents.readStreamToStringAsync();
+		}
+		
 		switch (bodyContents.streamContentsMimeType) {
 			case ApiMimeType.ApplicationJson:
-				return JSON.parse(await bodyContents.readStreamToStringAsync());
+				return JSON.parse(bodyContents.contentsString!);
 
 			case ApiMimeType.Text:
-				return await bodyContents.readStreamToStringAsync();
+				return bodyContents.contentsString!;
 			
 			// TODO: Add a way to register mime type parsers so that you can BYO xml
 

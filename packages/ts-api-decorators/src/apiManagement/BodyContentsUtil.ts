@@ -3,57 +3,66 @@ import { Readable } from "stream";
 export function readStreamToStringUtil(stream: Readable, textEncoding: string = 'utf8'): () => Promise<string> {
     let error: Error;
     let result: string;
-    return () => new Promise<string>((resolve, reject) => {
-        if (error) {
-            reject(error);
-            return;
-        } else if (result) {
-            resolve(result);
-            return;
-        } else if (!stream.readable) {
-            reject(new Error('Unreadable stream'));
-            return;
+    let readPromise: Promise<string>;
+    return () => {
+        if (readPromise) {
+            return readPromise;
         }
         
-        const chunks: (Buffer | string)[] = [];
-        function exceptionOccured(err: Error) {
-            if (!error) {
-                error = err;
+        readPromise = new Promise<string>((resolve, reject) => {
+            if (error) {
                 reject(error);
+                return;
+            } else if (result) {
+                resolve(result);
+                return;
+            } else if (!stream.readable) {
+                reject(new Error('Unreadable stream'));
+                return;
             }
-        }
-
-        stream.on('data', (chunk: any) => {
-            if (typeof chunk === 'string' || chunk instanceof Buffer) {
-                chunks.push(chunk);
-            } else {
-                exceptionOccured(new Error('Unexpected chunk type: ' + typeof chunk));
-            }
-        });
-
-        stream.on('end', () => {
-            if (!error && !result) { 
-                try {
-                    const chunkStrs = chunks.map(c => c instanceof Buffer
-                        ? (c.toString(textEncoding))
-                        : c);
-                    
-                    result = chunkStrs.join('');
-                    resolve(result);
-                } catch (e) {
-                    if (e instanceof Error) {
-                        exceptionOccured(e);
-                    } else {
-                        exceptionOccured(new Error('Unknown error occured building string: ' + e));
-                    }
+            
+            const chunks: (Buffer | string)[] = [];
+            function exceptionOccured(err: Error) {
+                if (!error) {
+                    error = err;
+                    reject(error);
                 }
             }
+
+            stream.on('data', (chunk: any) => {
+                if (typeof chunk === 'string' || chunk instanceof Buffer) {
+                    chunks.push(chunk);
+                } else {
+                    exceptionOccured(new Error('Unexpected chunk type: ' + typeof chunk));
+                }
+            });
+
+            stream.on('end', () => {
+                if (!error && !result) { 
+                    try {
+                        const chunkStrs = chunks.map(c => c instanceof Buffer
+                            ? (c.toString(textEncoding))
+                            : c);
+                        
+                        result = chunkStrs.join('');
+                        resolve(result);
+                    } catch (e) {
+                        if (e instanceof Error) {
+                            exceptionOccured(e);
+                        } else {
+                            exceptionOccured(new Error('Unknown error occured building string: ' + e));
+                        }
+                    }
+                }
+            });
+
+            stream.on('error', (err) => {
+                exceptionOccured(err);
+            });
         });
 
-        stream.on('error', (err) => {
-            exceptionOccured(err);
-        });
-    });
+        return readPromise;
+    }
 }
 
 export function readStreamToStringUtilCb(stream: Readable, textEncoding: string = 'utf8'): (cb: (err: any, contents?: string) => void) => void {

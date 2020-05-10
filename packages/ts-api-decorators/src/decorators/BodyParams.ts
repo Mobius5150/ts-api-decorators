@@ -1,6 +1,6 @@
 import { ManagedApiInternal } from "../apiManagement";
 import { __ApiParamArgs, ApiParamValidationFunction, InternalTypeUtil } from '../apiManagement/InternalTypes';
-import { ApiParamType } from "../apiManagement/ApiDefinition";
+import { ApiParamType, ApiRawBodyParamType } from "../apiManagement/ApiDefinition";
 import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction } from "./DecoratorUtil";
 import { HandlerMethodParameterDecorator } from "../transformer/HandlerMethodParameterDecorator";
 import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtractors";
@@ -54,7 +54,6 @@ abstract class BodyParams {
 	/**
 	 * Decorates a body parameter that receives a raw, readable stream for the request
 	 * @param mimeType The valid mime type for the request.
-	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
 	public static ApiBodyParamStream(mimeType?: string);
 	@ApiDecorator(HandlerMethodParameterDecorator, {
@@ -79,6 +78,40 @@ abstract class BodyParams {
 					parameterIndex,
 					propertyKey,
 					type: ApiParamType.RawBody,
+					bodyType: ApiRawBodyParamType.Stream,
+				},
+				target.constructor);
+		}
+	}
+
+	/**
+	 * Decorates a body parameter that receives an unparsed string representing the request body.
+	 * @param mimeType The valid mime type for the request.
+	 */
+	public static ApiBodyParamRawString(mimeType?: string);
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.RawBody,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		skipOutputTypeDefinitions: true,
+		arguments: [
+			BuiltinArgumentExtractors.OptionalMimeTypeArgument,
+		],
+	})
+	public static ApiBodyParamRawString(a?: any) {
+		const args = <__ApiParamArgs>a;
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					...a,
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.RawBody,
+					bodyType: ApiRawBodyParamType.String,
 				},
 				target.constructor);
 		}
@@ -127,3 +160,4 @@ export const ApiBodyParam = BodyParams.ApiBodyParam;
 export const ApiBodyParamString = BodyParams.ApiBodyParamString;
 export const ApiBodyParamNumber = BodyParams.ApiBodyParamNumber;
 export const ApiBodyParamStream = BodyParams.ApiBodyParamStream;
+export const ApiBodyParamRawString = BodyParams.ApiBodyParamRawString;

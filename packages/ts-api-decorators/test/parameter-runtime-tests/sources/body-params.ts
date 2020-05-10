@@ -1,7 +1,8 @@
-import { Api, ApiPostMethod, ApiBodyParam, HttpBadRequestError, ApiBodyParamNumber, ApiBodyParamString, readStreamToStringUtil } from "../../../src";
+import { Api, ApiPostMethod, ApiBodyParam, HttpBadRequestError, ApiBodyParamNumber, ApiBodyParamString, readStreamToStringUtil, HttpTransportConfigurationError } from "../../../src";
 import { TestManagedApi } from "../../../src/Testing/TestTransport";
-import { ApiBodyParamStream } from "../../../src/decorators/BodyParams";
+import { ApiBodyParamStream, ApiBodyParamRawString } from "../../../src/decorators/BodyParams";
 import { Readable } from "stream";
+import * as deepEqual from 'fast-deep-equal';
 
 interface MyBodyData {
 	data: string;
@@ -77,6 +78,46 @@ class MyApi {
 		const json = JSON.parse(contents);
 		return json.data.toString();
 	}
+
+	@ApiPostMethod('/bodyString')
+	async bodyString(
+		@ApiBodyParamRawString() body: string,
+	): Promise<string> {
+		return body;
+	}
+
+	@ApiPostMethod('/bodyStringWithMimeType')
+	async bodyStringWithMimeType(
+		@ApiBodyParamRawString('application/json') body: string,
+	): Promise<string> {
+		const json = JSON.parse(body);
+		return json.data.toString();
+	}
+
+	@ApiPostMethod('/bodyStringWithParsedBody')
+	async bodyStringWithParsedBody(
+		@ApiBodyParamRawString() body: string,
+		@ApiBodyParam() contents: MyBodyData,
+	): Promise<string> {
+		if (!deepEqual(contents, JSON.parse(body))) {
+			throw new HttpTransportConfigurationError();
+		}
+
+		return body;
+	}
+
+	@ApiPostMethod('/bodyStringWithParsedBody2')
+	async bodyStringWithParsedBody2(
+		@ApiBodyParam() contents: MyBodyData,
+		@ApiBodyParamRawString() body: string,
+	): Promise<string> {
+		if (!deepEqual(contents, JSON.parse(body))) {
+			throw new HttpTransportConfigurationError();
+		}
+
+		return body;
+	}
+
 }
 
 const testApi = new TestManagedApi();

@@ -33,6 +33,10 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		return this.definition.paramId;
 	}
 
+	public get bodyType() {
+		return this.definition.bodyType;
+	}
+
 	public get skipOutputTypeDefinitions() {
 		return !!this.definition.skipOutputTypeDefinitions;
 	}
@@ -61,6 +65,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 				type: this.definition.parameterType,
 				transportTypeId: this.transportTypeId,
 				paramId: this.paramId,
+				bodyType: this.bodyType,
 			},
 			metadata: argumentResult.metadata,
 		};

@@ -148,6 +148,39 @@ describe('Body Param Runtime', () => {
             [{ data: 'hello' }, 'hello', 200],
             ['invalid', null, 415],
             ['', '', 415],
+            [undefined, null, 415],
+        ]);
+    });
+
+    it('should support raw body strings', async () => {
+        await testApiMethodInput('/bodyString', [
+            ['valid', 'valid', 200],
+            ['', '', 200],
+            [undefined, null, 500],
+        ]);
+    });
+
+    it('should validate mime types for raw body strings', async () => {
+        await testApiMethodInput('/bodyStringWithMimeType', [
+            [{ data: 'hello' }, 'hello', 200],
+            ['invalid', null, 415],
+            ['', '', 415],
+            [undefined, null, 415],
+        ]);
+    });
+
+    it('should allow both raw and parsed bodies on the same handler', async () => {
+        await testApiMethodInput('/bodyStringWithParsedBody', [
+            [{ data: 'hello' }, JSON.stringify({ data: 'hello' }), 200],
+            ['invalid', null, 400],
+            ['', '', 400],
+            [undefined, null, 500],
+        ]);
+
+        await testApiMethodInput('/bodyStringWithParsedBody2', [
+            [{ data: 'hello' }, JSON.stringify({ data: 'hello' }), 200],
+            ['invalid', null, 400],
+            ['', '', 400],
             [undefined, null, 500],
         ]);
     });

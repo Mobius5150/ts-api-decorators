@@ -2,7 +2,7 @@ import * as ts from 'typescript';
 import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
 import { ITransformerMetadata, IMetadataDescriptor } from './TransformerMetadata';
 import { ITransformContext } from './ITransformContext';
-import { ApiParamType } from '../apiManagement/ApiDefinition';
+import { ApiParamType, ApiRawBodyParamType } from '../apiManagement/ApiDefinition';
 import { Func1 } from '../Util/Func';
 import { IHandlerTreeNode } from './HandlerTree';
 
@@ -52,6 +52,11 @@ export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase 
 	 * If the parameterType is `Custom`, the param id
 	 */
 	paramId?: string;
+
+	/**
+	 * If the parameterType is `RawBody`, the type of raw body
+	 */
+	bodyType?: ApiRawBodyParamType;
 
 	/**
 	 * If set, parameter type must match at least one of the type restrictions

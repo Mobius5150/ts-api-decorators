@@ -22,6 +22,11 @@ export const enum ApiParamType {
 	Custom,
 }
 
+export const enum ApiRawBodyParamType {
+	Stream,
+	String,
+}
+
 export type ApiMethodReturnTypePrimitives = void | string | object;
 
 export type ApiMethodReturnType = ApiMethodReturnTypePrimitives | Promise<ApiMethodReturnTypePrimitives>;
@@ -67,6 +72,7 @@ export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
 
 export interface IApiRawBodyParamDefinition extends IApiParamDefinitionBase {
 	type: ApiParamType.RawBody;
+	bodyType: ApiRawBodyParamType;
 	mimeType?: string;
 }
 
