@@ -1,4 +1,4 @@
-/# Typescript API Decorators
+# Typescript API Decorators
 This library provides a simple way to use typescript decorators to define APIs. The benefits of this approach are many-fold:
 
 - __Automatic Runtime Type Safety and Validation__: The library automatically checks that inputs you accept comply with the type definitions in your code. Extended validation also supports deep, customizable validation that helps you simplify your handlers while making them robust.
