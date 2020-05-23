@@ -60,12 +60,14 @@ class MyApi {
 
 When this API is called at `/hello?name=SuperDeveloper` the following response is returned:
 ```
+> GET /hello?name=SuperDeveloper
 200 OK
 Hello SuperDeveloper!
 ```
 
 However, because the query parameter is required, then if this param is ommited the API returns:
 ```
+> /hello
 400 Bad Request
 Missing query parameter 'name'
 ```
@@ -89,7 +91,7 @@ class MyApi {
 ```
 
 ```
-GET /hello
+> GET /hello
 200 OK
 Hello!
 ```
@@ -148,23 +150,23 @@ class MyApi {
 
 Examples:
 ```
-GET /day?date=1566329594
+> GET /day?date=1566329594
 200 Ok
 The specified day is Tue Aug 20 2019
 
-GET /day?date=2019-08-02T05:17:53
+> GET /day?date=2019-08-02T05:17:53
 200 Ok
 The specified day is Fri Aug 02 2019
 
-GET /day
+> GET /day
 400 Bad Request
 Missing query parameter 'date'
 
-GET /day?date=
+> GET /day?date=
 400 Bad Request
 Invalid value for query parameter 'date'. Must be a valid date string.
 
-GET /day?date=My2019Custom08Format02
+> GET /day?date=My2019Custom08Format02
 400 Bad Request
 Invalid value for query parameter 'date'. Must be a valid date string.
 ```
@@ -294,7 +296,7 @@ class MyApi {
 
 Example:
 ```
-GET /hello
+> GET /hello
 X-Name: HeaderDev
 
 200 Ok
@@ -325,7 +327,7 @@ class MyApi {
 
 Example:
 ```
-GET /hello?name=InigoMontoya
+> GET /hello?name=InigoMontoya
 
 400 Bad Request
 name must be 10 or fewer characters
