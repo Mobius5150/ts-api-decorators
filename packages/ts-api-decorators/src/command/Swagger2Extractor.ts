@@ -18,6 +18,7 @@ export interface ISwagger2Opts {
 export class Swagger2Extractor implements IExtractor {
     public static readonly SwaggerVersion = '2.0';
     private static readonly RouteSeperator = '/';
+    private static readonly ExcludeMetadataTags = ['private'];
 
     private tags = new Map<string, IExtractedTag>();
     private definitions = new Map<string, OpenAPIV2.SchemaObject>();
@@ -105,13 +106,18 @@ export class Swagger2Extractor implements IExtractor {
         const paths: OpenAPIV2.PathsObject = {};
         // Array.from(WalkChildrenByType(api, isHandlerParameterNode)).forEach(api => {
         for (const api of WalkTreeByType(this.apiTree, isHandlerNode)) {
+            const operation = this.getOperationObject(api);
+            if (!operation) {
+                continue;
+            }
+
             const route = this.swaggerizeRoute(api.route);
             if (!paths[route]) {
                 paths[route] = {};
             }
 
             if (!paths[route][api.apiMethod.toLowerCase()]) {
-                paths[route][api.apiMethod.toLowerCase()] = this.getOperationObject(api);
+                paths[route][api.apiMethod.toLowerCase()] = operation;
             } else {
                 throw new Error(`Multiple APIs for route: [${api.apiMethod}]: ${route}`);
             }
@@ -141,11 +147,16 @@ export class Swagger2Extractor implements IExtractor {
     }
     
     private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV2.OperationObject {
+        if (getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Private)) {
+            return;
+        }
+
+        const metadataTags = getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag);
         return {
             operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
             summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
-            tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
+            tags: metadataTags.map(t => this.recordTagObject(t)),
             parameters: Array.from(WalkChildrenByType(api, isHandlerParameterNode)).map(p => this.getParametersObject(p)),
             responses: {
                 default: {
@@ -252,7 +263,7 @@ export class Swagger2Extractor implements IExtractor {
                 break;
 
             default:
-                throw new Error(`Unknown Api Parameter Type: ${p.type}`);
+                return;
         }
 
         let schema: OpenAPIV2.SchemaObject;

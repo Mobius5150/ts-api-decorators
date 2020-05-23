@@ -132,6 +132,8 @@ abstract class BodyParams {
 			InternalTypeUtil.TypeString,
 			InternalTypeUtil.TypeDate,
 			InternalTypeUtil.TypeAnyObject,
+			InternalTypeUtil.TypeAnyArray,
+			InternalTypeUtil.TypeAny,
 		],
 		provider: BuiltinMetadata.BuiltinComponent,
 		transformArgumentsToObject: true,

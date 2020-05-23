@@ -141,6 +141,16 @@ class MyApi {
 		};
 	}
 
+
+	@ApiPostMethod<IGreetResponse[]>('/helloBodyArray')
+	greetObjectArray(
+		@ApiBodyParam() bodies: IGreetArgs[]
+	): IGreetResponse[] {
+		return bodies.map(body => ({
+			response: this.greet(body.name, body.times, body.optional),
+		}));
+	}
+
 	/**
 	 * Returns a string via a promise
 	 */

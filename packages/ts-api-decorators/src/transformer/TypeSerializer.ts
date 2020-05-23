@@ -25,13 +25,13 @@ export class TypeSerializer {
 				type: <any>type.intrinsicName,
 			};
 		}
-		else if (node && (ts.isRegularExpressionLiteral(node) || node.getText() === RegExp.name)) {
+		if (node && (ts.isRegularExpressionLiteral(node) || node.getText() === RegExp.name)) {
 			return {
 				...base,
 				type: 'regex',
 			};
 		}
-		else if (type.symbol && isBuiltinSymbol(type.symbol)) {
+		if (type.symbol && isBuiltinSymbol(type.symbol)) {
 			switch (type.symbol.name) {
 				case 'Buffer':
 					return {
@@ -53,7 +53,7 @@ export class TypeSerializer {
 					}
 			}
 		}
-		else if (type.symbol && isSymbolWithId(type.symbol)) {
+		if (type.symbol && isSymbolWithId(type.symbol)) {
 			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
 			const symbols = [
 				...this.generator.getSymbols(name),
@@ -75,7 +75,7 @@ export class TypeSerializer {
 				}
 			}
 		}
-		else if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {
+		if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {
 			return {
 				...base,
 				type: 'union',
@@ -84,7 +84,7 @@ export class TypeSerializer {
 				uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
 			};
 		}
-		else if (node && ts.isIntersectionTypeNode(node) && isIntersectionType(node, type)) {
+		if (node && ts.isIntersectionTypeNode(node) && isIntersectionType(node, type)) {
 			return {
 				...base,
 				type: 'intersection',
@@ -93,14 +93,14 @@ export class TypeSerializer {
 				uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
 			};
 		}
-		else if (node && node && ts.isArrayTypeNode(node)) {
+		if (node && node && ts.isArrayTypeNode(node)) {
 			return {
 				...base,
 				type: 'array',
 				elementType: this.getInternalTypeRepresentation(node.elementType, this.typeChecker.getTypeFromTypeNode(node.elementType)),
 			};
 		}
-		else if (type.aliasSymbol && type.aliasSymbol.declarations.length > 0) {
+		if (type.aliasSymbol && type.aliasSymbol.declarations.length > 0) {
 			for (const decl of type.aliasSymbol.declarations) {
 				if (!ts.isTypeAliasDeclaration(decl)) {
 					continue;
@@ -110,12 +110,8 @@ export class TypeSerializer {
 				}
 			}
 		}
-		else if (node && ts.isParenthesizedTypeNode(node)) {
+		if (node && ts.isParenthesizedTypeNode(node)) {
 			return this.getInternalTypeRepresentation(node.type, this.typeChecker.getTypeFromTypeNode(node.type));
-		}
-		else {
-			console.log(node);
-			console.log(type);
 		}
 	}
 	
@@ -137,10 +133,52 @@ export class TypeSerializer {
 		return {
 			...base,
 			type,
-			schema,
+			schema: this.reduceSchemaReferences(schema),
 			typename: symbol.typeName,
 			uniqueTypename: symbol.name,
 		};
+	}
+
+	private reduceSchemaReferences(schema: tjs.Definition): tjs.Definition {
+		if (!schema.$ref || !schema.definitions) {
+			return schema;
+		}
+
+		const newSchema = {
+			...schema,
+			definitions: {},
+		};
+		const refs: string[] = [this.getRefShortName(schema.$ref)];
+		this.getRefsRecursive(schema.definitions[refs[0]], schema.definitions, refs);
+		refs.forEach(v => newSchema.definitions[v] = schema.definitions[v]);
+
+		return newSchema;
+	}
+
+	private getRefsRecursive(obj: { $ref?: string }, definitions: tjs.Definition['definitions'], refs: string[]): void {
+		Object.keys(obj).filter(k => typeof obj[k] === 'object')
+			.map(k => this.getRefsRecursive(obj[k], definitions, refs));
+		if (obj.$ref) {
+			const ref = this.getRefShortName(obj.$ref);
+
+			if (refs.indexOf(ref) !== -1) {
+				return;
+			}
+			
+			refs.push(ref);
+			const definition = definitions[ref];
+			if (definition) {
+				this.getRefsRecursive(<any>definition, definitions, refs)
+			}
+		}
+	}
+
+	private getRefShortName(ref?: string) {
+		ref = ref.substring('#/definitions/'.length);
+		if (ref.indexOf('/')) {
+			ref = ref.split('/')[0];
+		}
+		return ref;
 	}
 
 	public getReferencedTypeDefinition(reference: IJsonSchemaWithRefs): IJsonSchemaWithRefs {

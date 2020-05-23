@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as ts from 'typescript';
 import 'mocha';
 import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile, getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
-import { IHandlerTreeNodeRoot, HandlerTreeNodeType, IHandlerTreeNode } from '../../src/transformer/HandlerTree';
+import { IHandlerTreeNodeRoot, HandlerTreeNodeType, IHandlerTreeNode, WalkChildrenByType, WalkTreeByType, isHandlerNode } from '../../src/transformer/HandlerTree';
 import { ApiMethod } from '../../src';
 import { treeRootNode, treeHandlerMethodNode, treeHandlerParameterNode, treeNodeMetadata, treeHandlerMethodCollectionNode } from '../../src/Testing/TreeTestUtil';
 import { ApiParamType } from '../../src/apiManagement/ApiDefinition';
@@ -40,7 +40,7 @@ describe('openapi metadata', () => {
 		loadBasicTree();
 	});
 
-	it('should parse string enums', async () => {
+	it('should parse metadata', async () => {
 		loadBasicTree();
 		assertRealInclude(tree, treeHandlerMethodCollectionNode([
 			// greet()
@@ -92,6 +92,20 @@ describe('openapi metadata', () => {
 						description: 'A group of methods for greeting'
 					}
 				),
+			]),
+		]));
+	});
+
+	it('should extract methods marked private', async () => {
+		loadBasicTree();
+		assertRealInclude(tree, treeHandlerMethodCollectionNode([
+			// greetPrivate()
+			treeHandlerMethodNode(ApiMethod.GET, '/helloPrivate', [],
+			[
+				treeNodeMetadata({
+					type: IMetadataType.OpenApi,
+					key: OpenApiMetadataType.Private,
+				}, { "name": "private" })
 			]),
 		]));
 	});

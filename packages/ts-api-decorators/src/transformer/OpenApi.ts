@@ -7,7 +7,8 @@ import { IHandlerTreeNodeHandler, HandlerTreeNodeType, IHandlerTreeNodeHandlerCo
 
 export const enum OpenApiMetadataType {
     Summary = 'summary',
-    ResponseDescription = 'response',
+	ResponseDescription = 'response',
+	Private = 'private',
     Description = 'description',
     Tag = 'tag',
 }
@@ -67,6 +68,16 @@ export class OpenApiMetadataExtractors {
                     key: OpenApiMetadataType.ResponseDescription,
                     value: returnTag,
                 });
+			}
+			
+			// Private tag
+            const privateTags = OpenApiMetadataExtractors.getJsDocCustomTags(methodNode.jsDoc, 'private');
+            if (privateTags) {
+                metadata.push(...privateTags.map(t => ({
+                    type: IMetadataType.OpenApi,
+                    key: OpenApiMetadataType.Private,
+                    value: t,
+                })));
             }
 
             // Method summary and jsdoc tags
@@ -111,6 +122,23 @@ export class OpenApiMetadataExtractors {
 		}
 
 		return [];
+	}
+
+	private static getJsDocCustomTags(nodes: ts.JSDoc[], tag: string): IExtractedTag[] {
+		return nodes.map(node => {
+			if (node.tags) {
+				return node.tags.filter(t => t.tagName.text === tag)
+					.map(t => {
+						const parts = t.comment?.split(/\s+/);
+						return {
+							name: parts ? parts.shift() : tag,
+							description: parts?.join(' '),
+						};
+					})
+			} else {
+				return [];
+			}
+		}).reduce((p, c) => p.concat(c), []);
 	}
 
 	private static jsdocTagString(tag: ts.JSDocTag | undefined): string {

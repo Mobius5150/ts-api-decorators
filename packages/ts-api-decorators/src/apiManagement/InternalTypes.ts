@@ -133,6 +133,13 @@ export abstract class InternalTypeUtil {
 		type: 'object',
 	};
 
+	public static readonly TypeAnyArray: InternalArrayTypeDefinition = {
+		type: 'array',
+		elementType: {
+			type: 'any',
+		},
+	};
+
 	public static readonly TypeAnyFunction: InternalFunctionTypeDefinition = {
 		type: 'function',
 	};

@@ -26,4 +26,21 @@ class MyApi {
 
 		return result;
 	}
+
+	/**
+	 * @private
+	 */
+	@ApiGetMethod<string>('/helloPrivate')
+	greetPrivate(
+		@ApiQueryParam() name: string,
+		@ApiQueryParam() times: number = 1,
+		@ApiQueryParam() optional?: string,
+	): string {
+		let result = optional ? optional : '';
+		for (let i = 0; i < times; ++i) {
+			result += `Hi ${name}! `;
+		}
+
+		return result;
+	}
 }

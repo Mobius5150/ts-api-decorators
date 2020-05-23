@@ -117,18 +117,6 @@ describe('TypeSerializer', () => {
 							}
 						}
 					},
-					'IResponse<P>': {
-						type: 'object',
-						required: ['response'],
-						properties: {
-							response: {
-								'$ref': '#/definitions/P',
-							}
-						}
-					},
-					P: {
-						type: 'object',
-					}
 				},
 			}
 		)

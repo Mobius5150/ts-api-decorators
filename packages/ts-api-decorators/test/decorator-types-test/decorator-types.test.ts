@@ -384,6 +384,35 @@ describe('transformer', () => {
 					}
 				}),
 			]),
+
+			// greetObjectArray()
+			treeHandlerMethodNode(ApiMethod.POST, '/helloBodyArray', [
+				treeHandlerParameterNode({
+					propertyKey: 'bodies',
+					type: ApiParamType.Body,
+					parameterIndex: 0,
+					args: {
+						typedef: {
+							...InternalTypeUtil.TypeAnyArray,
+							elementType: {
+								...InternalTypeUtil.TypeAnyObject,
+								typename: 'IGreetArgs',
+							}
+						},
+					}
+				})
+			], [
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, {
+					...InternalTypeUtil.TypeAnyArray,
+					elementType: {
+						...InternalTypeUtil.TypeAnyObject,
+						typename: 'IGreetResponse',
+						schema: {
+							'$ref': '#/definitions/IGreetResponse',
+						}
+					}
+				}),
+			]),
 		]));
 	});
 	

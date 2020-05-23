@@ -20,6 +20,7 @@ export class OpenApiV3Extractor implements IExtractor {
     private static readonly RouteSeperator = '/';
     private static readonly MimeTypeText = 'text/plain';
     private static readonly MimeTypeJson = 'application/json';
+    private static readonly ExcludeMetadataTags = ['private'];
 
     private tags = new Map<string, IExtractedTag>();
     private definitions = new Map<string, OpenAPIV3.SchemaObject>();
@@ -140,13 +141,18 @@ export class OpenApiV3Extractor implements IExtractor {
         const paths: OpenAPIV3.PathsObject = {};
         // Array.from(WalkChildrenByType(api, isHandlerParameterNode)).forEach(api => {
         for (const api of WalkTreeByType(this.apiTree, isHandlerNode)) {
+            const operation = this.getOperationObject(api);
+            if (!operation) {
+                continue;
+            }
+            
             const route = this.swaggerizeRoute(api.route);
             if (!paths[route]) {
                 paths[route] = {};
             }
 
             if (!paths[route][api.apiMethod.toLowerCase()]) {
-                paths[route][api.apiMethod.toLowerCase()] = this.getOperationObject(api);
+                paths[route][api.apiMethod.toLowerCase()] = operation;
             } else {
                 throw new Error(`Multiple APIs for route: [${api.apiMethod}]: ${route}`);
             }
@@ -176,13 +182,18 @@ export class OpenApiV3Extractor implements IExtractor {
     }
     
     private getOperationObject(api: IHandlerTreeNodeHandler): OpenAPIV3.OperationObject {
+        if (getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Private)) {
+            return;
+        }
+
         const params = Array.from(WalkChildrenByType(api, isHandlerParameterNode));
         const bodyParam = params.find(p => p.paramDef.type === ApiParamType.Body || p.paramDef.type === ApiParamType.RawBody);
+        const metadataTags = getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag);
         return {
             operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
             summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
-            tags: getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag).map(t => this.recordTagObject(t)),
+            tags: metadataTags.map(t => this.recordTagObject(t)),
             parameters: params
                 .filter(p => p.paramDef.type !== ApiParamType.Body && p.paramDef.type !== ApiParamType.RawBody)
                 .map(p => this.getParametersObject(p)),

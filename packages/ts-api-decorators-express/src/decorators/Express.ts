@@ -21,6 +21,7 @@ abstract class ExpressParams {
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeRequestParam,
+		skipOutputTypeDefinitions: true,
 		transformArgumentsToObject: false,
 	})
 	public static ExpressApiRequestParam(a?: any): ParameterDecorator {
@@ -49,6 +50,7 @@ abstract class ExpressParams {
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeResponseParam,
+		skipOutputTypeDefinitions: true,
 		transformArgumentsToObject: false,
 	})
 	public static ExpressApiResponseParam(a?: any): ParameterDecorator {
@@ -77,6 +79,7 @@ abstract class ExpressParams {
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeRequestUserParam,
+		skipOutputTypeDefinitions: true,
 		transformArgumentsToObject: false,
 	})
 	public static ExpressApiRequestUserParam(a?: any): ParameterDecorator {

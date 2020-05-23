@@ -459,6 +459,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				contents = await this.parseRawRequestBody(bodyContents);
 				switch (args.typedef.type) {
 					case 'any':
+						if (typeof contents === 'object') {
+							break;
+						}
+						
 					case 'string':
 					case 'number':
 					case 'boolean':
