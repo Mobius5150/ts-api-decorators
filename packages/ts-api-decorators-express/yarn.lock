@@ -1066,9 +1066,9 @@ lodash.isequal@^4.5.0:
   integrity sha1-QVxEePK8wwEgwizhDtMib30+GOA=
 
 lodash@^4.17.15:
-  version "4.17.15"
-  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
-  integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
+  version "4.17.19"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.19.tgz#e48ddedbe30b3321783c5b4301fbd353bc1e4a4b"
+  integrity sha512-JNvd8XER9GQX0v2qJgsaN/mzFCNA5BRe/j8JN9d+tWyGLSodKQHKFicdwNYzWwI3wjRnaKPsGj1XkBjx/F96DQ==
 
 log-symbols@2.2.0:
   version "2.2.0"
@@ -1824,10 +1824,10 @@ ts-api-decorators-azure-function@^0.1.3:
     ts-api-decorators "^0.1.5"
     uuid "^3.4.0"
 
-ts-api-decorators@^0.1.27:
-  version "0.1.27"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.27.tgz#1887e8b85eaba43a7a0b4b2787c397abf199643a"
-  integrity sha512-LWi1a1IZRNT6xHwA8bbFATgl6PFBSMkSe3f1nsXKqXKpE8MQdfcW7FDeS/cj0RYoNY7UDLOW0CnRiIN7tDsb8w==
+ts-api-decorators@^0.1.35:
+  version "0.1.35"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.35.tgz#b139176672862e1f4d33699f71f0f1a5a6068480"
+  integrity sha512-fX0daUmWAUEgDUtWLaZMd3WVfESa2cLvnNkpDm5K7bqZmrcKLYCeDy7TfuzejATuaXm/5iOY7a0/4FVVQNgw2Q==
   dependencies:
     "@azure/functions" "^1.0.3"
     acorn "^7.0.0"
