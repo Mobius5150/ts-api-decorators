@@ -1,12 +1,12 @@
-import { IBindingTrigger, IBindingParam } from "./Bindings";
+import { IBindingTrigger, IBindingParam, IBindingOutput } from "./Bindings";
 import { ApiMethod, IApiInvocationParams, ApiParamsDict } from "ts-api-decorators";
 import { IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
 import { AzFuncBinding } from "../../metadata/AzFuncBindings";
-import { IHandlerTreeNodeHandler } from "ts-api-decorators/dist/transformer/HandlerTree";
+import { IHandlerTreeNodeHandler, IHandlerTreeNodeHandlerModifier, IHandlerTreeNodeHandlerCollection } from "ts-api-decorators/dist/transformer/HandlerTree";
 import { getMetadataValueByDescriptor, BuiltinMetadata } from "ts-api-decorators/dist/transformer/TransformerMetadata";
 import { AzFuncMetadata } from "../../metadata/AzFuncMetadata";
-import { IBlobTriggerBinding, IBlobInputBinding } from "../../decorators/ExtensionDecorators/BlobStorage/BlobStorageBinding";
+import { IBlobTriggerBinding, IBlobInputBinding, IBlobOutputBinding } from "../../decorators/ExtensionDecorators/BlobStorage/BlobStorageBinding";
 import { BlobStorageParams } from "../../decorators/ExtensionDecorators/BlobStorage/BlobStorageTrigger";
 
 export class BlobStorageBindingTriggerFactory {
@@ -176,5 +176,33 @@ export class BlobStorageBindingParamFactory {
 				},
 			}
 		};
+	}
+}
+
+export class BlobStorageOutputBindingFactory {
+	public static GetOutputBindings(): IBindingOutput[] {
+		return [
+			{
+				outputTypeId: BlobStorageParams.TransportTypeBlobOutputParam,
+				getBindingForOutput: (output, route) => {
+					const name = getMetadataValueByDescriptor<string>(output.metadata, AzFuncMetadata.Output);
+					if (!name) {
+						throw new Error('Output binding must have a name');
+					}
+
+					const path = getMetadataValueByDescriptor<string>(output.metadata, BuiltinMetadata.Route);
+					const connection = getMetadataValueByDescriptor<string>(output.metadata, AzFuncMetadata.BlobStorageConnection);
+					return [
+						<IBlobOutputBinding>{
+							type: AzFuncBinding.Blob,
+							direction: 'out',
+							name,
+							path,
+							connection,
+						},
+					];
+				},
+			},
+		];
 	}
 }

@@ -35,6 +35,25 @@ export abstract class AzFuncMetadata {
 		key: 'azfblobstorconn',
 	}
 
+	public static readonly OutField: IMetadataDescriptor = {
+		type: IMetadataType.Plugin,
+		component: AzFuncMetadata.Component,
+		key: 'azfbindingoutfield',
+	}
+
+	public static readonly Output: IMetadataDescriptor = {
+		type: IMetadataType.Plugin,
+		component: AzFuncMetadata.Component,
+		key: 'azfbindingoutput',
+	}
+
+	public static OutputMetadata(transportTypeId: string): ITransformerMetadata {
+		return {
+			...AzFuncMetadata.ExtensionBundle,
+			value: transportTypeId,
+		};
+	}
+
 	public static ExtensionBundleMetadata(extension: IAzureFunctionExtensionDefinition): ITransformerMetadata[] {
 		return [
 			{

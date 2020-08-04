@@ -16,7 +16,7 @@ import { getMetadataValueByDescriptor, BuiltinMetadata } from 'ts-api-decorators
 import { FunctionExtensionJsonFileGenerator } from '../generators/FunctionExtensionJsonFileGenerator';
 import { TimerBindingTriggerFactory } from '../generators/Bindings/TimerBinding';
 import { getTransformerArguments } from '../transformer';
-import { BlobStorageBindingTriggerFactory, BlobStorageBindingParamFactory } from '../generators/Bindings/BlobStorageBinding';
+import { BlobStorageBindingTriggerFactory, BlobStorageBindingParamFactory, BlobStorageOutputBindingFactory } from '../generators/Bindings/BlobStorageBinding';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
@@ -68,6 +68,9 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             params: [
                 TimerBindingTriggerFactory.GetParamBinding(),
                 ...BlobStorageBindingParamFactory.GetParamBindings(),
+            ],
+            outputs: [
+                ...BlobStorageOutputBindingFactory.GetOutputBindings(),
             ],
         };
         const outGenerator = new OutputFileGenerator(options.outDir);

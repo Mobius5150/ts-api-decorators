@@ -33,9 +33,12 @@
     "strip-dirs": "^3.0.0",
     "supertest": "^4.0.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.5.3"
+    "typescript": "^3.7 < 3.8"
   },
   "peerDependencies": {
-    "typescript": "^3.5.3"
+    "typescript": "^3.7 < 3.8"
+  },
+  "resolutions": {
+    "typescript": "^3.7 < 3.8"
   }
 }

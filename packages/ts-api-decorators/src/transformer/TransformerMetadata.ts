@@ -144,6 +144,12 @@ export abstract class BuiltinMetadata {
         key: 'numberMax',
     }
 
+    public static readonly UndefinedIfOmitted: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'undefinedIfOmitted',
+    }
+
     public static readonly ValidationRegExp: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,
