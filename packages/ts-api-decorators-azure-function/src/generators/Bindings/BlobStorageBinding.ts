@@ -3,7 +3,7 @@ import { ApiMethod, IApiInvocationParams, ApiParamsDict } from "ts-api-decorator
 import { IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
 import { AzFuncBinding } from "../../metadata/AzFuncBindings";
-import { IHandlerTreeNodeHandler, IHandlerTreeNodeHandlerModifier, IHandlerTreeNodeHandlerCollection } from "ts-api-decorators/dist/transformer/HandlerTree";
+import { IHandlerTreeNodeHandler } from "ts-api-decorators/dist/transformer/HandlerTree";
 import { getMetadataValueByDescriptor, BuiltinMetadata } from "ts-api-decorators/dist/transformer/TransformerMetadata";
 import { AzFuncMetadata } from "../../metadata/AzFuncMetadata";
 import { IBlobTriggerBinding, IBlobInputBinding, IBlobOutputBinding } from "../../decorators/ExtensionDecorators/BlobStorage/BlobStorageBinding";
@@ -156,26 +156,6 @@ export class BlobStorageBindingParamFactory {
 		}
 
 		return result;
-	}
-
-	public static GetInvocationParams(context: Context): { method: ApiMethod, invocationParams: IApiInvocationParams<IAzureFunctionManagedApiContext> } {
-		if (!context.bindings.blobTrigger) {
-			throw new Error('Context does not have http req');
-		}
-
-		return {
-			method: <any>AzFuncBinding.BlobTrigger,
-			invocationParams: {
-				queryParams: {},
-				pathParams: {},
-				headers: {},
-				transportParams: {
-					context,
-					[BlobStorageParams.TransportTypeBlobInputParam]: context.bindings.blobTrigger,
-					[BlobStorageParams.TransportTypeBlobInputPropsParam]: context.bindingData.properties,
-				},
-			}
-		};
 	}
 }
 
