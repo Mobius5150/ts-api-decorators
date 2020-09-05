@@ -21,6 +21,7 @@ export class OpenApiV3Extractor implements IExtractor {
     private static readonly MimeTypeText = 'text/plain';
     private static readonly MimeTypeJson = 'application/json';
     private static readonly ExcludeMetadataTags = ['private'];
+    private readonly removableTypes = ['undefined', 'null'];
 
     private tags = new Map<string, IExtractedTag>();
     private definitions = new Map<string, OpenAPIV3.SchemaObject>();
@@ -247,6 +248,13 @@ export class OpenApiV3Extractor implements IExtractor {
 
     private getInlineTypeSchema(returnType: InternalTypeDefinition): OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject {
         switch (returnType.type) {
+            case null:
+            // @ts-ignore
+            case 'null':
+                return {
+                    type: null,
+                };
+
             case 'object':
                 if (returnType.schema) {
                     return this.getInternalSchemaToOutputSchema(returnType.schema);
@@ -350,9 +358,48 @@ export class OpenApiV3Extractor implements IExtractor {
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {
         for (const definition of Object.keys(definitions)) {
             if (!this.definitions.has(definition)) {
-                this.definitions.set(definition, <OpenAPIV3.SchemaObject>this.fixDefinitionRefs(definitions[definition]));
+                this.definitions.set(definition, 
+                    this.fixDefinitionProperties(
+                        this.fixDefinitionRefs(definitions[definition])));
             }
         }
+    }
+
+    private fixDefinitionProperties(_: IJsonSchema): OpenAPIV3.SchemaObject {
+        const redef = _;
+        if (redef.properties) {
+            let removeProps = [];
+            for (const property of Object.keys(redef.properties)) {
+                const pdef = redef.properties[property];
+                if (typeof pdef['$ref'] !== 'undefined' || !pdef.type) {
+                    continue;
+                }
+
+                if (typeof pdef.type === 'string') {
+                    if (this.removableTypes.indexOf(pdef.type) !== -1) {
+                        removeProps.push(property);
+                    }
+                } else {
+                    let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
+                    if (newTypes.length === 0) {
+                        removeProps.push(property);
+                    } else {
+                        pdef.type = newTypes;
+                        (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
+                    }
+                }
+
+                if (pdef.properties) {
+                    this.fixDefinitionProperties(pdef);
+                }
+            }
+
+            for (const prop of removeProps) {
+                delete redef.properties[prop];
+            }
+        }
+
+        return <OpenAPIV3.SchemaObject>redef;
     }
 
     private fixDefinitionRefs<T extends object>(def: T): T {
