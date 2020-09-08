@@ -1,6 +1,7 @@
 import { ManagedApi as BaseManagedApi, IApiHandlerInstance, ApiMethod, ApiHeadersDict, ApiParamsDict, IApiInvocationResult, IApiBodyContents } from '..';
 import { CollectionUtil } from '../Util/CollectionUtil';
 import * as p2r from 'path-to-regexp';
+import { StreamCoercionMode } from '../Util/StreamCoercer';
 
 export interface ITestManagedApiContext {
 }
@@ -92,6 +93,7 @@ export class TestManagedApi extends BaseManagedApi<ITestManagedApiContext> imple
 
 	private getResponse(code: number, description: string = ''): IApiInvocationResult | PromiseLike<IApiInvocationResult> {
 		return {
+			streamMode: StreamCoercionMode.None,
 			statusCode: code,
 			body: description,
 			headers: {},

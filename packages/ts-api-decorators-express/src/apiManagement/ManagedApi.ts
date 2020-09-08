@@ -14,6 +14,9 @@ import {
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
 import { ExpressMetadata } from '../metadata/ExpressMetadata';
+import * as stream from 'stream';
+import { StreamCoercionMode, StreamCoercer } from 'ts-api-decorators/dist/Util/StreamCoercer';
+import { promisifyEvent } from 'ts-api-decorators/dist/Util/PromiseEvent';
 
 export interface IExpressManagedApiContext {
 	'express.request': Express.Request;
@@ -21,8 +24,14 @@ export interface IExpressManagedApiContext {
 }
 
 export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
+	private pipeStreams: boolean = true;
+
 	public passErrorsToExpress(pass: boolean): void {
 		this.handleErrors = !pass;
+	}
+
+	public coerceStreamsMode(mode: StreamCoercionMode): void {
+		this.streamCoercionMode = mode;
 	}
 	
 	public init(): Express.Router {
@@ -120,9 +129,23 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		};
 	}
 
-	private expressResultHandler(res: Express.Response, result: IApiInvocationResult) {
+	private async expressResultHandler(res: Express.Response, result: IApiInvocationResult): Promise<void> {
 		if (!res.writableEnded) {
-			if (result.body) {
+			if (result.streamMode !== StreamCoercionMode.None) {
+				res.status(result.statusCode);
+				const pipeBody = StreamCoercer.CoerceWith(result.body, result.streamMode);
+				let error: any;
+				pipeBody.on('error', function (e) {
+					error = e;
+				});
+				
+				let finishPromise = promisifyEvent(pipeBody, 'end');
+				pipeBody.pipe(res, { end: true, });
+				await finishPromise;
+				if (error) {
+					throw error;
+				}
+			} else if (result.body) {
 				res.status(result.statusCode).send(result.body);
 			} else {
 				res.sendStatus(result.statusCode);

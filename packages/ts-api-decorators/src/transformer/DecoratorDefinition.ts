@@ -67,6 +67,11 @@ export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase 
 	 * If true, the library will not output typeref or typedef metadata
 	 */
 	skipOutputTypeDefinitions?: boolean;
+
+	/** 
+	 * If true, this parameter overrides the return value of the function
+	 */
+	overrideOutput?: boolean;
 }
 
 export interface IClassPropertyDecoratorDefinition extends IDecoratorDefinitionBase {

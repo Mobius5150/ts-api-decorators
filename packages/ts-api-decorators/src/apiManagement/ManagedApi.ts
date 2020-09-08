@@ -13,6 +13,8 @@ import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
 import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
 import { Func, OptionalAsyncFunc1 } from "../Util/Func";
+import { StreamCoercionMode, StreamCoercer } from "../Util/StreamCoercer";
+import { StreamIntermediary } from "../Util/StreamIntermediary";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -38,6 +40,7 @@ export interface IApiInvocationParams<TransportParamsType extends object = {}> {
 }
 
 export interface IApiInvocationResult {
+	streamMode: StreamCoercionMode;
 	statusCode: number;
 	body: string | object;
 	headers: ApiHeadersDict;
@@ -90,6 +93,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	protected handleErrors: boolean = true;
 
+	protected streamCoercionMode: StreamCoercionMode = StreamCoercionMode.Any;
+
 	public constructor(
 		private readonly useGlobal: boolean = false
 	) {
@@ -104,6 +109,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		this.classes = [];
 
 		this.jsonValidator = new JsonSchemaValidator();
+
+		this.addHook('handler-postinvoke', (h) => this.hook_checkStreamCoercionMode(h));
 	}
 
 	public addHandlerClass(constructor: ClassConstructor) {
@@ -182,7 +189,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
 				try {
-					const context: IApiInvocationContextPostInvoke<TransportParamsType> ={
+					const context: IApiInvocationContextPostInvoke<TransportParamsType> = {
 						...await this.preProcessInvocationParams({
 							apiDefinition: def,
 							invocationParams,
@@ -191,12 +198,12 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 							statusCode: 200,
 							body: null,
 							headers: {},
+							streamMode: StreamCoercionMode.None,
 						}
 					};
 					ManagedApi.namespace.set(ManagedApi.ContextNamespace, context);
 					context.result.body = await this.invokeHandler(def, handlerArgs, instance, context.invocationParams);
 					const {result} = await this.postProcessInvocationResult(context, def.processors);
-
 					return result;
 				} catch (e) {
 					return this.getErrorResponseForException(e);
@@ -207,16 +214,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		};
 	}
 
-	protected getErrorResponseForException(e: any) {
+	protected getErrorResponseForException(e: any): IApiInvocationResult {
 		if (this.handleErrors) {
 			if (this.isHttpErrorLike(e)) {
 				return {
+					streamMode: StreamCoercionMode.None,
 					statusCode: e.statusCode || e.code,
 					body: e.message,
 					headers: {},
 				};
 			} else {
 				return {
+					streamMode: StreamCoercionMode.None,
 					statusCode: 500,
 					body: '',
 					headers: {},
@@ -275,6 +284,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
 		// Resolve handler arguments
 		let useCallback: PromiseCallbackHelper<any>;
+		let output: any = null, overrideOutput = false;
 		const args = await Promise.all(handlerArgs.map(async (def) => {
 			// Callback arg is special
 			if (def.type === ApiParamType.Callback) {
@@ -288,6 +298,15 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 			// Parse the contents of the argument and validate
 			const parsed = await this.getHandlerArg(def, invocationParams);
+			if (def.type === ApiParamType.Out && def.overrideOutput) {
+				if (overrideOutput) {
+					throw new Error('Cannot override output in multiple args');
+				}
+
+				overrideOutput = true;
+				output = parsed;
+			}
+
 			if (!def.args) {
 				return parsed;
 			}
@@ -316,11 +335,18 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			return parsed;
 		}));
 
+		let executionResult: any;
 		if (useCallback) {
-			return useCallback.execute(() => def.handler.apply(instance, args));
+			executionResult = await useCallback.execute(() => def.handler.apply(instance, args));
 		} else {
-			return await def.handler.apply(instance, args);
+			executionResult = await def.handler.apply(instance, args);
 		}
+
+		if (overrideOutput) {
+			executionResult = await output;
+		}
+
+		return executionResult;
 	}
 	
 	private applyValidationFunction({name, validationFunc}: __ApiParamArgs, parsed: any) {
@@ -506,6 +532,12 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 				throw e;
 			}
+		} else if (def.type === ApiParamType.Out) {
+			if (this.streamCoercionMode === StreamCoercionMode.None) {
+				throw new Error('Stream out type cannot be used while coercion is disabled');
+			}
+
+			return StreamIntermediary.GetStreamIntermediary();
 		}
 	}
 
@@ -709,5 +741,13 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 
 		return false;
+	}
+
+	private hook_checkStreamCoercionMode(pi: IApiInvocationContextPostInvoke<TransportParamsType>): IApiInvocationResult {
+		if (this.streamCoercionMode === StreamCoercionMode.None) {
+			return;
+		}
+
+		pi.result.streamMode = StreamCoercer.IsCoercible(pi.result.body, this.streamCoercionMode);
 	}
 }

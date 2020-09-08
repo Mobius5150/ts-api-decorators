@@ -83,6 +83,13 @@
     "@types/express-serve-static-core" "*"
     "@types/mime" "*"
 
+"@types/stream-buffers@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@types/stream-buffers/-/stream-buffers-3.0.3.tgz#34e565bf64e3e4bdeee23fd4aa58d4636014a02b"
+  integrity sha512-NeFeX7YfFZDYsCfbuaOmFQ0OjSmHreKBpp7MQ4alWQBHeh2USLsj7qyMyn9t82kjqIX516CR/5SRHnARduRtbQ==
+  dependencies:
+    "@types/node" "*"
+
 "@types/superagent@*":
   version "4.1.7"
   resolved "https://registry.yarnpkg.com/@types/superagent/-/superagent-4.1.7.tgz#a7d92d98c490ee0f802a127fdf149b9a114f77a5"
@@ -1626,6 +1633,11 @@ stealthy-require@^1.1.1:
   resolved "https://registry.yarnpkg.com/stealthy-require/-/stealthy-require-1.1.1.tgz#35b09875b4ff49f26a777e509b3090a3226bf24b"
   integrity sha1-NbCYdbT/SfJqd35QmzCQoyJr8ks=
 
+stream-buffers@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/stream-buffers/-/stream-buffers-3.0.2.tgz#5249005a8d5c2d00b3a32e6e0a6ea209dc4f3521"
+  integrity sha512-DQi1h8VEBA/lURbSwFtEHnSTb9s2/pwLEaFuNhXwy1Dx3Sa0lOuYT2yNUr4/j2fs8oCAMANtrZ5OrPZtyVs3MQ==
+
 "string-width@^1.0.2 || 2":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-2.1.1.tgz#ab93f27a8dc13d28cac815c462143a6d9012ae9e"
@@ -1824,10 +1836,10 @@ ts-api-decorators-azure-function@^0.1.3:
     ts-api-decorators "^0.1.5"
     uuid "^3.4.0"
 
-ts-api-decorators@^0.1.27:
-  version "0.1.27"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.27.tgz#1887e8b85eaba43a7a0b4b2787c397abf199643a"
-  integrity sha512-LWi1a1IZRNT6xHwA8bbFATgl6PFBSMkSe3f1nsXKqXKpE8MQdfcW7FDeS/cj0RYoNY7UDLOW0CnRiIN7tDsb8w==
+ts-api-decorators@^0.1.38:
+  version "0.1.38"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.1.38.tgz#4aebf5b90401da1786714b2b5b0f9b984f752faf"
+  integrity sha512-d3GEGlFHu0PXew7bgmD3RleSE7JpgaDrJ66QwzP/OjWHDJmf8p667w6Qp2pIxdKlDTrtcLCHleV14UjLMD2MRQ==
   dependencies:
     "@azure/functions" "^1.0.3"
     acorn "^7.0.0"

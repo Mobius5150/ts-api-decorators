@@ -19,6 +19,7 @@ export const enum ApiParamType {
 	Callback,
 	Transport,
 	Dependency,
+	Out,
 	Custom,
 }
 
@@ -81,12 +82,17 @@ export interface IApiTransportTypeParamDefinition extends IApiParamDefinitionBas
 	transportTypeId: string;
 }
 
+export interface IApiOutTypeParamDefinition extends IApiParamDefinitionBase {
+	type: ApiParamType.Out;
+	overrideOutput: boolean;
+}
+
 export interface IApiCustomTypeParamDefinition extends IApiParamDefinitionBase {
 	type: ApiParamType.Custom;
 	paramId: string;
 }
 
-export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition | IApiRawBodyParamDefinition;
+export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition | IApiRawBodyParamDefinition | IApiOutTypeParamDefinition;
 
 export interface IApiModifierDefinition<T = object> {
 	propertyKey: string | symbol;

@@ -5,6 +5,7 @@ import * as sinon from 'sinon';
 import { getCompiledProgram } from '../../src/Testing/TestUtil';
 import { ApiMethod, IApiInvocationParams, IApiInvocationContext, IApiInvocationContextPostInvoke } from '../../src';
 import { TestManagedApi, ITestManagedApiContext } from '../../src/Testing/TestTransport';
+import { StreamCoercionMode } from '../../src/Util/StreamCoercer';
 
 describe('Hooks', () => {
 	let api: TestManagedApi;
@@ -42,6 +43,7 @@ describe('Hooks', () => {
 		const postInvokeParams: Partial<IApiInvocationContextPostInvoke<ITestManagedApiContext>> = {
 			invocationParams,
 			result: {
+				streamMode: StreamCoercionMode.None,
 				body: `Hi ${invocationParams.queryParams.name}`,
 				headers: {},
 				statusCode: 200,
@@ -76,6 +78,7 @@ describe('Hooks', () => {
 		const postInvokeParams: Partial<IApiInvocationContextPostInvoke<ITestManagedApiContext>> = {
 			invocationParams,
 			result: {
+				streamMode: StreamCoercionMode.None,
 				body: `Hi ${invocationParams.queryParams.name}`,
 				headers: {},
 				statusCode: 200,
@@ -143,6 +146,7 @@ describe('Hooks', () => {
 				}
 			},
 			result: {
+				streamMode: StreamCoercionMode.None,
 				body: `Hi ${invocationParams.queryParams.name}`,
 				headers: {},
 				statusCode: 200,

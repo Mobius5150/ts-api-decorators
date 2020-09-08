@@ -25,3 +25,6 @@ export {
 export {
 	ApiProcessor,
 } from './ApiProcessing';
+export {
+	ApiOutParamStream,
+} from './OutParams';

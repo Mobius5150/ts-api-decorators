@@ -10,3 +10,6 @@ export {
 	IApiInvocationResult,
 	IApiInvocationParams,
 } from 'ts-api-decorators/dist/apiManagement/ManagedApi';
+export {
+	StreamCoercionMode
+} from 'ts-api-decorators';
