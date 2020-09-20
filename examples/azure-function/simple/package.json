@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "ttsc && npm run build:azfunc_files",
-    "build:azfunc_files": "npx tsapi azfunc-generate src function --tsconfig ./tsconfig.json",
+    "build:azfunc_files": "npx tsapi azfunc-generate src function --tsconfig ./tsconfig.json --verbose",
     "start": "cd function && func start"
   },
   "author": "",

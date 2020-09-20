@@ -3,6 +3,7 @@ import { Swagger2Extractor } from './Swagger2Extractor';
 import { CliCommand, IParseApiResult } from './CliCommand';
 import { IParseOptions } from './ProgramOptions';
 import { OpenApiV3Extractor } from './OpenApiV3';
+import { ApiParser } from '../Util/ApiParser';
 
 export interface IProgramOptions extends IParseOptions {
     type: string;
@@ -11,10 +12,12 @@ export interface IProgramOptions extends IParseOptions {
 }
 
 export class ExtractCommand extends CliCommand {
+    private apiParser: ApiParser;
     constructor(
         private readonly program: Command
     ) {
         super();
+        this.apiParser = new ApiParser();
         program
             .command('extract <rootDir>')
             .description(
@@ -35,11 +38,11 @@ export class ExtractCommand extends CliCommand {
     }
 
     protected async runCommand(options: IProgramOptions) {
-        const api = await this.parseApi(options);
+        const api = await this.apiParser.parseApi(options);
         let summary: string | Buffer;
         switch (options.type) {
             case 'summary':
-                summary = this.printExtractionSummary(options, api);
+                summary = this.printExtractionSummary(options, api, this.apiParser.getTree());
                 break;
 
             case 'swagger2':

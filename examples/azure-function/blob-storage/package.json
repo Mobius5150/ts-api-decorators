@@ -15,9 +15,13 @@
     "ttypescript": "^1.5.8"
   },
   "dependencies": {
-    "ts-api-decorators-azure-function": "^0.1.4",
+    "@types/node": "^14.10.1",
+    "ts-api-decorators": "^0.1.38",
+    "ts-api-decorators-azure-function": "^0.1.38",
     "ts-node": "^8.6.2",
-    "typescript": "^3.7.5"
-  },
-  "peerDependencies": {}
+    "typescript": "3.7.X"
+	},
+	"resolutions": {
+		"typescript": "^3.7 < 3.8"
+	}
 }

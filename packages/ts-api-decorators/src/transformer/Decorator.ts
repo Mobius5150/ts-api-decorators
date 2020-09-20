@@ -304,7 +304,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 			return true;
 		}
 		
-		const sourceFileExt = this.getExt(sourceFile.fileName);
+		const sourceFileExt = this.getExt(sourceFilePath);
 		switch (sourceFileExt) {
 			case '.d.ts':
 				return sourceFilePath.endsWith(this.indexTs + '.d.ts');

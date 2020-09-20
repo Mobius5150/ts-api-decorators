@@ -1,7 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiBodyParam } from "../../../src";
-import { ITestServer } from '../../TestServer';
-import * as express from 'express';
-import * as http from 'http';
+import { Api, ApiGetMethod, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiQueryParam, ApiBodyParam } from "../../../../dist";
 
 interface IGreetArgs {
 	name: string;
@@ -103,20 +100,3 @@ class MyApi {
 		return str;
 	}
 }
-
-let app: express.Express;
-let server: http.Server;
-export default <ITestServer>{
-	start: (port, started) => {
-		const api = new ManagedApi();
-        api.addHandlerClass(MyApi);
-		app = express();
-		app.use(api.init());
-		server = app.listen(port, () => {
-			started(null, server);
-		});
-	},
-	stop: () => {
-		server.close();
-	},
-};

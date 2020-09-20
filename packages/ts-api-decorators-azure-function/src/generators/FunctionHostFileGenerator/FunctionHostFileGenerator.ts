@@ -15,12 +15,25 @@ export interface IFunctionJson {
 	scriptFile: string;
 }
 
-export interface IFunctionJsonFileGeneratorOpts {
+export interface IFunctionHostJsonFileGeneratorOpts {
 	setWatchDirectories?: boolean;
 	tsConfig?: ParsedCommandLine;
 	tsConfigPath?: string;
 	triggers: IBindingTrigger[];
 	params: IBindingParam[];
+	extensionOpts?: IFunctionHostFile['extensions'];
+}
+
+export interface IFunctionJsonHttpExtensionOpts {
+	routePrefix?: string;
+	maxOutstandingRequests?: number;
+	maxConcurrentRequests?: number;
+	dynamicThrottlesEnabled?: boolean;
+	hsts?: {
+		isEnabled: boolean,
+		maxAge: string,
+	},
+	customHeaders?: { [key: string]: string },
 }
 
 interface IFunctionHostFile {
@@ -29,7 +42,10 @@ interface IFunctionHostFile {
 	extensionBundle?: {
 		id: string;
 		version: string;
-	}
+	},
+	extensions?: {
+		http?: IFunctionJsonHttpExtensionOpts;
+	},
 }
 
 export class FunctionHostFileGenerator implements IGenerator {
@@ -40,7 +56,7 @@ export class FunctionHostFileGenerator implements IGenerator {
 	private readonly params: Map<string, IBindingParam> = new Map();
 
 	constructor(
-		private readonly opts: IFunctionJsonFileGeneratorOpts
+		private readonly opts: IFunctionHostJsonFileGeneratorOpts
 	) {
 		for (const t of opts.triggers) {
 			this.triggers.set(t.triggerMethod, t);
@@ -71,6 +87,10 @@ export class FunctionHostFileGenerator implements IGenerator {
 		const extensions = this.getExtensionsForRoutes(routes);
 		if (extensions) {
 			hostfile.extensionBundle = AzFuncExtension.ExtensionBundle;
+		}
+
+		if (this.opts.extensionOpts) {
+			hostfile.extensions = this.opts.extensionOpts;
 		}
 
 		return JSON.stringify(hostfile, undefined, FunctionHostFileGenerator.JSON_PRETTY_PRINT_SPACE);

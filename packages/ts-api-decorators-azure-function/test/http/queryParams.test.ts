@@ -1,43 +1,46 @@
 import 'mocha';
-import { TestServer } from '../TestServer';
-import { ManagedApiInternal } from 'ts-api-decorators';
-import { DefaultExpressPort } from '../TestUtil';
+import { expect, assert } from 'chai';
 import * as path from 'path';
-import * as request from 'supertest';
-import * as http from 'http';
+import { TestServer } from '../TestUtil';
+import * as supertest from 'supertest';
 
-describe('Callbacks', () => {
+describe('http query params', () => {
+	const testPort = Math.round( Math.random() * 500 + 2000 );
 	let testServer: TestServer;
-	let httpServer: http.Server;
+	let request: supertest.SuperTest<supertest.Test>;
 
 	before(async () => {
-		ManagedApiInternal.ResetRegisteredApis();
-		testServer = new TestServer(path.resolve(__dirname, './sources/callbacks.ts'));
-		httpServer = await testServer.start(DefaultExpressPort);
+		testServer = new TestServer({
+			sourceFile: path.resolve(__dirname, './sources/src/server-basic.ts'),
+			functionsOutDir: path.resolve(__dirname, './sources/function'),
+			compileOutDir: path.resolve(__dirname, './sources/dist'),
+			tsConfigJson: path.resolve(__dirname, './sources/tsconfig.json'),
+			packageJson: path.resolve(__dirname, '../../package.json'),
+			startTimeout: 30000,
+			portNo: testPort,
+		});
+		
+		await testServer.start();
+		assert(testServer.isRunning(), 'Test server should be running');
+		request = supertest(testServer.getBaseUrl());
 	});
 
 	after(async () => {
-		if (testServer) {
-			await testServer.stop();
-			testServer = undefined;
-			httpServer = undefined;
-		}
-
-		ManagedApiInternal.ResetRegisteredApis();
+		await testServer.stop();
 	});
 
 	for (const verb of ['get', 'put', 'post', 'delete']) {
 		const verbUpper = verb.toUpperCase();
 		it(`[${verbUpper}] accepts strings`, async () => {
 			const name = 'test';
-			return request(httpServer)
+			return request
 				[verb](`/hello?name=${name}`)
 				.expect(200, `Hi ${name}! `);
 		});
 
 		it(`[${verbUpper}] accepts numbers`, async () => {
 			const name = 'test';
-			return request(httpServer)
+			return request
 				[verb](`/hello?name=${name}&times=3`)
 				.expect(200, `Hi ${name}! Hi ${name}! Hi ${name}! `);
 		});
@@ -46,17 +49,17 @@ describe('Callbacks', () => {
 			const name = 'test';
 			return Promise.all([
 				// Invalid characters as suffix
-				request(httpServer)
+				request
 					[verb](`/hello?name=${name}&times=3n`)
 					.expect(400),
 
 				// Invalid string
-				request(httpServer)
+				request
 					[verb](`/hello?name=${name}&times=potato`)
 					.expect(400),
 
 				// Invalid prefix
-				request(httpServer)
+				request
 					[verb](`/hello?name=${name}&times=n3`)
 					.expect(400),
 			]);
@@ -64,29 +67,16 @@ describe('Callbacks', () => {
 
 		it(`[${verbUpper}] accepts optional args`, async () => {
 			const name = 'test';
-			return request(httpServer)
+			return request
 				[verb](`/hello?name=${name}&times=3&optional=preamble`)
 				.expect(200, `preambleHi ${name}! Hi ${name}! Hi ${name}! `);
 		});
 
 		it(`[${verbUpper}] accepts named args`, async () => {
 			const str = 'test';
-			return request(httpServer)
+			return request
 				[verb](`/echo?echo=${str}`)
-				.expect(200, {str});
-		});
-
-		it(`[${verbUpper}] handles errors`, async () => {
-			const str = 'test';
-			return request(httpServer)
-				[verb](`/hello?name=${str}&throwError`)
-				.expect(418);
-		});
-
-		it(`[${verbUpper}] handles incorrectly thrown errors`, async () => {
-			return request(httpServer)
-				[verb](`/unexpectedError`)
-				.expect(418);
+				.expect(200, str);
 		});
 	}
 });
