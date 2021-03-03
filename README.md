@@ -11,6 +11,7 @@ This library provides a simple way to use typescript decorators to define APIs. 
 The fastest way to get started is to check out the docs or samples for the transport/hosting technology that you use:
 
 - Express.js: [Documentation](packages/ts-api-decorators-express) / [Samples](examples/express/simple)
+- Azure Functions: [Documentation](packages/ts-api-decorators-azure-function) / [Samples](examples/azure-function)
 
 Or you can read on to learn about the capabilities.
 
@@ -39,7 +40,7 @@ class MyApi {
 
 This defines an API that exposes a single `GET` handler at `/hello` that returns the string `Hello World!`. To hook this up with your desired transport you'll need to pick and install one of the supported transport packages:
 - [`ts-api-decorators-express`](packages/ts-api-decorators-express)
-- `ts-api-decorators-azure-function` (WIP)
+- [`ts-api-decorators-azure-function`](packages/ts-api-decorators-azure-function)
 - `ts-api-decorators-aws-lambda` (WIP)
 
 > You can also write your own to hook up to your preferred environment.
