@@ -49,7 +49,7 @@ export abstract class AzFuncMetadata {
 
 	public static OutputMetadata(transportTypeId: string): ITransformerMetadata {
 		return {
-			...AzFuncMetadata.ExtensionBundle,
+			...AzFuncMetadata.Output,
 			value: transportTypeId,
 		};
 	}

@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 import * as path from 'path';
-import { IDecoratorDefinitionBase, IDecoratorArgumentProcessorArgs, IDecoratorArgument } from './DecoratorDefinition';
+import { IDecoratorDefinitionBase, IDecoratorArgumentProcessorArgs, IDecoratorArgument, DecoratorNodeTreeHierarchyType } from './DecoratorDefinition';
 import { ITransformedTreeElement, IHandlerLocation, IHandlerTreeNode } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } from './TransformerMetadata';
@@ -16,6 +16,7 @@ export enum DecoratorNodeType {
 
 export interface IDecorator<N extends ts.Node = ts.Node> extends IDecoratorDefinitionBase {
 	nodeType: DecoratorNodeType;
+	treeHierarchyType: DecoratorNodeTreeHierarchyType;
 	isSourceFileMatch(sourceFile: ts.SourceFile): boolean;
 	getDecoratorTreeElement(parent: IHandlerTreeNode | undefined, node: N, decorator: ts.Decorator, context: ITransformContext): ITransformedTreeElement<ts.Decorator>;
 }
@@ -75,6 +76,14 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		}
 		
 		return true;
+	}
+
+	public get treeHierarchyType() {
+		if (typeof this.definition.treeHierarchyType !== 'undefined') {
+			return this.definition.treeHierarchyType;
+		}
+
+		return DecoratorNodeTreeHierarchyType.Child;
 	}
 
 	constructor(

@@ -177,7 +177,9 @@ export abstract class BlobStorageParams {
 
 export const AzFuncBlobMethodDecorator = ApiMethodDecoratorGetFunction<HandlerMethodDecorator>(BlobStorageMethodDecorators);
 export const AzFuncBlobParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(BlobStorageParams);
+export const AzFuncBlobModifierDecorator = ApiMethodDecoratorGetFunction<HandlerMethodModifierDecorator>(BlobStorageParams);
 
 export const AzFuncBlob = BlobStorageMethodDecorators.AzFuncBlob;
 export const AzFuncBlobParam = BlobStorageParams.AzFuncBlobParam;
 export const AzFuncBlobPropertiesParam = BlobStorageParams.AzFuncBlobPropertiesParam;
+export const AzFuncBlobOutput = BlobStorageParams.AzFuncBlobOutput;

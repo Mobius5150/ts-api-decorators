@@ -22,12 +22,18 @@ export interface IDecorationFunctionTransformInfoBase {
 	provider: string;
 }
 
+export enum DecoratorNodeTreeHierarchyType {
+	Child,
+	Modifier,
+}
+
 export interface IDecoratorDefinitionBase extends IDecorationFunctionTransformInfoBase {
 	decoratorType: DecoratorType;
 	dependencies: Array<IDecoratorDependency | Func1<IHandlerTreeNode, IDecoratorDependency[] | void>>;
 	arguments: IDecoratorArgument[];
 	metadata?: ITransformerMetadata[];
 	isCallExpression?: boolean;
+	treeHierarchyType?: DecoratorNodeTreeHierarchyType;
 	
 	/**
 	 * If set, all arguments will be transformed to object keys

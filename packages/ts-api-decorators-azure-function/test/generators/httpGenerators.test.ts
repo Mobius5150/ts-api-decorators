@@ -71,6 +71,7 @@ describe('generators-http', () => {
 								type: 'http',
 							}),
 						],
+						scriptFile: 'index.js'
 					}));
 
 					++assertionCount;

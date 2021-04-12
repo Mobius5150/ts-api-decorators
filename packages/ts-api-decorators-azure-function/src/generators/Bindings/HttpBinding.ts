@@ -21,7 +21,7 @@ export class HttpBindingTriggerFactory {
 					// TODO: authLevel
 				},
 
-				// Outupt binding
+				// Output binding
 				{
 					type: 'http',
 					direction: 'out',

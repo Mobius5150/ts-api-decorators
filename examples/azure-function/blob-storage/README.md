@@ -19,7 +19,7 @@ Before you run this sample, you'll need to [create an Azure Storage Account](htt
 		"AzureWebJobsStorage": "paste-your-storage-account-here"
 	}
 }
-```
+````
 
 Once that's configured, start the sample with:
 ```bash
@@ -43,7 +43,7 @@ Firstly, in the `tsconfig.json`, `experimentalDecorators` must be set to `true` 
         "experimentalDecorators": true,
         "plugins": [
             {
-                "transform": "ts-api-decorators/dist/transformer"
+                "transform": "ts-api-decorators-azure-function/dist/transformer"
             }
         ]
     }

@@ -9,6 +9,7 @@ import { IMetadataResolver } from './MetadataManager';
 import { IDecoratorResolver } from './IDecoratorResolver';
 import { ITransformer } from './ITransformer';
 import { isNamedDeclaration, isTypeWithSymbol } from './TransformerUtil';
+import { DecoratorNodeTreeHierarchyType } from './DecoratorDefinition';
 
 export class TreeTransformer implements ITransformer {
 	protected readonly typeChecker: ts.TypeChecker;
@@ -71,6 +72,11 @@ export class TreeTransformer implements ITransformer {
 
 		const decorators = this.decorators.getDecoratorsForNodeType(nodeType, parent);
 		const nodeDecorators: ts.Decorator[] = [];
+		const nodeTypes = {
+			[DecoratorNodeTreeHierarchyType.Child]: <IHandlerTreeNode[]>[],
+			[DecoratorNodeTreeHierarchyType.Modifier]: <IHandlerTreeNode[]>[],
+		};
+
 		for (let i = 0; i < node.decorators.length; ++i) {
 			nodeDecorators[i] = node.decorators[i];
 			for (const definition of decorators) {
@@ -79,7 +85,7 @@ export class TreeTransformer implements ITransformer {
 					|| (!definition.isCallExpression && this.isArgumentDecoratorExpression(nodeDecorators[i].expression, definition))
 				) {
 					const treeNode = this.getDecoratorTreeElement(definition, parent, node, nodeDecorators[i]);
-					parent.children.push(treeNode.decoratorTreeNode);
+					nodeTypes[definition.treeHierarchyType].push(treeNode.decoratorTreeNode);
 
 					if (treeNode.transformedDecorator) {
 						nodeDecorators[i] = treeNode.transformedDecorator;
@@ -88,6 +94,13 @@ export class TreeTransformer implements ITransformer {
 
 					node = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode);
 				}
+			}
+		}
+
+		for (const node of nodeTypes[DecoratorNodeTreeHierarchyType.Child]) {
+			parent.children.push(node);
+			for (const modifierNode of nodeTypes[DecoratorNodeTreeHierarchyType.Modifier]) {
+				node.children.push(modifierNode);
 			}
 		}
 
