@@ -1,4 +1,4 @@
-import { Api, AzFuncBlob, AzFuncBlobParam, IAzureStorageBlobProperties, ApiPathParam, AzFuncBlobPropertiesParam } from 'ts-api-decorators-azure-function';
+import { Api, AzFuncBlob, AzFuncBlobParam, IAzureStorageBlobProperties, ApiPathParam, AzFuncBlobPropertiesParam, AzFuncBlobOutput } from 'ts-api-decorators-azure-function';
 
 @Api
 class MyApi {
@@ -30,11 +30,13 @@ class MyApi {
 	 * This method shows how to use `AzFuncBlobPropertiesParam` to get a buffer with the contents of the blob.
 	 */
 	@AzFuncBlob('testblob3/{blobName}.{blobExt}')
+	@AzFuncBlobOutput('blobOut', 'testblob3/{blobName}.{blobExt}.copy')
 	blobChangedWithProps(
 		@ApiPathParam() blobName: string,
 		@ApiPathParam() blobExt: string,
 		@AzFuncBlobPropertiesParam() blob: IAzureStorageBlobProperties
-	) {
+	): { blobOut: object } {
 		console.log(`Blob trigger executed for blob: ${blobName}.${blobExt} with properties: `, blob);
+		return { blobOut: blob };
 	}
 }

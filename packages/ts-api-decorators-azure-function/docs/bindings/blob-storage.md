@@ -8,7 +8,7 @@ import { Api, ApiGetMethod } from 'ts-api-decorators-azure-function';
 
 @Api
 class MyApi {
-	@AzureApiBlob('samples-workitems/{name}')
+	@AzFuncBlob('samples-workitems/{name}')
 	greet(
 		@ApiPathParam() name: string,
 	) {
@@ -31,10 +31,10 @@ import { Api, ApiGetMethod } from 'ts-api-decorators-azure-function';
 
 @Api
 class MyApi {
-	@AzureApiQueue('myqueue-items')
-	@AzureApiBlobOutput('samples-workitems/{queueTrigger}-Copy')
+	@AzFuncBlob('myqueue-items')
+	@AzFuncBlobOutput('samples-workitems/{queueTrigger}-Copy')
 	greet(
-		@AzureApiBlobInput('samples-workitems/{queueTrigger}') inputBlob: TbdAzureBlobType,
+		@AzFuncBlobParam() inputBlob: TbdAzureBlobType,
 	): TbdAzureBlobType {
 		return inputBlob;
 	}

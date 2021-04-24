@@ -1,8 +1,10 @@
 import { IGenerator, OutputFileGeneratorFunc } from 'ts-api-decorators/dist/generators/IGenerator';
 import { FunctionFileGenerator } from '../FunctionFileGenerator';
 import { ApiParamType, IApiTransportTypeParamDefinition } from 'ts-api-decorators/dist/apiManagement/ApiDefinition';
-import { IBinding, IBindingParam, IBindingTrigger } from '../Bindings';
-import { IHandlerTreeNode, IHandlerTreeNodeHandler, isHandlerNode, WalkChildrenByType, isHandlerParameterNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { IBinding, IBindingParam, IBindingTrigger, IBindingOutput } from '../Bindings';
+import { IHandlerTreeNode, IHandlerTreeNodeHandler, isHandlerNode, WalkChildrenByType, isHandlerParameterNode, isHandlerModifierNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { getMetadataValueByDescriptor } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
+import { AzFuncMetadata } from '../../metadata/AzFuncMetadata';
 
 export interface IFunctionJson {
 	bindings: IBinding[];
@@ -12,6 +14,7 @@ export interface IFunctionJson {
 export interface IFunctionJsonFileGeneratorOpts {
 	triggers: IBindingTrigger[];
 	params: IBindingParam[];
+	outputs: IBindingOutput[];
 }
 
 export class FunctionJsonFileGenerator implements IGenerator {
@@ -19,6 +22,7 @@ export class FunctionJsonFileGenerator implements IGenerator {
 	private static readonly JSON_PRETTY_PRINT_SPACE: string | number = 4;
 	private readonly triggers: Map<string, IBindingTrigger> = new Map();
 	private readonly params: Map<string, IBindingParam> = new Map();
+	private readonly outputs: Map<string, IBindingOutput> = new Map();
 
 	constructor(opts: IFunctionJsonFileGeneratorOpts) {
 		for (const t of opts.triggers) {
@@ -27,6 +31,10 @@ export class FunctionJsonFileGenerator implements IGenerator {
 
 		for (const p of opts.params) {
 			this.params.set(p.paramTypeId, p);
+		}
+
+		for (const p of opts.outputs) {
+			this.outputs.set(p.outputTypeId, p);
 		}
 	}
 
@@ -82,6 +90,27 @@ export class FunctionJsonFileGenerator implements IGenerator {
 						} else if (binding) {
 							bindings.push(binding);
 						}
+					}
+				}
+			}
+
+			for (const param of WalkChildrenByType(route, isHandlerModifierNode)) {
+				const outputParamTransportType = getMetadataValueByDescriptor<string>(param.metadata, AzFuncMetadata.Output);
+				if (!outputParamTransportType) {
+					continue;
+				}
+
+				if (!this.outputs.has(outputParamTransportType)) {
+					throw new Error('Output binding not registered for typeId: ' + outputParamTransportType);
+				}
+
+				const bindingDef = this.outputs.get(outputParamTransportType);
+				if (bindingDef.getBindingForOutput) {
+					const binding = bindingDef.getBindingForOutput(param, route);
+					if (Array.isArray(binding)) {
+						bindings.push(...binding);
+					} else if (binding) {
+						bindings.push(binding);
 					}
 				}
 			}

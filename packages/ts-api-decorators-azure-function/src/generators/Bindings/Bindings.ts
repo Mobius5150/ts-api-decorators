@@ -1,5 +1,5 @@
 import { IApiTransportTypeParamDefinition } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
-import { IHandlerTreeNodeHandler } from "ts-api-decorators/dist/transformer/HandlerTree";
+import { IHandlerTreeNodeHandler, IHandlerTreeNodeHandlerModifier } from "ts-api-decorators/dist/transformer/HandlerTree";
 import { AzFuncBinding } from "../../metadata/AzFuncBindings";
 
 export interface IBinding {
@@ -31,4 +31,9 @@ export interface IBindingTrigger<T extends IBinding = IBinding> {
 export interface IBindingParam<T extends IBinding = IBinding> {
 	paramTypeId: string;
 	getBindingForParam?: (param: IApiTransportTypeParamDefinition, route: IHandlerTreeNodeHandler) => T[] | undefined;
+}
+
+export interface IBindingOutput<T extends IBinding = IBinding> {
+	outputTypeId: string;
+	getBindingForOutput?: (output: IHandlerTreeNodeHandlerModifier, route: IHandlerTreeNodeHandler) => T[] | undefined;
 }

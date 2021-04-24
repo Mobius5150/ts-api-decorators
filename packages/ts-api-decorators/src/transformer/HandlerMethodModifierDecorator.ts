@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { IMethodDecoratorDefinition, DecoratorType } from './DecoratorDefinition';
+import { IMethodDecoratorDefinition, DecoratorType, DecoratorNodeTreeHierarchyType } from './DecoratorDefinition';
 import { ITransformedTreeElement, HandlerTreeNodeType, IHandlerTreeNodeHandlerModifier, IHandlerTreeNode } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
 import { Decorator, DecoratorNodeType } from './Decorator';
@@ -11,6 +11,7 @@ export class HandlerMethodModifierDecorator extends Decorator<ts.MethodDeclarati
 		super({
 			...definition,
 			decoratorType: DecoratorType.Method,
+			treeHierarchyType: DecoratorNodeTreeHierarchyType.Modifier,
 		}, DecoratorNodeType.Method);
 	}
 	

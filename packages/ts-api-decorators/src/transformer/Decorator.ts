@@ -1,11 +1,12 @@
 import * as ts from 'typescript';
 import * as path from 'path';
-import { IDecoratorDefinitionBase, IDecoratorArgumentProcessorArgs, IDecoratorArgument } from './DecoratorDefinition';
+import { IDecoratorDefinitionBase, IDecoratorArgumentProcessorArgs, IDecoratorArgument, DecoratorNodeTreeHierarchyType } from './DecoratorDefinition';
 import { ITransformedTreeElement, IHandlerLocation, IHandlerTreeNode } from './HandlerTree';
 import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } from './TransformerMetadata';
 import { isNamedNode } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
+import { exception } from 'console';
 
 export enum DecoratorNodeType {
 	Class,
@@ -16,6 +17,7 @@ export enum DecoratorNodeType {
 
 export interface IDecorator<N extends ts.Node = ts.Node> extends IDecoratorDefinitionBase {
 	nodeType: DecoratorNodeType;
+	treeHierarchyType: DecoratorNodeTreeHierarchyType;
 	isSourceFileMatch(sourceFile: ts.SourceFile): boolean;
 	getDecoratorTreeElement(parent: IHandlerTreeNode | undefined, node: N, decorator: ts.Decorator, context: ITransformContext): ITransformedTreeElement<ts.Decorator>;
 }
@@ -75,6 +77,14 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		}
 		
 		return true;
+	}
+
+	public get treeHierarchyType() {
+		if (typeof this.definition.treeHierarchyType !== 'undefined') {
+			return this.definition.treeHierarchyType;
+		}
+
+		return DecoratorNodeTreeHierarchyType.Child;
 	}
 
 	constructor(
@@ -299,21 +309,30 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 	}
 	
 	public isSourceFileMatch(sourceFile: ts.SourceFile): boolean {
-		const sourceFilePath = path.join(sourceFile.fileName);
-		if (sourceFilePath == this.indexTs) {
+		let sourceFilePaths = [ path.join(sourceFile.fileName) ];
+		if (sourceFilePaths[0] == this.indexTs) {
 			return true;
 		}
-		
-		const sourceFileExt = this.getExt(sourceFile.fileName);
+
+		const sourceFileExt = this.getExt(sourceFilePaths[0]);
+		let parts = [ '/dist/', '/src/' ];
+		if (process.env["DEBUG_PATH_REPLACE"]) {
+			parts = process.env["DEBUG_PATH_REPLACE"].split(":");
+			if (parts.length !== 2) {
+				throw new Error("DEBUG_PATH_REPLACE must split into two parts using ':' separator");
+			}
+		}
+
+		sourceFilePaths.push(sourceFilePaths[0].replace(parts[0], parts[1]));
 		switch (sourceFileExt) {
 			case '.d.ts':
-				return sourceFilePath.endsWith(this.indexTs + '.d.ts');
+				return !!sourceFilePaths.find(p => p.endsWith(this.indexTs + '.d.ts'));
 
 			case '.ts':
-				return sourceFilePath.endsWith(this.indexTs + '.ts');
+				return !!sourceFilePaths.find(p => p.endsWith(this.indexTs + '.ts'));
 
 			case '.js':
-				return sourceFilePath.endsWith(this.indexTs + '.js');
+				return !!sourceFilePaths.find(p => p.endsWith(this.indexTs + '.js'));
 
 			default:
 				return false;

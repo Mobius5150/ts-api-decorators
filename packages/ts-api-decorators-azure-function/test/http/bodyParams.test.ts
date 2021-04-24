@@ -1,43 +1,45 @@
 import 'mocha';
 import { expect, assert } from 'chai';
-import { TestServer } from '../TestServer';
-import { ManagedApiInternal } from 'ts-api-decorators';
-import { DefaultExpressPort } from '../TestUtil';
 import * as path from 'path';
-import * as request from 'supertest';
-import * as http from 'http';
+import { TestServer } from '../TestUtil';
+import * as supertest from 'supertest';
 
-describe('Body Params', () => {
+describe('http body params', () => {
+	const testPort = Math.round( Math.random() * 500 + 2000 );
 	let testServer: TestServer;
-	let httpServer: http.Server;
+	let request: supertest.SuperTest<supertest.Test>;
 
 	before(async () => {
-		ManagedApiInternal.ResetRegisteredApis();
-		testServer = new TestServer(path.resolve(__dirname, './sources/server-basic.ts'));
-		httpServer = await testServer.start(DefaultExpressPort);
+		testServer = new TestServer({
+			sourceFile: path.resolve(__dirname, './sources/src/server-basic.ts'),
+			functionsOutDir: path.resolve(__dirname, './sources/function'),
+			compileOutDir: path.resolve(__dirname, './sources/dist'),
+			tsConfigJson: path.resolve(__dirname, './sources/tsconfig.json'),
+			packageJson: path.resolve(__dirname, '../../package.json'),
+			startTimeout: 30000,
+			portNo: testPort,
+		});
+		
+		await testServer.start();
+		assert(testServer.isRunning(), 'Test server should be running');
+		request = supertest(testServer.getBaseUrl());
 	});
 
 	after(async () => {
-		if (testServer) {
-			await testServer.stop();
-			testServer = undefined;
-			httpServer = undefined;
-		}
-
-		ManagedApiInternal.ResetRegisteredApis();
+		await testServer.stop();
 	});
 
 	for (const verb of ['put', 'post']) {
 		const verbUpper = verb.toUpperCase();
 		it(`[${verbUpper}] accepts strings`, async () => {
-			return request(httpServer)
+			return request
 				[verb](`/helloBody`)
 				.send({ name: verb, times: 1 })
 				.expect(200, `Hi ${verb}! `);
 		});
 
 		it(`[${verbUpper}] accepts numbers`, async () => {
-			return request(httpServer)
+			return request
 				[verb](`/helloBody`)
 				.send({ name: verb, times: 3 })
 				.expect(200, `Hi ${verb}! Hi ${verb}! Hi ${verb}! `);
@@ -46,31 +48,31 @@ describe('Body Params', () => {
 		it(`[${verbUpper}] validates strings`, async () => {
 			return Promise.all([
 				// Number
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: 1, times: 1 })
 					.expect(400),
 
 				// Null
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: null, times: 1 })
 					.expect(400),
 
 				// undefined
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: undefined, times: 1 })
 					.expect(400),
 
 				// Object
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: {}, times: 1 })
 					.expect(400),
 
 				// Invalid prefix
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: [], times: 1 })
 					.expect(400),
@@ -80,49 +82,49 @@ describe('Body Params', () => {
 		it(`[${verbUpper}] validates numbers`, async () => {
 			return Promise.all([
 				// String number
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: '3' })
 					.expect(400),
 
 				// Invalid characters as suffix
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: '3n' })
 					.expect(400),
 
 				// Invalid string
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: 'potato' })
 					.expect(400),
 
 				// Invalid prefix
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: 'n3' })
 					.expect(400),
 
 				// Object
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: {} })
 					.expect(400),
 
 				// Invalid prefix
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: [] })
 					.expect(400),
 
 				// Null
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: null })
 					.expect(400),
 
 				// Undefined
-				request(httpServer)
+				request
 					[verb](`/helloBody`)
 					.send({ name: verb, times: undefined })
 					.expect(400),
@@ -131,10 +133,11 @@ describe('Body Params', () => {
 
 		it(`[${verbUpper}] accepts optional args`, async () => {
 			const optional = 'preamble';
-			return request(httpServer)
+			return request
 				[verb](`/helloBody`)
 				.send({ name: verb, times: 3, optional })
 				.expect(200, `${optional}Hi ${verb}! Hi ${verb}! Hi ${verb}! `);
 		});
 	}
+
 });

@@ -11,9 +11,11 @@ export interface IFunctionFileGeneratorOpts {
 	tsConfigPath?: string;
 	triggers: IBindingTrigger[];
 	params: IBindingParam[];
+	libIncludePath?: string;
 }
 
 export class FunctionFileGenerator implements IGenerator {
+	private static readonly LIB_INCLUDE = 'ts-api-decorators-azure-function';
 	public static readonly FILE_NAME = 'index.js';
 	private static readonly TEMPLATE_NAME = `${FunctionFileGenerator.FILE_NAME}.mustache`;
 	private readonly mustacheGenerator: MustacheFileGenerator;
@@ -38,11 +40,16 @@ export class FunctionFileGenerator implements IGenerator {
 	public forTree(routes: IHandlerTreeNode[]): OutputFileGeneratorFunc {
 		const handlerNodes = routes.filter(isHandlerNode);
 		return (p) => this.mustacheGenerator.generate({
+			libInclude: this.getLibIncludePath(),
 			scriptFiles: this.getSourceFilesForRoutes(handlerNodes, p),
 			triggerType: this.getTriggerTypeForRoutes(handlerNodes).triggerType,
 			route: this.getRoute(handlerNodes),
 			methods: handlerNodes.map(route => route.apiMethod),
 		});
+	}
+
+	private getLibIncludePath() {
+		return GeneratorUtil.NormalizePathSlashes(this.opts.libIncludePath ? this.opts.libIncludePath : FunctionFileGenerator.LIB_INCLUDE);
 	}
 
 	getSourceFilesForRoutes(routes: IHandlerTreeNodeHandler[], p: string): string[] {

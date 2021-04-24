@@ -110,6 +110,17 @@ export abstract class BuiltinArgumentExtractors {
 		},
 	};
 
+	public static readonly BoolUndefinedIfOmitted: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeBoolean,
+		optional: true,
+		metadataExtractor: (args) => {
+			return {
+				...BuiltinMetadata.UndefinedIfOmitted,
+				value: args.transformContext.typeSerializer.compileExpressionToNumericConstant(args.argumentExpression),
+			}
+		},
+	};
+
 	public static readonly ValidationFunctionArgument: IDecoratorArgument = {
 		type: InternalTypeUtil.TypeAnyFunction,
 		optional: true,

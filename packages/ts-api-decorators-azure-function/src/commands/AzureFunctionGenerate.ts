@@ -10,25 +10,39 @@ import { ApiMethod } from 'ts-api-decorators';
 import { HttpBindingTriggerFactory } from '../generators/Bindings/HttpBinding';
 import { NArgReducer } from '../Util/NArgReducer';
 import { IBinding, IBindingTrigger } from '../generators/Bindings';
-import { FunctionHostFileGenerator } from '../generators/FunctionHostFileGenerator';
-import { IHandlerTreeNode, WalkChildrenByType, isHandlerNode } from 'ts-api-decorators/dist/transformer/HandlerTree';
+import { FunctionHostFileGenerator, IFunctionHostJsonFileGeneratorOpts } from '../generators/FunctionHostFileGenerator';
+import { IHandlerTreeNode, WalkChildrenByType, isHandlerNode, WalkTreeByType } from 'ts-api-decorators/dist/transformer/HandlerTree';
 import { getMetadataValueByDescriptor, BuiltinMetadata } from 'ts-api-decorators/dist/transformer/TransformerMetadata';
 import { FunctionExtensionJsonFileGenerator } from '../generators/FunctionExtensionJsonFileGenerator';
 import { TimerBindingTriggerFactory } from '../generators/Bindings/TimerBinding';
 import { getTransformerArguments } from '../transformer';
-import { BlobStorageBindingTriggerFactory, BlobStorageBindingParamFactory } from '../generators/Bindings/BlobStorageBinding';
+import { BlobStorageBindingTriggerFactory, BlobStorageBindingParamFactory, BlobStorageOutputBindingFactory } from '../generators/Bindings/BlobStorageBinding';
+import { ApiParser } from 'ts-api-decorators/dist/Util/ApiParser';
+import { RouteReducer } from '../Util/RouteReducer';
 
 export interface IAzureFunctionGenerateCommandOptions extends IParseOptions {
     outDir: string;
     silent: boolean;
     verbose: boolean;
+    httpPrefix?: string;
+}
+
+export interface IAzureFunctionGenerateCommandAdditionalOpts {
+    alternateLibIncludePath?: string;
 }
 
 export class AzureFunctionGenerateCommand extends CliCommand {
+    private static readonly HttpPrefixNoneStr = '<none>'
+    private apiParser: ApiParser;
     constructor(
-        private readonly program: Command
+        private readonly program: Command,
+        private readonly additionalOpts?: IAzureFunctionGenerateCommandAdditionalOpts,
     ) {
         super();
+        if (!this.additionalOpts) {
+            this.additionalOpts = {};
+        }
+        this.apiParser = new ApiParser();
         program
             .command('azfunc-generate <rootDir> <outDir>')
             .description(
@@ -42,6 +56,7 @@ export class AzureFunctionGenerateCommand extends CliCommand {
             .option('--silent', 'Don\'t output information', false)
             .option('--verbose', 'Write extra output information', false)
             .option('--apiInfo <file>', 'File containing information for the API', 'package.json')
+            .option('--httpPrefix <prefix>', 'The prefix path for all http bindings. Defaults to /api')
             .action((rootDir: string, outDir: string, options: IAzureFunctionGenerateCommandOptions) => this.runCommand({
                 ...options,
                 rootDir,
@@ -50,9 +65,9 @@ export class AzureFunctionGenerateCommand extends CliCommand {
     }
 
     protected async runCommand(options: IAzureFunctionGenerateCommandOptions) {
-        const api = await this.parseApi(options, getTransformerArguments());
+        const api = await this.apiParser.parseApi(options, getTransformerArguments());
         if (!options.silent) {
-            let summary: string | Buffer = this.printExtractionSummary(options, api);
+            let summary: string | Buffer = this.printExtractionSummary(options, api, this.apiParser.getTree());
             this.printSummary(summary);
         }
         
@@ -69,28 +84,38 @@ export class AzureFunctionGenerateCommand extends CliCommand {
                 TimerBindingTriggerFactory.GetParamBinding(),
                 ...BlobStorageBindingParamFactory.GetParamBindings(),
             ],
+            outputs: [
+                ...BlobStorageOutputBindingFactory.GetOutputBindings(),
+            ],
         };
         const outGenerator = new OutputFileGenerator(options.outDir);
-        const hostGen = new FunctionHostFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig });
-        const extensionGen = new FunctionExtensionJsonFileGenerator();
-        const functionGen = new FunctionFileGenerator({ ...generatorOpts, tsConfig: api.tsConfig, tsConfigPath: api.tsConfigPath });
-        const functionJsonGen = new FunctionJsonFileGenerator(generatorOpts);
-
-        // TODO: Actually check on the binding triggers and parameter types for each method
-        const reducer = new NArgReducer<[string, string, ...IBindingTrigger[]], IHandlerTreeNode>()
-        const routeNames = new Set<string>();
-        for (const route of WalkChildrenByType(api.tree, isHandlerNode)) {
-            let methodType: string = getMetadataValueByDescriptor(route.metadata, BuiltinMetadata.ApiMethodType);
-            if (!methodType) {
-                throw new Error(`Unknown http method type: ${methodType}`);
-            }
-
-            reducer.add([methodType, route.route], route);
+        const hostGenOpts: IFunctionHostJsonFileGeneratorOpts = {
+            ...generatorOpts,
+            tsConfig: api.tsConfig
+        };
+        if (options.httpPrefix) {
+            hostGenOpts.extensionOpts = {
+                http: {
+                    routePrefix:
+                        options.httpPrefix === AzureFunctionGenerateCommand.HttpPrefixNoneStr
+                        ? ''
+                        : options.httpPrefix,
+                },
+            };
         }
-
+        const hostGen = new FunctionHostFileGenerator(hostGenOpts);
+        const extensionGen = new FunctionExtensionJsonFileGenerator();
+        const functionGen = new FunctionFileGenerator({
+            ...generatorOpts,
+            tsConfig: api.tsConfig,
+            tsConfigPath: api.tsConfigPath,
+            libIncludePath: this.additionalOpts?.alternateLibIncludePath,
+        });
+        const functionJsonGen = new FunctionJsonFileGenerator(generatorOpts);
+        const routeNames = new Set<string>();
         outGenerator.addOutputFile(hostGen.getFilename(), hostGen.forTree([api.tree]));
         outGenerator.addOutputFile(extensionGen.getFilename(), extensionGen.forTree([api.tree]));
-        for (let [[method, route, ...bindings], routes] of reducer.getReduced()) {
+        for (let [[method, route, ...bindings], routes] of RouteReducer.reduceFunctionRoutesByPath(api)) {
             route = route.startsWith('/') ? route.substr(1) : route;
             const baseRouteName = `${route.replace(/[^-a-zA-Z0-9_]/g, '_').toString()}`;
             let routeName = baseRouteName;

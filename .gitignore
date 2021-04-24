@@ -4,6 +4,7 @@
 .
 **/test/**/*.js
 **/test/**/*.js.map
+**/test/**/function
 # Created by https://www.gitignore.io/api/osx,node,code,linux,windows
 
 ### Code ###

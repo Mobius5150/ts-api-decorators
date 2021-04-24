@@ -33,7 +33,6 @@ abstract class QueryParams {
 	 * Decorates a query parameter that should be cast to a number.
 	 * @param numberMin The minimum value, undefined for no minimum.
 	 * @param numberMax The maximum value, undefined for no maximum.
-	 * @param numberDefault The default value, undefined will use the minimum value if defined, if not the maximum, if not then undefined.
 	 */
 	public static ApiQueryParamNumber(paramName?: string, numberMin?: number, numberMax?: number);
 	@ApiDecorator(HandlerMethodParameterDecorator, {

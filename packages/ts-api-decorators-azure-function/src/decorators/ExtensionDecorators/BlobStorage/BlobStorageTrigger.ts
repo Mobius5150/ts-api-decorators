@@ -2,14 +2,16 @@ import { ManagedApiInternal, Api, ApiMethodDecoratorReturnType } from "ts-api-de
 import { ApiParamType, ApiMethodReturnType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
 import { __ApiParamArgs, InternalTypeUtil } from "ts-api-decorators/dist/apiManagement/InternalTypes";
 import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction } from "ts-api-decorators/dist/decorators/DecoratorUtil";
+import { HandlerMethodModifierDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodModifierDecorator";
 import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
 import { HandlerMethodDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodDecorator";
-import { AzFuncMetadata } from "../../../metadata/AzFuncMetadata";
+import { AzFuncMetadata, IAzFunctionArgs } from "../../../metadata/AzFuncMetadata";
 import { AzFuncBinding } from "../../../metadata/AzFuncBindings";
 import { BlobStorageArgumentExtractors } from "./ArgumentExtractors";
 import { BuiltinMetadata } from "ts-api-decorators/dist/transformer/TransformerMetadata";
 import { AzFuncExtension } from "../../../metadata/AzFuncExtension";
 import { IHandlerTreeNode, IHandlerTreeNodeParameter } from "ts-api-decorators/dist/transformer/HandlerTree";
+import { AzFuncArgumentExtractors } from "../../ArgumentExtractors";
 
 abstract class BlobStorageMethodDecorators {
 	/**
@@ -139,11 +141,45 @@ export abstract class BlobStorageParams {
 				target.constructor);
 		}
 	}
+
+	public static AzFuncBlobOutput<T extends object>(outField: keyof T, path: string, connection?: string): ApiMethodDecoratorReturnType<T>;
+	@ApiDecorator(HandlerMethodModifierDecorator, {
+		indexTs: __filename,
+		dependencies: [],
+		provider: AzFuncMetadata.Component,
+		arguments: [
+			AzFuncArgumentExtractors.OutParamArgument,
+			{ ...BlobStorageArgumentExtractors.PathArgument, optional: true, },
+			BlobStorageArgumentExtractors.ConnectionArgument,
+		],
+		transformArgumentsToObject: true,
+		metadata: [
+			AzFuncMetadata.OutputMetadata(BlobStorageParams.TransportTypeBlobOutputParam),
+			...AzFuncMetadata.ExtensionBundleMetadata(AzFuncExtension.AzureStorage),
+		],
+	})
+	public static AzFuncBlobOutput(a?: any): ApiMethodDecoratorReturnType<any> {
+		return (
+			target: object,
+			propertyKey: string,
+			descriptor: TypedPropertyDescriptor<any>
+		) => {
+			// const args = <IAzFunctionArgs>a;
+			// ManagedApiInternal.AddApiModifierMetadataToObject(
+			// 	{
+			// 		propertyKey,
+			// 		arguments: args,
+			// 		metadata: AzFuncMetadata.Output,
+			// 	}, target.constructor);
+		}
+	}
 }
 
 export const AzFuncBlobMethodDecorator = ApiMethodDecoratorGetFunction<HandlerMethodDecorator>(BlobStorageMethodDecorators);
 export const AzFuncBlobParamDecorator = ApiMethodDecoratorGetFunction<HandlerMethodParameterDecorator>(BlobStorageParams);
+export const AzFuncBlobModifierDecorator = ApiMethodDecoratorGetFunction<HandlerMethodModifierDecorator>(BlobStorageParams);
 
 export const AzFuncBlob = BlobStorageMethodDecorators.AzFuncBlob;
 export const AzFuncBlobParam = BlobStorageParams.AzFuncBlobParam;
 export const AzFuncBlobPropertiesParam = BlobStorageParams.AzFuncBlobPropertiesParam;
+export const AzFuncBlobOutput = BlobStorageParams.AzFuncBlobOutput;

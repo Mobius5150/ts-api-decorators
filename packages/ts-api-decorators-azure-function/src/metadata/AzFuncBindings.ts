@@ -1,3 +1,5 @@
+export const AzFuncBindingNameReturn = 'tsapiazfreturnvaldonotuseasyourreturnvalue';
+
 export const enum AzFuncBinding {
 	HttpTrigger = 'httpTrigger',
 	Http = 'http',
