@@ -2,7 +2,7 @@
 This library allows you to use [Typescript API Decorators](https://github.com/Mobius5150/ts-api-decorators) with the Express framework.
 
 ## Installation
-This library performs preprocessing on APIs during the typescript compilation step. See [Configuring Transformers](../../ConfiguringTransformers.md) for how to set this up. If you want to get started faster, check out the simple example in (examples/express/simple)[../../examples/express/simple].
+This library performs preprocessing on APIs during the typescript compilation step. See [Configuring Transformers](../../ConfiguringTransformers.md) for how to set this up. If you want to get started faster, check out the simple example in [examples/express/simple](../../examples/express/simple).
 
 ## Usage (Defining an API)
 APIs are defined as methods on a class:
@@ -46,7 +46,7 @@ class MyApi {
 	@ApiGetMethod('/hello')
 	greet(
 		@ExpressApiRequestParam() req: Express.Request,
-        @ExpressApiResponseParam() res: Express.Response,
+		@ExpressApiResponseParam() res: Express.Response,
 	) {
 		// ...
 	}
