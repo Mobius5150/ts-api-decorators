@@ -153,6 +153,7 @@ export abstract class BlobStorageParams {
 			BlobStorageArgumentExtractors.ConnectionArgument,
 		],
 		transformArgumentsToObject: true,
+		isParentableExpression: false,
 		metadata: [
 			AzFuncMetadata.OutputMetadata(BlobStorageParams.TransportTypeBlobOutputParam),
 			...AzFuncMetadata.ExtensionBundleMetadata(AzFuncExtension.AzureStorage),
