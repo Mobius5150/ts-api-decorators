@@ -16,12 +16,12 @@
   },
   "dependencies": {
     "@types/node": "^14.10.1",
-    "ts-api-decorators": "^0.1.38",
-    "ts-api-decorators-azure-function": "^0.1.38",
+    "ts-api-decorators": "^0.2.0",
+    "ts-api-decorators-azure-function": "^0.2.0",
     "ts-node": "^8.6.2",
-    "typescript": "3.7.X"
+    "typescript": "^4.x"
 	},
 	"resolutions": {
-		"typescript": "^3.7 < 3.8"
+		"typescript": "^4.x"
 	}
 }

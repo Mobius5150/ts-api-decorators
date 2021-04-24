@@ -73,7 +73,7 @@ Firstly, in the `tsconfig.json`, `experimentalDecorators` must be set to `true` 
         "experimentalDecorators": true,
         "plugins": [
             {
-                "transform": "ts-api-decorators/dist/transformer"
+                "transform": "ts-api-decorators-express/dist/transformer"
             }
         ]
     }
