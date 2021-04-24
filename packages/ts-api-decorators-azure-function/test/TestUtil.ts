@@ -297,6 +297,10 @@ export class TestServer {
 		}
 
 		const destinationPath = path.join(this.opts.packageSymlink, `/${packageJson.name}`);
+		if (fs.existsSync(destinationPath)) {
+			fs.unlinkSync(destinationPath);
+		}
+		
 		fs.symlinkSync(packagePath, destinationPath, 'dir');
 	}
 }
