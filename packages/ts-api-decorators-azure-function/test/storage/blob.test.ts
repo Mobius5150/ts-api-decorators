@@ -36,6 +36,7 @@ describe('storage::blob', () => {
 			compileOutDir: path.resolve(__dirname, './sources/dist'),
 			tsConfigJson: path.resolve(__dirname, './sources/tsconfig.json'),
 			packageJson: path.resolve(__dirname, '../../package.json'),
+			packageSymlink: path.resolve(__dirname, './sources/node_modules'),
 			startTimeout: 30000,
 			portNo: testPort,
 		});

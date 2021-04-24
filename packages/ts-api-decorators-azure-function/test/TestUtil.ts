@@ -4,6 +4,7 @@ import transformer from '../src/transformer';
 import { spawn, ChildProcess } from 'child_process';
 import { Command } from 'commander';
 import { AzureFunctionGenerateCommand } from '../src/commands';
+import { PackageJson } from 'ts-api-decorators/dist/command/CommandUtil';
 import { assert } from 'chai';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -23,6 +24,7 @@ export interface TestServerOpts {
 	pollFrequency?: number,
 	showOutputOnExit?: boolean,
 	disableDevelopmentStorage?: boolean,
+	packageSymlink?: string,
 }
 
 export interface WaitTillConditionTrueArgs {
@@ -110,6 +112,10 @@ export class TestServer {
 			this.opts.compileOutDir,
 			this.opts.functionsOutDir,
 		]);
+
+		if (this.opts.packageSymlink) {
+			await this.createPackageSymlink();
+		}
 
 		let commander = new Command();
 		new AzureFunctionGenerateCommand(commander, {
@@ -281,5 +287,16 @@ export class TestServer {
 		if (this.process && typeof this.exitCode === 'undefined') {
 			this.process.kill('SIGKILL');
 		}
+	}
+
+	private async createPackageSymlink() {
+		const packagePath = path.resolve(__dirname, '../');
+		const packageJson: PackageJson = JSON.parse(fs.readFileSync(path.join(packagePath, '/package.json'), { 'encoding': 'utf8' }));
+		if (!fs.existsSync(this.opts.packageSymlink)) {
+			fs.mkdirSync(this.opts.packageSymlink);
+		}
+
+		const destinationPath = path.join(this.opts.packageSymlink, `/${packageJson.name}`);
+		fs.symlinkSync(packagePath, destinationPath, 'dir');
 	}
 }
