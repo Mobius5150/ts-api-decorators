@@ -77,6 +77,7 @@ export class TreeTransformer implements ITransformer {
 			[DecoratorNodeTreeHierarchyType.Modifier]: <IHandlerTreeNode[]>[],
 		};
 
+		let visitedNodeChildren = false;
 		for (let i = 0; i < node.decorators.length; ++i) {
 			nodeDecorators[i] = node.decorators[i];
 			for (const definition of decorators) {
@@ -92,7 +93,10 @@ export class TreeTransformer implements ITransformer {
 						this.cacheDecoratorTreeElement(node, nodeDecorators[i], treeNode);
 					}
 
-					node = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode);
+					if (definition.isParentableExpression && !visitedNodeChildren) {
+						node = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode);
+						visitedNodeChildren = true;
+					}
 				}
 			}
 		}
@@ -105,7 +109,9 @@ export class TreeTransformer implements ITransformer {
 		}
 
 		if (this.applyTransformation) {
-			node.decorators = ts.createNodeArray(nodeDecorators);
+			node = Object.assign(
+				Object.create(Object.getPrototypeOf(node)),
+				{ ...node, decorators: ts.factory.createNodeArray(nodeDecorators) });
 		}
 
 		return node;

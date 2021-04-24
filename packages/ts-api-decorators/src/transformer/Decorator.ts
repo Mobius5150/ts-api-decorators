@@ -79,6 +79,14 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		return true;
 	}
 
+	public get isParentableExpression() {
+		if (typeof this.definition.isParentableExpression === 'boolean') {
+			return this.definition.isParentableExpression;
+		}
+		
+		return true;
+	}
+
 	public get treeHierarchyType() {
 		if (typeof this.definition.treeHierarchyType !== 'undefined') {
 			return this.definition.treeHierarchyType;
@@ -131,11 +139,17 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 
 	protected getNodeLocation(node: N): IHandlerLocation {
 		const sourceFile = node.getSourceFile();
+		if (!sourceFile) {
+			return {
+				position: node.pos,
+			}
+		}
+
 		const posDetails = sourceFile.getLineAndCharacterOfPosition(node.pos);
 		return {
 			...posDetails,
 			file: sourceFile.fileName,
-			position:node.pos,
+			position: node.pos,
 		}
 	}
 
@@ -240,7 +254,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 
 		return {
 			metadata,
-			decorator: ts.createDecorator(this.getOutputDecoratorArgs(decorator.expression, exprArguments, metadata, context)),
+			decorator: ts.factory.createDecorator(this.getOutputDecoratorArgs(decorator.expression, exprArguments, metadata, context)),
 		}
 	}
 	
@@ -264,7 +278,8 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 	}
 
 	protected getOutputDecoratorArgs(expression: ts.CallExpression, exprArguments: IExprWithMetadata[], metadataCollection: ITransformerMetadata[], context: ITransformContext) {
-		const clonedExpression: ts.CallExpression = { ...expression };
+		let clonedExpression: ts.CallExpression = { ...expression };
+		let exprArgs = expression.arguments;
 		if (this.definition.transformArgumentsToObject) {
 			let paramArgs: object = {};
 			if (Array.isArray(this.definition.transformArgumentsToObject)) {
@@ -294,12 +309,14 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 				}
 			}
 
-			clonedExpression.arguments = ts.createNodeArray([context.typeSerializer.objectToLiteral(paramArgs)]);
+			exprArgs = ts.factory.createNodeArray([context.typeSerializer.objectToLiteral(paramArgs)]);
 		} else {
-			clonedExpression.arguments = ts.createNodeArray(exprArguments.filter(arg => !!arg.expression).map(arg => arg.expression));
+			exprArgs = ts.factory.createNodeArray(exprArguments.filter(arg => !!arg.expression).map(arg => arg.expression));
 		}
 
-		return clonedExpression;
+		return Object.assign(
+			Object.create(Object.getPrototypeOf(expression)),
+			{ ...expression, arguments: exprArgs });
 	}
 
 	protected parenthesizeExpression(expression: ts.Expression) {

@@ -15,9 +15,9 @@ export enum HandlerTreeNodeType {
 }
 
 export interface IHandlerLocation {
-	file: string;
-	line: number;
-	character: number;
+	file?: string;
+	line?: number;
+	character?: number;
 	position: number;
 }
 
@@ -96,7 +96,7 @@ export interface ITransformedTreeElement<T extends ts.Node> {
 	decoratorTreeNode: IHandlerTreeNode;
 }
 
-function isNodeByType<T extends any>(type: HandlerTreeNodeType): (node: IHandlerTreeNode) => node is T {
+function isNodeByType<T extends IHandlerTreeNode>(type: HandlerTreeNodeType): (node: IHandlerTreeNode) => node is T {
 	return (node): node is T => {
 		return node.type === type;
 	};

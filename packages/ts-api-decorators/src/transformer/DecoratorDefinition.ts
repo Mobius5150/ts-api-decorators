@@ -33,6 +33,7 @@ export interface IDecoratorDefinitionBase extends IDecorationFunctionTransformIn
 	arguments: IDecoratorArgument[];
 	metadata?: ITransformerMetadata[];
 	isCallExpression?: boolean;
+	isParentableExpression?: boolean;
 	treeHierarchyType?: DecoratorNodeTreeHierarchyType;
 	
 	/**

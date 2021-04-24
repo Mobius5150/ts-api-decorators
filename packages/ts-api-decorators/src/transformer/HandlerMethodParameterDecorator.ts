@@ -64,7 +64,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 					typeref: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.Typeref),
 					validationFunc: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationFunction),
 				},
-				parameterIndex: node.parent.parameters.indexOf(node),
+				parameterIndex: node.parent.parameters.findIndex(n => n.name == node.name), // node.parent.parameters.indexOf(node),
 				propertyKey: this.getParameterName(node),
 				type: this.definition.parameterType,
 				transportTypeId: this.transportTypeId,
