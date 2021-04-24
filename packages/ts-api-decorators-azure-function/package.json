@@ -18,11 +18,11 @@
   },
   "dependencies": {
     "commander": "^4.0.1",
-    "ts-api-decorators": "^0.1.38",
-    "uuid": "^3.4.0"
+    "ts-api-decorators": "^0.1.38"
   },
   "devDependencies": {
     "@azure/functions": "^1.0.3",
+    "@azure/storage-blob": "^12.5.0",
     "@types/bent": "^7.3.0",
     "@types/chai": "^4.2.0",
     "@types/mocha": "^5.2.7",
@@ -38,7 +38,8 @@
     "strip-dirs": "^3.0.0",
     "supertest": "^4.0.2",
     "ts-node": "^8.3.0",
-    "typescript": "^3.7 < 3.8"
+    "typescript": "^3.7 < 3.8",
+    "uuid": "^3.4.0"
   },
   "peerDependencies": {
     "typescript": "^3.7 < 3.8"

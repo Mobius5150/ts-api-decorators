@@ -1,4 +1,4 @@
-import { Api, AzFuncBlob, ApiPathParam, AzFuncBlobOutput, AzFuncBlobPropertiesParam, AzFuncBlobParam, IAzureStorageBlobProperties } from "../../../../dist";
+import { Api, AzFuncBlob, ApiPathParam, AzFuncBlobOutput, AzFuncBlobPropertiesParam, AzFuncBlobParam, IAzureStorageBlobProperties } from "ts-api-decorators-azure-function";
 
 interface BlobReturn {
 	blobContents: object;
@@ -18,40 +18,44 @@ class MyBlobStorageApi {
 	/**
 	 * This method shows how to register for a blob creation/update event and get path parameters from the event.
 	 */
-	@AzFuncBlob('testBlobChanged/{blobName}.{blobExt}')
-	@AzFuncBlobOutput('blobContents', 'testoutput/blobChanged/{blobName}/{blobExt}')
+	@AzFuncBlob('testblobchanged/{blobName}.in')
+	@AzFuncBlobOutput('blobContents', 'testblobchanged/{blobName}.out')
 	blobChanged(
 		@ApiPathParam() blobName: string,
-		@ApiPathParam() blobExt: string,
+		@ApiPathParam() blobExt: string = 'in',
 	) : BlobReturn {
-		console.log(`Blob trigger executed for blob: ${blobName}.${blobExt}`);
 		return {
 			blobContents: { blobName, blobExt }
 		}
 	}
 
-	// /**
-	//  * This method shows how to use `AzFuncBlobParam` to get a buffer with the contents of the blob.
-	//  */
-	// @AzFuncBlob('testBlobChangedWithContents/{blobName}.{blobExt}')
-	// blobChangedWithContents(
-	// 	@ApiPathParam() blobName: string,
-	// 	@ApiPathParam() blobExt: string,
-	// 	@AzFuncBlobParam() blob: Buffer
-	// ) {
-	// 	console.log(`New blob ${blobName}.${blobExt} contents: `, blob.toString().substr(0, 300));
-	// }
+	/**
+	 * This method shows how to use `AzFuncBlobParam` to get a buffer with the contents of the blob.
+	 */
+	@AzFuncBlob('testblobchangedwithcontents/{blobName}.in')
+	@AzFuncBlobOutput('blobContents', 'testblobchangedwithcontents/{blobName}.out')
+	blobChangedWithContents(
+		@ApiPathParam() blobName: string,
+		@AzFuncBlobParam() blob: Buffer,
+		@ApiPathParam() blobExt: string = 'in',
+	) {
+		return {
+			blobContents: { blobName, blobExt, contents: blob.toString() }
+		}
+	}
 
-	// /**
-	//  * This method shows how to use `AzFuncBlobPropertiesParam` to get a buffer with the contents of the blob.
-	//  */
-	// @AzFuncBlob('testBlobChangedWithProps/{blobName}.{blobExt}')
-	// blobChangedWithProps(
-	// 	@ApiPathParam() blobName: string,
-	// 	@ApiPathParam() blobExt: string,
-	// 	@AzFuncBlobPropertiesParam() blob: IAzureStorageBlobProperties
-	// ) {
-	// 	console.log(`Blob trigger executed for blob: ${blobName}.${blobExt} with properties: `, blob);
-	// }
-	
+	/**
+	 * This method shows how to use `AzFuncBlobPropertiesParam` to get a buffer with the contents of the blob.
+	 */
+	@AzFuncBlob('testblobchangedwithprops/{blobName}.in')
+	@AzFuncBlobOutput('blobContents', 'testblobchangedwithprops/{blobName}.out')
+	blobChangedWithProps(
+		@ApiPathParam() blobName: string,
+		@ApiPathParam() blobExt: string = 'in',
+		@AzFuncBlobPropertiesParam() props: IAzureStorageBlobProperties
+	) {
+		return {
+			blobContents: { blobName, blobExt, props }
+		}
+	}
 }

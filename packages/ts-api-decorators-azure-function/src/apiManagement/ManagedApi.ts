@@ -6,15 +6,18 @@ import {
 	ApiHeadersDict,
 	IApiInvocationParams,
 	IApiInvocationResult,
-	ManagedApiInternal
+	ManagedApiInternal,
+	HttpError
 } from 'ts-api-decorators';
 import { AzureFunctionHandlerFunc, IAzureFunctionsTimer } from "./AzureFunctionTypes";
 import { HttpBindingTriggerFactory } from "../generators/Bindings/HttpBinding";
-import { AzFuncBinding } from "../metadata/AzFuncBindings";
+import { AzFuncBinding, AzFuncBindingNameReturn } from "../metadata/AzFuncBindings";
 import { TimerBindingTriggerFactory } from "../generators/Bindings/TimerBinding";
 import { BlobStorageBindingTriggerFactory } from "../generators/Bindings/BlobStorageBinding";
 import { IAzureStorageBlobProperties } from "../decorators";
 import { IApiProcessor } from "ts-api-decorators/dist/apiManagement/ApiProcessing/ApiProcessing";
+import { getMetadataValueByDescriptor } from "ts-api-decorators/dist/transformer/TransformerMetadata";
+import { AzFuncArgumentExtractors } from "../decorators/ArgumentExtractors";
 
 export function registerApiProcessorsOnHandler(handlerMethod: object, processors: IApiProcessor<IApiInvocationParams<IAzureFunctionManagedApiContext> | IApiInvocationResult>[]): void {
 	ManagedApiInternal.AddApiProcessorsToObject(processors, handlerMethod);
@@ -69,12 +72,39 @@ export class ManagedApi extends BaseManagedApi<IAzureFunctionManagedApiContext> 
 				
 				const handler = singleton.getHandler(method, descr.route);
 				const result = await handler.wrappedHandler(invocationParams);
-				// TODO: This won't play nice with non-http handler types
-				context.res = {
-					status: result.statusCode,
-					body: result.body,
-					headers: this.getHeadersObject(result.headers),
-				};
+				if (!context.res && result.statusCode >= 300) {
+					// TODO: Need to handle error responses in non-http functions
+					if (typeof result.body === 'string') {
+						throw new HttpError(result.body, result.statusCode);
+					}
+
+					throw new HttpError('Unknown Error', result.statusCode);
+				}
+
+				for (const bindingDef of context.bindingDefinitions) {
+					if (bindingDef.direction !== 'out') {
+						continue;
+					}
+
+					let assignValue = result.body;
+					if (bindingDef.name === AzFuncBindingNameReturn) {
+						assignValue = result.body
+					} else if (typeof result.body[bindingDef.name] === 'undefined') {
+						throw new Error(`Could not find output binding ${bindingDef.name} of type ${bindingDef.type} on result`);
+					} else {
+						assignValue = result.body[bindingDef.name];
+					}
+
+					if (bindingDef.type === 'http') {
+						context.res = {
+							status: result.statusCode,
+							body: assignValue,
+							headers: this.getHeadersObject(result.headers),
+						};
+					} else {
+						context.bindings[bindingDef.name] = assignValue;
+					}
+				}
 			} catch (e) {
 				const response = {
 					status: 500,

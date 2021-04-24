@@ -25,6 +25,50 @@ export interface TestServerOpts {
 	disableDevelopmentStorage?: boolean,
 }
 
+export interface WaitTillConditionTrueArgs {
+	testInterval?: number;
+	timeout?: number;
+};
+
+export function propsFromObject<T extends object>(obj: T, props: Array<keyof T>): Partial<T> {
+	const r: Partial<T> = {};
+	for (const prop of props) {
+		r[prop] = obj[prop];
+	}
+
+	return r;
+}
+
+export function waitTillConditionTrue(testFunc: () => Promise<boolean> | boolean, args: WaitTillConditionTrueArgs) {
+	args = {
+		testInterval: 100,
+		timeout: 30000,
+		...args,
+	};
+
+	const startTime = Date.now();
+	return new Promise<void>(async (resolve, reject) => {
+		while ((Date.now() - startTime) <= args.timeout) {
+			const result = await testFunc();
+			if (result) {
+				resolve();
+			} else {
+				await asyncWait(args.testInterval);
+			}
+		}
+
+		reject(new Error(`waitTillConditionTrue timed out after ${Date.now() - startTime}ms`));
+	});
+}
+
+export function asyncWait(timeout: number) {
+	return new Promise<void>((resolve) => {
+		setTimeout(() => {
+			resolve();
+		}, timeout);
+	});
+}
+
 export class TestServer {
 	private static readonly WebJobsStorageEnvName = 'AzureWebJobsStorage';
 	private process: ChildProcess;
@@ -42,7 +86,7 @@ export class TestServer {
 	}
 
 	private removeDir(dir: string) {
-		return new Promise((resolve, reject) => {
+		return new Promise<void>((resolve, reject) => {
 			rimraf(dir, e => {
 				if (e) {
 					reject(e);

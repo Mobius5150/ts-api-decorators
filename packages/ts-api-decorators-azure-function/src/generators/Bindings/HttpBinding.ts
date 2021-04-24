@@ -3,7 +3,7 @@ import { ApiMethod, ManagedApi, IApiInvocationParams, ApiStdHeaderName, parseApi
 import { AzureFunctionParams, IAzureFunctionManagedApiContext } from "../..";
 import { Context } from "@azure/functions";
 import { trimLeft } from "../../Util/TrimLeft";
-import { AzFuncBinding } from "../../metadata/AzFuncBindings";
+import { AzFuncBinding, AzFuncBindingNameReturn } from "../../metadata/AzFuncBindings";
 
 export class HttpBindingTriggerFactory {
 	public static GetBindingForMethod(method: ApiMethod): IBindingTrigger {
@@ -25,7 +25,7 @@ export class HttpBindingTriggerFactory {
 				{
 					type: 'http',
 					direction: 'out',
-					name: AzureFunctionParams.TransportTypeResponseParam,
+					name: AzFuncBindingNameReturn,
 				}
 			])
 		};

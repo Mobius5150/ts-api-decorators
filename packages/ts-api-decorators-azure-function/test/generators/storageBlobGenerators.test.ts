@@ -61,7 +61,7 @@ describe('generators-storage-blob', () => {
 							connection: 'inConnectionStr',
 						}),
 						(<IBlobOutputBinding>{
-							name: 'outputblob',
+							name: 'blobContents',
 							direction: 'out',
 							type: 'blob',
 							path: 'outPath',

@@ -5,7 +5,7 @@ import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunct
 import { HandlerMethodModifierDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodModifierDecorator";
 import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
 import { HandlerMethodDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodDecorator";
-import { AzFuncMetadata } from "../../../metadata/AzFuncMetadata";
+import { AzFuncMetadata, IAzFunctionArgs } from "../../../metadata/AzFuncMetadata";
 import { AzFuncBinding } from "../../../metadata/AzFuncBindings";
 import { BlobStorageArgumentExtractors } from "./ArgumentExtractors";
 import { BuiltinMetadata } from "ts-api-decorators/dist/transformer/TransformerMetadata";
@@ -164,7 +164,7 @@ export abstract class BlobStorageParams {
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<any>
 		) => {
-			// const args = <__ApiParamArgs>a;
+			// const args = <IAzFunctionArgs>a;
 			// ManagedApiInternal.AddApiModifierMetadataToObject(
 			// 	{
 			// 		propertyKey,

@@ -3,11 +3,12 @@ import { ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition
 import { __ApiParamArgs, InternalTypeUtil } from "ts-api-decorators/dist/apiManagement/InternalTypes";
 import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction } from "ts-api-decorators/dist/decorators/DecoratorUtil";
 import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
+import { AzFuncBindingNameReturn } from "../metadata/AzFuncBindings";
 import { AzFuncMetadata } from "../metadata/AzFuncMetadata";
 
 export abstract class AzureFunctionParams {
 	public static readonly TransportTypeRequestParam = 'request';
-	public static readonly TransportTypeResponseParam = 'response';
+	public static readonly TransportTypeResponseParam = AzFuncBindingNameReturn;
 
 	public static AzFuncApiRequestParam(): ParameterDecorator;
 	@ApiDecorator(HandlerMethodParameterDecorator, {

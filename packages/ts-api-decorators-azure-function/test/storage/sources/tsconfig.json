@@ -8,7 +8,8 @@
 		"esModuleInterop": false,
 		"experimentalDecorators": true,
 		"declaration": true,
-		"rootDir": "src"
+		"rootDir": "src",
+		// "rootDirs": ["src", "../../../src"]
 	},
 	"include": [
 		"src"

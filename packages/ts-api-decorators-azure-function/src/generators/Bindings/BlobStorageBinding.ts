@@ -165,7 +165,7 @@ export class BlobStorageOutputBindingFactory {
 			{
 				outputTypeId: BlobStorageParams.TransportTypeBlobOutputParam,
 				getBindingForOutput: (output, route) => {
-					const name = getMetadataValueByDescriptor<string>(output.metadata, AzFuncMetadata.Output);
+					const name = getMetadataValueByDescriptor<string>(output.metadata, AzFuncMetadata.OutField);
 					if (!name) {
 						throw new Error('Output binding must have a name');
 					}

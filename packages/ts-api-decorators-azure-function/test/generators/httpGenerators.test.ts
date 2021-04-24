@@ -9,6 +9,7 @@ import { IParseApiResult } from 'ts-api-decorators/dist/command/CliCommand';
 import { RouteReducer } from '../../src/Util/RouteReducer';
 import { IHttpTriggerBinding, IHttpOutputBinding } from '../../src/generators/Bindings/Bindings';
 import { assertRealInclude } from 'ts-api-decorators/dist/Testing/TestUtil';
+import { AzureFunctionParams } from '../../src';
 
 describe('generators-http', () => {
 	let apiParser: ApiParser = new ApiParser();
@@ -57,7 +58,7 @@ describe('generators-http', () => {
 					assertRealInclude(parsedGenerated, (<IFunctionJson>{
 						bindings: [
 							(<IHttpTriggerBinding>{
-								name: 'request',
+								name: AzureFunctionParams.TransportTypeRequestParam,
 								direction: 'in',
 								type: 'httpTrigger',
 								route: verb,
@@ -66,12 +67,12 @@ describe('generators-http', () => {
 								],
 							}),
 							(<IHttpOutputBinding>{
-								name: 'response',
+								name: AzureFunctionParams.TransportTypeResponseParam,
 								direction: 'out',
 								type: 'http',
 							}),
 						],
-						scriptFile: 'index.js'
+						scriptFile: './index.js'
 					}));
 
 					++assertionCount;
@@ -97,14 +98,14 @@ describe('generators-http', () => {
 				assertRealInclude(parsedGenerated, (<IFunctionJson>{
 					bindings: [
 						(<IHttpTriggerBinding>{
-							name: 'request',
+							name: AzureFunctionParams.TransportTypeRequestParam,
 							direction: 'in',
 							type: 'httpTrigger',
 							route: 'hello',
 							methods,
 						}),
 						(<IHttpOutputBinding>{
-							name: 'response',
+							name: AzureFunctionParams.TransportTypeResponseParam,
 							direction: 'out',
 							type: 'http',
 						}),
