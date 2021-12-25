@@ -5,6 +5,7 @@ import { BuiltinMetadata } from "./TransformerMetadata";
 import { ITransformContext } from './ITransformContext';
 import { ExpressionWrapper } from './ExpressionWrapper';
 import { ApiProcessorTime, ApiProcessorScope } from '../apiManagement/ApiProcessing/ApiProcessing';
+import { CompilationError } from '../Util/CompilationError';
 
 export abstract class BuiltinArgumentExtractors {
 	public static readonly RouteArgument: IDecoratorArgument = {
@@ -78,7 +79,7 @@ export abstract class BuiltinArgumentExtractors {
 		optional: true,
 		metadataExtractor: (args) => {
 			if (!ts.isRegularExpressionLiteral(args.argumentExpression)) {
-				throw new Error('Regular expression must be a regex literal');
+				throw new CompilationError('Regular expression must be a regex literal', args.node);
 			}
 
 			return {
@@ -161,7 +162,7 @@ export abstract class BuiltinArgumentExtractors {
 					node.type,
 					context.typeChecker.getReturnTypeOfSignature(callSignatures[0]));
 			} else if (callSignatures.length > 1) {
-				throw new Error('Cannot handle method with multiple call signatures');
+				throw new CompilationError('Cannot handle method with multiple call signatures', node);
 			}
 		}
 	}

@@ -6,6 +6,7 @@ import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, getMetadataValueByDescriptor, BuiltinMetadata } from './TransformerMetadata';
 import { Decorator, DecoratorNodeType } from './Decorator';
 import { ExpressionWrapper, ParamArgsInitializer } from './ExpressionWrapper';
+import { CompilationError } from '../Util/CompilationError';
 
 export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDeclaration, IParameterDecoratorDefinition> implements IParameterDecoratorDefinition {
 	constructor(
@@ -112,7 +113,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			}
 			if (this.parameterTypeRestrictions
 				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`);
+				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
 			}
 		}
 
@@ -135,7 +136,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			}
 			if (this.parameterTypeRestrictions
 				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`);
+				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
 			}
 
 			if (internalType.type === 'object' && type.isClass() && ts.isTypeReferenceNode(node.type)) {
@@ -200,7 +201,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		} else if (ts.isIdentifier(node.name)) {
 			name = node.name.text;
 		} else {
-			throw new Error('Unknown node name type');
+			throw new CompilationError('Unknown node name type', node);
 		}
 
 		return name;

@@ -7,6 +7,7 @@ import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } f
 import { isNamedNode } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 import { exception } from 'console';
+import { CompilationError } from '../Util/CompilationError';
 
 export enum DecoratorNodeType {
 	Class,
@@ -177,7 +178,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 			} else if (ts.isIdentifier(node.name)) {
 				name = node.name.text;
 			} else {
-				throw new Error('Unknown node name type');
+				throw new CompilationError('Unknown node name type', node);
 			}
 
 			return {
@@ -212,7 +213,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 						continue;
 					}
 				} else if (!argDef.optional) {
-					throw new Error('Expected argument');
+					throw new CompilationError('Expected argument', node);
 				}
 			} else {
 				this.checkTypeCompatibility(argDef, arg, context);
