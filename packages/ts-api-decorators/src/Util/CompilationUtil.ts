@@ -28,9 +28,10 @@ export function getDefaultCompilerOptions(): ts.CompilerOptions {
 		noEmitOnError: true,
 		noImplicitAny: false,
 		experimentalDecorators: true,
-		target: ts.ScriptTarget.ES2019,
+		target: ts.ScriptTarget.ES2015,
 		downlevelIteration: true,
 		sourceMap: true,
+		
 	}
 }
 

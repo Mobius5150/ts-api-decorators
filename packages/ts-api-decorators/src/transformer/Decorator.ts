@@ -6,7 +6,6 @@ import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } from './TransformerMetadata';
 import { isNamedNode } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
-import { exception } from 'console';
 import { CompilationError } from '../Util/CompilationError';
 
 export enum DecoratorNodeType {

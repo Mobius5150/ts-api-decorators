@@ -7,6 +7,7 @@ import { ITransformerMetadata, getMetadataValueByDescriptor, BuiltinMetadata } f
 import { Decorator, DecoratorNodeType } from './Decorator';
 import { ExpressionWrapper, ParamArgsInitializer } from './ExpressionWrapper';
 import { CompilationError } from '../Util/CompilationError';
+import { combineTsComments } from '../Util/TsComments';
 
 export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDeclaration, IParameterDecoratorDefinition> implements IParameterDecoratorDefinition {
 	constructor(
@@ -210,7 +211,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 	private getParamDescription(param: ts.ParameterDeclaration): string | undefined {
 		const paramTags = ts.getJSDocParameterTags(param);
 		if (paramTags.length) {
-			return paramTags[0].comment;
+			return combineTsComments(paramTags[0].comment);
 		}
 
 		return undefined;

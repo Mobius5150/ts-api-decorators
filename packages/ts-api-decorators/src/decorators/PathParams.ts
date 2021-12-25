@@ -26,7 +26,7 @@ abstract class PathParams {
 		],
 	})
 	public static ApiPathParamString(a?: any): ParameterDecorator {
-		return this.ApiPathParam(a);
+		return PathParams.ApiPathParam(a);
 	}
 
 	/**
@@ -50,7 +50,7 @@ abstract class PathParams {
 		],
 	})
 	public static ApiPathParamNumber(a?: any): ParameterDecorator {
-		return this.ApiPathParam(a);
+		return PathParams.ApiPathParam(a);
 	}
 
 	/**

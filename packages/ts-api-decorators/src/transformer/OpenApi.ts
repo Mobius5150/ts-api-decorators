@@ -4,6 +4,7 @@ import { ITransformerMetadata, IMetadataType } from './TransformerMetadata';
 import { isNodeWithJsDoc, WithJsDoc } from './TransformerUtil';
 import { IExtractedTag } from './IExtractedTag';
 import { IHandlerTreeNodeHandler, HandlerTreeNodeType, IHandlerTreeNodeHandlerCollection } from './HandlerTree';
+import { combineTsComments } from '../Util/TsComments';
 
 export const enum OpenApiMetadataType {
     Summary = 'summary',
@@ -112,7 +113,7 @@ export class OpenApiMetadataExtractors {
 				node.tags
 					.filter(t => t.tagName.text === OpenApiMetadataExtractors.JsDocTagTag)
 					.map(t => {
-						const parts = t.comment.split(/\s+/);
+						const parts = combineTsComments(t.comment).split(/\s+/);
 						return {
 							name: parts.shift(),
 							description: parts.join(' '),
@@ -129,7 +130,7 @@ export class OpenApiMetadataExtractors {
 			if (node.tags) {
 				return node.tags.filter(t => t.tagName.text === tag)
 					.map(t => {
-						const parts = t.comment?.split(/\s+/);
+						const parts = combineTsComments(t.comment)?.split(/\s+/);
 						return {
 							name: parts ? parts.shift() : tag,
 							description: parts?.join(' '),
@@ -143,7 +144,7 @@ export class OpenApiMetadataExtractors {
 
 	private static jsdocTagString(tag: ts.JSDocTag | undefined): string {
 		if (tag) {
-			return tag.comment;
+			return combineTsComments(tag.comment);
 		}
 
 		return undefined;
