@@ -1,13 +1,13 @@
 {
   "name": "ts-api-decorators-azure-function",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "API Decorators for typescript and Azure Functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc && npm run build:copy_templates",
     "build:copy_templates": "copyfiles -u 1 src/**/*.mustache dist",
-    "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
+    "test": "mocha -r ts-node/register -t 30000 test/**/*.test.ts",
     "prepublishOnly": "npm run build"
   },
   "author": "Mike Blouin <ts-api-decorators@michaelblouin.ca> (michaelblouin.ca)",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "commander": "^4.0.1",
-    "ts-api-decorators": "^0.2.1"
+    "ts-api-decorators": "^0.2.2"
   },
   "devDependencies": {
     "@azure/functions": "^1.0.3",
@@ -37,7 +37,7 @@
     "rimraf": "^3.0.2",
     "strip-dirs": "^3.0.0",
     "supertest": "^4.0.2",
-    "ts-node": "^8.3.0",
+    "ts-node": "^10.x",
     "typescript": "^4.x",
     "uuid": "^3.4.0"
   },
