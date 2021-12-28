@@ -337,8 +337,8 @@ export class OpenApiV3Extractor implements IExtractor {
     }
     
     private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject {
-        if (schema.definitions) {
-            this.addDefinitions(schema.definitions);
+        if (typeof schema.definitions !== 'boolean' && schema.definitions) {
+            this.addDefinitions(<{[k: string]: IJsonSchema}>schema.definitions);
 
             schema = { ...schema };
             delete schema.definitions;
@@ -352,7 +352,7 @@ export class OpenApiV3Extractor implements IExtractor {
             schema.$ref = this.replaceRefStr(schema.$ref);
         }
 
-        return <OpenAPIV3.SchemaObject>schema;
+        return <OpenAPIV3.SchemaObject><any>schema;
     }
 
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {

@@ -15,6 +15,7 @@ import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
 import { Func, OptionalAsyncFunc1 } from "../Util/Func";
 import { StreamCoercionMode, StreamCoercer } from "../Util/StreamCoercer";
 import { StreamIntermediary } from "../Util/StreamIntermediary";
+import { Schema } from "js-yaml";
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -567,7 +568,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 
 		if (args.typedef.type === 'object') {
-			const result = this.jsonValidator.validate(contents, args.typedef.schema);
+			const result = this.jsonValidator.validate(contents, <Schema>args.typedef.schema);
 			if (!result.valid) {
 				if (result.errors.length === 0) {
 					throw new HttpBodyParamInvalidTypeError(args.typedef.type);

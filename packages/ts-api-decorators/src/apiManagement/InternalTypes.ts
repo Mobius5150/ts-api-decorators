@@ -1,5 +1,6 @@
-import { IJsonSchema } from "openapi-types";
+import { JSONSchema7 } from 'json-schema';
 import { ClassConstructor } from "../Util/ClassConstructors";
+import * as tjs from "typescript-json-schema";
 
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
@@ -100,7 +101,7 @@ export interface InternalIntersectionTypeDefinition extends IntrinsicNamedType{
 	types: InternalTypeDefinition[];
 }
 
-export interface IJsonSchemaWithRefs extends IJsonSchema {
+export interface IJsonSchemaWithRefs extends JSONSchema7 {
 	$ref?: string;
 }
 

@@ -381,7 +381,7 @@ describe('transformer', () => {
 					...InternalTypeUtil.TypeAnyObject,
 					typename: 'IGreetResponse',
 					schema: {
-						'$ref': '#/definitions/IGreetResponse',
+						'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 					}
 				}),
 			]),
@@ -409,12 +409,12 @@ describe('transformer', () => {
 						...InternalTypeUtil.TypeAnyObject,
 						typename: 'IGreetResponse',
 						schema: {
-							'$ref': '#/definitions/IGreetResponse',
+							'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 						}
 					}
 				}),
 			]),
-		]));
+		]), undefined, { funcmode: 'matcher' });
 	});
 	
 	it('should parse object return types with promises', async () => {
@@ -426,11 +426,11 @@ describe('transformer', () => {
 					...InternalTypeUtil.TypeAnyObject,
 					typename: 'IGreetResponse',
 					schema: {
-						'$ref': '#/definitions/IGreetResponse',
+						'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 					}
 				}),
 			]),
-		]));
+		]), undefined, { funcmode: 'matcher' });
 	});
 
 	it('should parse string return types with promises', async () => {

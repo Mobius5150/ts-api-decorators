@@ -208,10 +208,10 @@ export class Swagger2Extractor implements IExtractor {
                 throw new Error(`Unable to serialize inline type: ${returnType.typename} (type: ${returnType.type})`);
         }
     }
-    
+
     private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): Partial<OpenAPIV2.SchemaObject> | Partial<OpenAPIV2.ReferenceObject> {
-        if (schema.definitions) {
-            this.addDefinitions(schema.definitions);
+        if (typeof schema.definitions !== 'boolean' && schema.definitions) {
+            this.addDefinitions(<{[k: string]: IJsonSchema}>schema.definitions);
 
             schema = { ...schema };
             delete schema.definitions;
@@ -221,7 +221,7 @@ export class Swagger2Extractor implements IExtractor {
             delete schema.$schema;
         }
 
-        return <OpenAPIV2.SchemaObject>schema;
+        return <OpenAPIV2.SchemaObject><any>schema;
     }
 
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {

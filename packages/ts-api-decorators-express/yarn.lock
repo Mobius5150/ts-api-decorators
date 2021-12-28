@@ -2008,6 +2008,33 @@ ts-api-decorators@^0.2.1:
   optionalDependencies:
     ts-api-decorators-azure-function "^0.2.0"
 
+ts-api-decorators@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.2.2.tgz#932fad1ba2ac7610f382076fc5206008f59c64e9"
+  integrity sha512-6u8YLcOMVNWIjuLffs2eoTbIv0M4omkKck20Y1VclGpItkyBzlxUmLQx1whp9C8UuXz/7lOZ/Tt6z/ex1L40ug==
+  dependencies:
+    "@azure/functions" "^1.0.3"
+    acorn "^7.0.0"
+    acorn-walk "^7.0.0"
+    cli-table "^0.3.1"
+    cls-hooked "^4.2.2"
+    commander "^3.0.2"
+    dependency-graph "^0.8.1"
+    fast-deep-equal "^2.0.1"
+    js-yaml "^3.13.1"
+    jsonschema "^1.2.4"
+    mustache "^3.2.1"
+    parse-gitignore "^1.0.1"
+    path-to-regexp "^6.1.0"
+    promise-fs "^2.1.1"
+    reflect-metadata "^0.1.13"
+    strip-dirs "^3.0.0"
+    swagger-parser "^8.0.3"
+    swagger-ts-client "^0.9.6"
+    typescript-json-schema "^0.39.0"
+  optionalDependencies:
+    ts-api-decorators-azure-function "^0.2.0"
+
 ts-node@^10.x:
   version "10.4.0"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.4.0.tgz#680f88945885f4e6cf450e7f0d6223dd404895f7"
@@ -2051,7 +2078,7 @@ type-is@~1.6.18:
     media-typer "0.3.0"
     mime-types "~2.1.24"
 
-typescript-json-schema@0.39.0:
+typescript-json-schema@0.39.0, typescript-json-schema@^0.39.0:
   version "0.39.0"
   resolved "https://registry.yarnpkg.com/typescript-json-schema/-/typescript-json-schema-0.39.0.tgz#223d4c0e11b4bc56d8f1dd98e275804ab488be9e"
   integrity sha512-ax2UxMMdEhWIwvTjxwJxLmbGIATkY4vxPHeS9wItTb1RfhiUU927YqVixopxURQejbW+ki2awg+eSwRnA5ZUgA==

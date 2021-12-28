@@ -122,7 +122,7 @@ export class TypeSerializer {
 			const refDefParts = schema.$ref.split('/');
 			const refDefName = refDefParts[refDefParts.length - 1];
 			const def = schema.definitions[refDefName];
-			if (def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
+			if (typeof def !== 'boolean' && def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
 				type = def.type || InternalTypeUtil.TypeEnum.type;
 				schema = {
 					...def,
@@ -149,7 +149,10 @@ export class TypeSerializer {
 			definitions: {},
 		};
 		const refs: string[] = [this.getRefShortName(schema.$ref)];
-		this.getRefsRecursive(schema.definitions[refs[0]], schema.definitions, refs);
+		const def = schema.definitions[refs[0]];
+		if (typeof def !== 'boolean') {
+			this.getRefsRecursive(def, schema.definitions, refs);
+		}
 		refs.forEach(v => newSchema.definitions[v] = schema.definitions[v]);
 
 		return newSchema;
@@ -195,7 +198,7 @@ export class TypeSerializer {
 			throw new Error('Reference not found: ' + reference.$ref);
 		}
 
-		return def;
+		return <IJsonSchemaWithRefs>def;
 	}
 
 	protected valueToLiteral(val: any): ts.Expression {
