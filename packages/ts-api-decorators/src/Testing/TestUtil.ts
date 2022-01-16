@@ -46,12 +46,14 @@ export function validateOrSetMatch<MatchType>(sym: Symbol, match: MatchType, ctx
 export interface IIncludeMatchContext {
 	path?: string;
 	funcmode?: 'matcher' | 'value';
+	undefinedValMode?: 'explicit' | 'allowMissingKeys',
 	symbols?: {[sym: symbol]: { matcher?: ArgMatcherFunction<any>, value?: any }};
 }
 
 function initContextDefaults(ctx: IIncludeMatchContext): IIncludeMatchContext {
 	const newCtx: IIncludeMatchContext = {
 		funcmode: 'value',
+		undefinedValMode: 'allowMissingKeys',
 		...ctx,
 		symbols: {},
 	};
@@ -82,6 +84,7 @@ export function assertRealInclude(actual: object, expected: object, path: string
 	for (const expectedKey of [...Object.keys(expected), ...Object.getOwnPropertySymbols(expected)]) {
 		let actualKey = expectedKey;
 		const propPath = `${path}.${expectedKey.toString()}`;
+		const expectedVal = expected[expectedKey];
 		if (typeof expectedKey === 'symbol' && expectedKey in ctx.symbols) {
 			const symval = ctx.symbols[expectedKey];
 			if (!symval.matcher(symval.value, ctx)) {
@@ -99,10 +102,13 @@ export function assertRealInclude(actual: object, expected: object, path: string
 
 			actualKey = symval.value;
 		} else {
-			assert.property(actual, expectedKey as any, `Expected property ${propPath}`);
+			if (ctx.undefinedValMode === 'allowMissingKeys' && typeof expectedVal === 'undefined') {
+				assert.isUndefined(actual[expectedKey], `Expected property ${propPath} to not exist or be undefined`);
+			} else {
+				assert.property(actual, expectedKey as any, `Expected property ${propPath}`);
+			}
 		}
 
-		const expectedVal = expected[expectedKey];
 		if (typeof expectedVal === 'object') {
 			if (Array.isArray(expectedVal)) {
 				assertRealArrayInclude(actual[actualKey], expectedVal, propPath, ctx);

@@ -1,5 +1,9 @@
 import { Api, ApiGetMethod, ApiQueryParam } from "../../../src";
 
+interface Response1 {
+	response: string | number;
+}
+
 /**
  * @tags apis All apis
  */
@@ -42,5 +46,13 @@ class MyApi {
 		}
 
 		return result;
+	}
+
+	@ApiGetMethod<Response1>('/helloOneOf')
+	greetOneOf(
+	): Response1 {
+		return {
+			'response': '',
+		};
 	}
 }

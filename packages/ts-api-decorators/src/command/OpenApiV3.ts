@@ -32,7 +32,7 @@ export class OpenApiV3Extractor implements IExtractor {
         private readonly opts: IOpenApiV3Opts,
     ) {}
 
-    protected getDocument(): OpenAPIV3.Document {
+    public getDocument(): OpenAPIV3.Document {
         const doc: OpenAPIV3.Document = {
             openapi: OpenApiV3Extractor.SwaggerVersion,
             info: {
@@ -383,9 +383,20 @@ export class OpenApiV3Extractor implements IExtractor {
                     let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
                     if (newTypes.length === 0) {
                         removeProps.push(property);
+                    } else if (newTypes.length === 1) {
+                        pdef.type = newTypes[0];
                     } else {
-                        pdef.type = newTypes;
-                        (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
+                        pdef.oneOf = newTypes.map(t => {
+                            if (typeof t === 'string') {
+                                return {
+                                    type: t,
+                                }
+                            } else {
+                                return t;
+                            }
+                        });
+                        delete pdef.type;
+                        // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
                     }
                 }
 
