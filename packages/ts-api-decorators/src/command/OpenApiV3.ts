@@ -379,7 +379,7 @@ export class OpenApiV3Extractor implements IExtractor {
                     if (this.removableTypes.indexOf(pdef.type) !== -1) {
                         removeProps.push(property);
                     }
-                } else {
+                } else if (typeof pdef.type !== 'undefined') {
                     let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
                     if (newTypes.length === 0) {
                         removeProps.push(property);
@@ -395,6 +395,7 @@ export class OpenApiV3Extractor implements IExtractor {
                                 return t;
                             }
                         });
+
                         delete pdef.type;
                         // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
                     }

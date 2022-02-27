@@ -564,11 +564,6 @@ call-bind@^1.0.0, call-bind@^1.0.2:
     function-bind "^1.1.1"
     get-intrinsic "^1.0.2"
 
-call-me-maybe@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/call-me-maybe/-/call-me-maybe-1.0.1.tgz#26d208ea89e37b5cbde60250a15f031c16a4d66b"
-  integrity sha1-JtII6onje1y95gJQoV8DHBak1ms=
-
 camel-case@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/camel-case/-/camel-case-3.0.0.tgz#ca3c3688a4e9cf3a4cda777dc4dcbc713249cf73"
@@ -726,7 +721,7 @@ combined-stream@^1.0.6, combined-stream@~1.0.6:
   dependencies:
     delayed-stream "~1.0.0"
 
-commander@^2.15.1, commander@^2.7.1:
+commander@^2.15.1:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -1506,15 +1501,6 @@ jsesc@^2.5.1:
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-2.5.2.tgz#80564d2e483dacf6e8ef209650a67df3f0c283a4"
   integrity sha512-OYu7XEzjkCQ3C5Ps3QIZsQfNpqoJyZZA99wd9aWd05NCtC5pWOkShK2mkL6HXQR6/Cy2lbNdPlZBpuQHXE63gA==
 
-json-schema-ref-parser@^7.1.3:
-  version "7.1.4"
-  resolved "https://registry.yarnpkg.com/json-schema-ref-parser/-/json-schema-ref-parser-7.1.4.tgz#abb3f2613911e9060dc2268477b40591753facf0"
-  integrity sha512-AD7bvav0vak1/63w3jH8F7eHId/4E4EPdMAEZhGxtjktteUv9dnNB/cJy6nVnMyoTPBJnLwFK6tiQPSTeleCtQ==
-  dependencies:
-    call-me-maybe "^1.0.1"
-    js-yaml "^3.13.1"
-    ono "^6.0.0"
-
 json-schema-traverse@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz#69f6a87d9513ab8bb8fe63bdb0979c448e684660"
@@ -1598,11 +1584,6 @@ lodash.get@^4.4.2:
   version "4.4.2"
   resolved "https://registry.yarnpkg.com/lodash.get/-/lodash.get-4.4.2.tgz#2d177f652fa31e939b4438d5341499dfa3825e99"
   integrity sha1-LRd/ZS+jHpObRDjVNBSZ36OCXpk=
-
-lodash.isequal@^4.5.0:
-  version "4.5.0"
-  resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
-  integrity sha1-QVxEePK8wwEgwizhDtMib30+GOA=
 
 lodash@^4.17.15, lodash@^4.17.19:
   version "4.17.21"
@@ -1867,20 +1848,10 @@ once@^1.3.0:
   dependencies:
     wrappy "1"
 
-ono@^6.0.0:
-  version "6.0.1"
-  resolved "https://registry.yarnpkg.com/ono/-/ono-6.0.1.tgz#1bc14ffb8af1e5db3f7397f75b88e4a2d64bbd71"
-  integrity sha512-5rdYW/106kHqLeG22GE2MHKq+FlsxMERZev9DCzQX1zwkxnFwBivSn5i17a5O/rDmOJOdf4Wyt80UZljzx9+DA==
-
-openapi-schemas@^1.0.2:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/openapi-schemas/-/openapi-schemas-1.0.3.tgz#0fa2f19e44ce8a1cdab9c9f616df4babe1aa026b"
-  integrity sha512-KtMWcK2VtOS+nD8RKSIyScJsj8JrmVWcIX7Kjx4xEHijFYuvMTDON8WfeKOgeSb4uNG6UsqLj5Na7nKbSav9RQ==
-
-openapi-types@^1.3.5:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/openapi-types/-/openapi-types-1.3.5.tgz#6718cfbc857fe6c6f1471f65b32bdebb9c10ce40"
-  integrity sha512-11oi4zYorsgvg5yBarZplAqbpev5HkuVNPlZaPTknPDzAynq+lnJdXAmruGWP0s+dNYZS7bjM+xrTpJw7184Fg==
+openapi-types@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/openapi-types/-/openapi-types-10.0.0.tgz#0debbf663b2feed0322030b5b7c9080804076934"
+  integrity sha512-Y8xOCT2eiKGYDzMW9R4x5cmfc3vGaaI4EL2pwhDmodWw1HlK18YcZ4uJxc7Rdp7/gGzAygzH9SXr6GKYIXbRcQ==
 
 p-limit@^2.0.0, p-limit@^2.2.0:
   version "2.3.0"
@@ -2382,24 +2353,6 @@ supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-swagger-methods@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/swagger-methods/-/swagger-methods-2.0.2.tgz#5891d5536e54d5ba8e7ae1007acc9170f41c9590"
-  integrity sha512-/RNqvBZkH8+3S/FqBPejHxJxZenaYq3MrpeXnzi06aDIS39Mqf5YCUNb/ZBjsvFFt8h9FxfKs8EXPtcYdfLiRg==
-
-swagger-parser@^8.0.3:
-  version "8.0.4"
-  resolved "https://registry.yarnpkg.com/swagger-parser/-/swagger-parser-8.0.4.tgz#ddec68723d13ee3748dd08fd5b7ba579327595da"
-  integrity sha512-KGRdAaMJogSEB7sPKI31ptKIWX8lydEDAwWgB4pBMU7zys5cd54XNhoPSVlTxG/A3LphjX47EBn9j0dOGyzWbA==
-  dependencies:
-    call-me-maybe "^1.0.1"
-    json-schema-ref-parser "^7.1.3"
-    ono "^6.0.0"
-    openapi-schemas "^1.0.2"
-    openapi-types "^1.3.5"
-    swagger-methods "^2.0.1"
-    z-schema "^4.2.2"
-
 swagger-schema-official@^2.0.0-bab6bed:
   version "2.0.0-bab6bed"
   resolved "https://registry.yarnpkg.com/swagger-schema-official/-/swagger-schema-official-2.0.0-bab6bed.tgz#70070468d6d2977ca5237b2e519ca7d06a2ea3fd"
@@ -2456,20 +2409,21 @@ tough-cookie@^2.3.3, tough-cookie@~2.5.0:
     psl "^1.1.28"
     punycode "^2.1.1"
 
-ts-api-decorators-azure-function@^0.2.0:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators-azure-function/-/ts-api-decorators-azure-function-0.2.2.tgz#7fd7e884a335749feb02008b1b1c5f45f5d955a2"
-  integrity sha512-UEuZNT7fSlyh23gPIlcKkZpH3k6VRPPaIl0qAFAnjZf2Gv4N4MBUA3p9lbgH6y58VBfClN/LVdgPecEAmrtrPg==
+ts-api-decorators-azure-function@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators-azure-function/-/ts-api-decorators-azure-function-0.2.5.tgz#6a158b204135a0268ff5c37052ccd1ebd0369448"
+  integrity sha512-RiO15AePhRWympf7rzgv1Qm2U/xX54vfKivz3BCQjrEYHoGHTijBSDRT8htw5h1IH+BqmPkJMC+iH42r8YFEIg==
   dependencies:
     commander "^4.0.1"
-    ts-api-decorators "^0.2.2"
+    ts-api-decorators "^0.2.5"
 
-ts-api-decorators@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.2.2.tgz#932fad1ba2ac7610f382076fc5206008f59c64e9"
-  integrity sha512-6u8YLcOMVNWIjuLffs2eoTbIv0M4omkKck20Y1VclGpItkyBzlxUmLQx1whp9C8UuXz/7lOZ/Tt6z/ex1L40ug==
+ts-api-decorators@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.2.5.tgz#dcb668a21a7d45c913e78148d12aa409713f35d9"
+  integrity sha512-ioOM64EZqAyDd4L/dMA+w+zWj1gw4Exh5Iocpdq/5jqealHgQgUEmx8xg9FV0qyPrSz820l0uxEw5EjL1vauYw==
   dependencies:
     "@azure/functions" "^1.0.3"
+    "@types/json-schema" "^7.0.9"
     acorn "^7.0.0"
     acorn-walk "^7.0.0"
     cli-table "^0.3.1"
@@ -2480,16 +2434,16 @@ ts-api-decorators@^0.2.2:
     js-yaml "^3.13.1"
     jsonschema "^1.2.4"
     mustache "^3.2.1"
+    openapi-types "^10.0.0"
     parse-gitignore "^1.0.1"
     path-to-regexp "^6.1.0"
     promise-fs "^2.1.1"
     reflect-metadata "^0.1.13"
     strip-dirs "^3.0.0"
-    swagger-parser "^8.0.3"
     swagger-ts-client "^0.9.6"
     typescript-json-schema "^0.39.0"
   optionalDependencies:
-    ts-api-decorators-azure-function "^0.2.0"
+    ts-api-decorators-azure-function "^0.2.5"
 
 ts-node@^10.2.1, ts-node@^10.x:
   version "10.4.0"
@@ -2611,11 +2565,6 @@ uuid@^3.3.2, uuid@^3.3.3:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
-
-validator@^13.6.0:
-  version "13.7.0"
-  resolved "https://registry.yarnpkg.com/validator/-/validator-13.7.0.tgz#4f9658ba13ba8f3d82ee881d3516489ea85c0857"
-  integrity sha512-nYXQLCBkpJ8X6ltALua9dRrZDHVYxjJ1wgskNt1lH9fzGjs3tgojGSCBjmEPwkWS1y29+DrizMTW19Pr9uB2nw==
 
 verror@1.10.0:
   version "1.10.0"
@@ -2800,14 +2749,3 @@ yn@3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/yn/-/yn-3.1.1.tgz#1e87401a09d767c1d5eab26a6e4c185182d2eb50"
   integrity sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==
-
-z-schema@^4.2.2:
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/z-schema/-/z-schema-4.2.4.tgz#73102a49512179b12a8ec50b1daa676b984da6e4"
-  integrity sha512-YvBeW5RGNeNzKOUJs3rTL4+9rpcvHXt5I051FJbOcitV8bl40pEfcG0Q+dWSwS0/BIYrMZ/9HHoqLllMkFhD0w==
-  dependencies:
-    lodash.get "^4.4.2"
-    lodash.isequal "^4.5.0"
-    validator "^13.6.0"
-  optionalDependencies:
-    commander "^2.7.1"
