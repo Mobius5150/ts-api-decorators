@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators-azure-function",
-  "version": "0.1.38",
+  "version": "0.1.39",
   "description": "API Decorators for typescript and Azure Functions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "commander": "^4.0.1",
-    "ts-api-decorators": "^0.1.38"
+    "ts-api-decorators": "^0.1.39"
   },
   "devDependencies": {
     "@azure/functions": "^1.0.3",

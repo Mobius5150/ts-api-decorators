@@ -32,7 +32,7 @@ export class OpenApiV3Extractor implements IExtractor {
         private readonly opts: IOpenApiV3Opts,
     ) {}
 
-    protected getDocument(): OpenAPIV3.Document {
+    public getDocument(): OpenAPIV3.Document {
         const doc: OpenAPIV3.Document = {
             openapi: OpenApiV3Extractor.SwaggerVersion,
             info: {
@@ -337,8 +337,8 @@ export class OpenApiV3Extractor implements IExtractor {
     }
     
     private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject {
-        if (schema.definitions) {
-            this.addDefinitions(schema.definitions);
+        if (typeof schema.definitions !== 'boolean' && schema.definitions) {
+            this.addDefinitions(<{[k: string]: IJsonSchema}>schema.definitions);
 
             schema = { ...schema };
             delete schema.definitions;
@@ -352,7 +352,7 @@ export class OpenApiV3Extractor implements IExtractor {
             schema.$ref = this.replaceRefStr(schema.$ref);
         }
 
-        return <OpenAPIV3.SchemaObject>schema;
+        return <OpenAPIV3.SchemaObject><any>schema;
     }
 
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {
@@ -379,13 +379,25 @@ export class OpenApiV3Extractor implements IExtractor {
                     if (this.removableTypes.indexOf(pdef.type) !== -1) {
                         removeProps.push(property);
                     }
-                } else {
+                } else if (typeof pdef.type !== 'undefined') {
                     let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
                     if (newTypes.length === 0) {
                         removeProps.push(property);
+                    } else if (newTypes.length === 1) {
+                        pdef.type = newTypes[0];
                     } else {
-                        pdef.type = newTypes;
-                        (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
+                        pdef.oneOf = newTypes.map(t => {
+                            if (typeof t === 'string') {
+                                return {
+                                    type: t,
+                                }
+                            } else {
+                                return t;
+                            }
+                        });
+
+                        delete pdef.type;
+                        // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
                     }
                 }
 
