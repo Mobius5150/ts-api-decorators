@@ -4,3 +4,4 @@ tsconfig*
 TODO.md
 TREE_PLANNING.md
 .*
+yarn.lock

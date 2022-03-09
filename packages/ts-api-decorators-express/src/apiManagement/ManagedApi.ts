@@ -9,7 +9,8 @@ import {
 	ApiHeadersDict,
 	ApiParamsDict,
 	ManagedApiInternal,
-	IApiInvocationResult
+	IApiInvocationResult,
+	IApiInvocationParams
 } from 'ts-api-decorators';
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
@@ -17,6 +18,7 @@ import { ExpressMetadata } from '../metadata/ExpressMetadata';
 import * as stream from 'stream';
 import { StreamCoercionMode, StreamCoercer } from 'ts-api-decorators/dist/Util/StreamCoercer';
 import { promisifyEvent } from 'ts-api-decorators/dist/Util/PromiseEvent';
+import { IApiParamDefinition } from 'ts-api-decorators/dist/apiManagement/ApiDefinition';
 
 export interface IExpressManagedApiContext {
 	'express.request': Express.Request;
@@ -129,21 +131,34 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		};
 	}
 
+	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IApiInvocationParams<IExpressManagedApiContext>): stream.Writable {
+		// Return express.response which implements stream.Writable and saves some intermediary streams
+		return invocationParams.transportParams['express.response'];
+	}
+
+	public setResponseStatus(status: number): void {
+		super.setResponseStatus(status);
+		this.getExecutionContext().invocationParams.transportParams['express.response'].status(status);
+	}
+
 	private async expressResultHandler(res: Express.Response, result: IApiInvocationResult): Promise<void> {
 		if (!res.writableEnded) {
 			if (result.streamMode !== StreamCoercionMode.None) {
 				res.status(result.statusCode);
-				const pipeBody = StreamCoercer.CoerceWith(result.body, result.streamMode);
-				let error: any;
-				pipeBody.on('error', function (e) {
-					error = e;
-				});
-				
-				let finishPromise = promisifyEvent(pipeBody, 'end');
-				pipeBody.pipe(res, { end: true, });
-				await finishPromise;
-				if (error) {
-					throw error;
+
+				if (res !== result.body) {
+					const pipeBody = StreamCoercer.CoerceWith(result.body, result.streamMode);
+					let error: any;
+					pipeBody.on('error', function (e) {
+						error = e;
+					});
+					
+					let finishPromise = promisifyEvent(pipeBody, 'end');
+					pipeBody.pipe(res, { end: true, });
+					await finishPromise;
+					if (error) {
+						throw error;
+					}
 				}
 			} else if (result.body) {
 				res.status(result.statusCode).send(result.body);

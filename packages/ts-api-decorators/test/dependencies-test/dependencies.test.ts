@@ -57,4 +57,28 @@ describe('ManagedApi Dependencies', () => {
         assert.equal(result.statusCode, 200);
         assert.equal(result.body, 'response');
 	});
+
+    it('should used the specified instance for dependencies', async () => {
+        const api = modules[0];
+        const result = await api.invokeApiCall(ApiMethod.GET, '/hellodb3', {
+            headers: {},
+            queryParams: {},
+            transportParams: {},
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body, 'db3');
+    });
+
+    it('should used the intializer function for dependencies', async () => {
+        const api = modules[0];
+        const result = await api.invokeApiCall(ApiMethod.GET, '/hellodb4', {
+            headers: {},
+            queryParams: {},
+            transportParams: {},
+        });
+
+        assert.equal(result.statusCode, 200);
+        assert.equal(result.body, 'db4');
+    });
 });

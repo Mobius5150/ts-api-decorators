@@ -1,5 +1,5 @@
 import { Api, ApiGetMethod, ApiBodyParam } from "../../../src";
-import { ApiInjectedDependencyParam, ApiInjectedDependency } from "../../../src/decorators/DependencyParams";
+import { ApiInjectedDependencyParam, ApiInjectedDependency } from "../../../src/decorators";
 import { TestManagedApi } from "../../../src/Testing/TestTransport";
 
 class Database {
@@ -13,10 +13,24 @@ class Database2 {
 	public getResponse() { return this.db.getResponse() + this.db.getResponse(); }
 }
 
+class Database3 {
+	public getResponse() { return 'db3'; }
+}
+
+const db3Instance = new Database3();
+
+class Database4 {
+	public getResponse() { return 'db4'; }
+}
+
+const db4Instance = new Database4();
+
 @Api
 class MyApi {
 	constructor(
-		@ApiInjectedDependencyParam() private readonly db: Database
+		@ApiInjectedDependencyParam() private readonly db: Database,
+		@ApiInjectedDependencyParam() private readonly db3: Database3,
+		@ApiInjectedDependencyParam() private readonly db4: Database4,
 	) {}
 
 	@ApiInjectedDependency()
@@ -50,10 +64,38 @@ class MyApi {
 	) {
 		return database.getResponse();
 	}
+
+	/**
+	 * Tests a dependency that was initialized
+	 * @returns The string 'db3'
+	 */
+	@ApiGetMethod('/hellodb3')
+	greetDb3() {
+		if (this.db3 !== db3Instance) {
+			throw new Error('Got unexpected instance');
+		}
+		
+		return this.db3.getResponse();
+	}
+
+	/**
+	 * Tests a dependency that was initialized with an initializer function
+	 * @returns The string 'db4'
+	 */
+	@ApiGetMethod('/hellodb4')
+	greetDb4() {
+		if (this.db4 !== db4Instance) {
+			throw new Error('Got unexpected instance');
+		}
+
+		return this.db4.getResponse();
+	}
 }
 
 const testApi = new TestManagedApi();
 testApi.addDependency(Database);
 testApi.addDependency(Database2);
+testApi.addDependency(Database3, db3Instance);
+testApi.addDependency(Database4, () => db4Instance);
 testApi.addHandlerClass(MyApi);
 export default testApi;

@@ -12,9 +12,10 @@ import * as p2r from 'path-to-regexp';
 import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
 import { ClassConstructor } from "../Util/ClassConstructors";
 import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
-import { Func, OptionalAsyncFunc1 } from "../Util/Func";
+import { Func, Func0, OptionalAsyncFunc1 } from "../Util/Func";
 import { StreamCoercionMode, StreamCoercer } from "../Util/StreamCoercer";
 import { StreamIntermediary } from "../Util/StreamIntermediary";
+import * as stream from 'stream';
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
@@ -537,8 +538,16 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				throw new Error('Stream out type cannot be used while coercion is disabled');
 			}
 
-			return StreamIntermediary.GetStreamIntermediary();
+			return this.getStreamForOutput(def, invocationParams);
 		}
+	}
+
+	/**
+	 * Gets a writable stream to pipe output data to
+	 * @returns a writable stream
+	 */
+	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IApiInvocationParams<TransportParamsType>): stream.Writable {
+		return StreamIntermediary.GetStreamIntermediary(this);
 	}
 
 	private async parseRawRequestBody(bodyContents: IApiBodyContents) {
@@ -667,12 +676,19 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * 
 	 * Must be called before initialization to be applied.
 	 * @param dep The dependency to fill
-	 * @param name An optional name for the dependency.
+	 * @param instance An instance of the dependency to be used or a function that returns an instance of the dependency.
 	 */
-	public addDependency(dep: ClassConstructor, name?: string): void {
+	public addDependency<C extends object = {}>(dep: ClassConstructor<C>, instance?: C | Func0<C>): void {
 		// TODO: Dependency scopes
-		this.dependencies.registerDependency(
-			ApiDependency.WithConstructor(dep));
+		if (instance) {
+			this.dependencies.registerDependency(
+				ApiDependency.WithFunc(
+					dep,
+					typeof instance === 'function' ? <Func0<C>>instance : () => instance));
+		} else {
+			this.dependencies.registerDependency(
+				ApiDependency.WithConstructor(dep));
+		}
 	}
 
 	/**
@@ -695,6 +711,15 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param value The value of the header to set
 	 */
 	public abstract setHeader(name: string, value: string | number): void;
+
+	/**
+	 * Sets the HTTP status code for the response
+	 * @param status The HTTP status code to return in the request
+	 */
+	 public setResponseStatus(status: number): void {
+		const context = this.getExecutionContext();
+		context.result.statusCode = status;
+	}
 
 	/**
 	 * Add a hook to be processed during request handling.

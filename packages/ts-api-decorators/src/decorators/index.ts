@@ -28,3 +28,8 @@ export {
 export {
 	ApiOutParamStream,
 } from './OutParams';
+export {
+	ApiDependency,
+	ApiInjectedDependency,
+	ApiInjectedDependencyParam,
+} from './DependencyParams';
