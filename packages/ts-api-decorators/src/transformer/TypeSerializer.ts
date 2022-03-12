@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent } from './TransformerUtil';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -41,9 +41,16 @@ export class TypeSerializer {
 
 				case 'Promise':
 					if (isParameterizedType(type)) {
+						if (isNodeWithTypeArguments(node)) {
+							return {
+								...base,
+								...this.getInternalTypeRepresentation(node.typeArguments[0], type.resolvedTypeArguments[0]),
+							};
+						}
+
 						return {
 							...base,
-							...this.getInternalTypeRepresentation(undefined, type.resolvedTypeArguments[0]),
+							...this.getInternalTypeRepresentation(node, type.resolvedTypeArguments[0]),
 						};
 					} else {
 						return {

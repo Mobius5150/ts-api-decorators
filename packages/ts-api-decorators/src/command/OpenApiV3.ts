@@ -197,7 +197,8 @@ export class OpenApiV3Extractor implements IExtractor {
             tags: metadataTags.map(t => this.recordTagObject(t)),
             parameters: params
                 .filter(p => p.paramDef.type !== ApiParamType.Body && p.paramDef.type !== ApiParamType.RawBody)
-                .map(p => this.getParametersObject(p)),
+                .map(p => this.getParametersObject(p))
+                .filter(p => !!p),
             requestBody: bodyParam ? this.getRequestBody(bodyParam) : undefined,
             responses: {
                 default: this.getResponseObject(api),
@@ -464,7 +465,7 @@ export class OpenApiV3Extractor implements IExtractor {
         };
     }
     
-    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject {
+    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject | null {
         let inStr: string;
         switch (p.paramDef.type) {
             case ApiParamType.Body:
@@ -478,6 +479,17 @@ export class OpenApiV3Extractor implements IExtractor {
             case ApiParamType.Path:
                 inStr = 'path';
                 break;
+
+            case ApiParamType.Header:
+                inStr = 'header';
+                break;
+
+            case ApiParamType.Callback:
+            case ApiParamType.Transport:
+            case ApiParamType.Dependency:
+            case ApiParamType.Out:
+            case ApiParamType.Custom:
+                return null;
 
             default:
                 throw new Error(`Unknown Api Parameter Type: ${p.type}`);

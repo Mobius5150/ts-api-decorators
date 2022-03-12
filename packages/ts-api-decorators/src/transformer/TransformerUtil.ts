@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import { NodeWithTypeArguments } from 'typescript';
 import { InternalTypeDefinition, BuiltinTypeNames } from '../apiManagement/InternalTypes';
 
 export interface SymbolWithId extends ts.Symbol {
@@ -76,6 +77,10 @@ export function isParameterizedType(t: ts.Type & Partial<ParameterizedType>): t 
     }
     
     return false;
+}
+
+export function isNodeWithTypeArguments(n: ts.Node & Partial<NodeWithTypeArguments>): n is NodeWithTypeArguments {
+    return !!n && Array.isArray(n.typeArguments);
 }
 
 export function isIntersectionType(n: ts.TypeNode, s: ts.Type & Partial<IntersectionType>): s is IntersectionType {
