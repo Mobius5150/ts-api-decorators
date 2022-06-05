@@ -12,6 +12,12 @@ import { ManagedApi, ApiMimeType } from "../apiManagement";
 
 export interface IOpenApiV3Opts {
     disableTryInferSchemes?: boolean;
+
+    /**
+     * additionalProperties defaults to `true` so it shouldn't need to be outputted manually
+     * and may cause problems with some tools (e.g. autorest)
+     */
+    outputAdditionalPropertiesTrue?: boolean;
     yamlOpts?: yaml.DumpOptions;
 }
 
@@ -256,6 +262,18 @@ export class OpenApiV3Extractor implements IExtractor {
                     type: null,
                 };
 
+            case 'array':
+                if (returnType.elementType) {
+                    return {
+                        type: 'array',
+                        items: this.getInlineTypeSchema(returnType.elementType),
+                    };
+                } else {
+                    throw new Error(`Internal Error: Array types must have an elementType defined: ${returnType.typename}`)
+                }
+
+                break;
+
             case 'object':
                 if (returnType.schema) {
                     return this.getInternalSchemaToOutputSchema(returnType.schema);
@@ -345,8 +363,11 @@ export class OpenApiV3Extractor implements IExtractor {
             delete schema.definitions;
         }
 
-        if (schema.$schema) {
-            delete schema.$schema;
+        const delProps = ['uniqueTypename', 'typename', '$schema'];
+        for (const prop of delProps) {
+            if (typeof schema[prop] !== 'undefined') {
+                delete schema[prop];
+            }
         }
 
         if (schema.$ref) {
@@ -368,51 +389,91 @@ export class OpenApiV3Extractor implements IExtractor {
 
     private fixDefinitionProperties(_: IJsonSchema): OpenAPIV3.SchemaObject {
         const redef = _;
+        if (redef.anyOf) {
+            redef.anyOf = this._fixDefinitionPropertiesCollection(redef.anyOf);
+        }
+
+        if (redef.allOf) {
+            redef.allOf = this._fixDefinitionPropertiesCollection(redef.allOf);
+        }
+        
+        if (redef.oneOf) {
+            redef.oneOf = this._fixDefinitionPropertiesCollection(redef.oneOf);
+        }
+
         if (redef.properties) {
-            let removeProps = [];
-            for (const property of Object.keys(redef.properties)) {
-                const pdef = redef.properties[property];
-                if (typeof pdef['$ref'] !== 'undefined' || !pdef.type) {
-                    continue;
-                }
-
-                if (typeof pdef.type === 'string') {
-                    if (this.removableTypes.indexOf(pdef.type) !== -1) {
-                        removeProps.push(property);
-                    }
-                } else if (typeof pdef.type !== 'undefined') {
-                    let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
-                    if (newTypes.length === 0) {
-                        removeProps.push(property);
-                    } else if (newTypes.length === 1) {
-                        pdef.type = newTypes[0];
-                    } else {
-                        pdef.oneOf = newTypes.map(t => {
-                            if (typeof t === 'string') {
-                                return {
-                                    type: t,
-                                }
-                            } else {
-                                return t;
-                            }
-                        });
-
-                        delete pdef.type;
-                        // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
-                    }
-                }
-
-                if (pdef.properties) {
-                    this.fixDefinitionProperties(pdef);
-                }
+            redef.properties = this._fixDefinitionPropertiesCollection(redef.properties);
+        }
+        
+        if (typeof redef.additionalProperties === 'object') {
+            if (redef.additionalProperties.anyOf) {
+                redef.additionalProperties.anyOf = this._fixDefinitionPropertiesCollection(redef.additionalProperties.anyOf);
             }
 
-            for (const prop of removeProps) {
-                delete redef.properties[prop];
+            if (redef.additionalProperties.allOf) {
+                redef.additionalProperties.allOf = this._fixDefinitionPropertiesCollection(redef.additionalProperties.allOf);
             }
+
+            if (redef.additionalProperties.oneOf) {
+                redef.additionalProperties.oneOf = this._fixDefinitionPropertiesCollection(redef.additionalProperties.oneOf);
+            }
+
+            if (redef.additionalProperties.properties) {
+                redef.additionalProperties.properties = this._fixDefinitionPropertiesCollection(redef.additionalProperties.properties);
+            }
+        } else if (redef.additionalProperties === true && !this.opts.outputAdditionalPropertiesTrue) {
+            delete redef.additionalProperties;
         }
 
         return <OpenAPIV3.SchemaObject>redef;
+    }
+
+    private _fixDefinitionPropertiesCollection<T extends { [name: string]: IJsonSchema } | Array<IJsonSchema>>(props: T): T {
+        if (!props) {
+            return;
+        }
+
+        let removeProps = [];
+        for (const property of Object.keys(props)) {
+            const pdef = props[property];
+            if (typeof pdef['$ref'] !== 'undefined') {
+                continue;
+            }
+
+            if (typeof pdef.type === 'string') {
+                if (this.removableTypes.indexOf(pdef.type) !== -1) {
+                    removeProps.push(property);
+                }
+            } else if (typeof pdef.type !== 'undefined') {
+                let newTypes = pdef.type.filter(t => this.removableTypes.indexOf(t) === -1);
+                if (newTypes.length === 0) {
+                    removeProps.push(property);
+                } else if (newTypes.length === 1) {
+                    pdef.type = newTypes[0];
+                } else {
+                    pdef.oneOf = newTypes.map(t => {
+                        if (typeof t === 'string') {
+                            return {
+                                type: t,
+                            }
+                        } else {
+                            return t;
+                        }
+                    });
+
+                    delete pdef.type;
+                    // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
+                }
+            }
+
+            props[property] = this.fixDefinitionProperties(pdef);
+        }
+
+        for (const prop of removeProps) {
+            delete props[prop];
+        }
+
+        return props;
     }
 
     private fixDefinitionRefs<T extends object>(def: T): T {

@@ -80,7 +80,7 @@ abstract class ExpressParams {
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeRequestUserParam,
 		skipOutputTypeDefinitions: true,
-		transformArgumentsToObject: false,
+		transformArgumentsToObject: true,
 	})
 	public static ExpressApiRequestUserParam(a?: any): ParameterDecorator {
 		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {

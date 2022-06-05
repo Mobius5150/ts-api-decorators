@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
-import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments } from './TransformerUtil';
+import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil, InternalEnumTypeDefinition, IntrinsicTypeDefinitionString, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments, UnionType } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -83,13 +83,7 @@ export class TypeSerializer {
 			}
 		}
 		if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {
-			return {
-				...base,
-				type: 'union',
-				types: type.types.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t)),
-				typename: type.aliasSymbol ? type.aliasSymbol.escapedName.toString() : undefined,
-				uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
-			};
+			return this.getUnionType(base, type, node);
 		}
 		if (node && ts.isIntersectionTypeNode(node) && isIntersectionType(node, type)) {
 			return {
@@ -120,8 +114,58 @@ export class TypeSerializer {
 		if (node && ts.isParenthesizedTypeNode(node)) {
 			return this.getInternalTypeRepresentation(node.type, this.typeChecker.getTypeFromTypeNode(node.type));
 		}
+		if (node && ts.isLiteralTypeNode(node)) {
+			switch (node.literal.kind) {
+				case ts.SyntaxKind.StringLiteral:
+					return <IntrinsicTypeDefinitionString> { type: 'string', schema: { enum: [ node.literal.text ] } };
+
+				case ts.SyntaxKind.NumericLiteral:
+					return <IntrinsicTypeDefinitionNumber> { type: 'number', schema: { enum: [ Number(node.literal.text) ] } };
+
+				case ts.SyntaxKind.UndefinedKeyword:
+					return { type: 'void' };
+
+				default:
+					throw new Error(`Cannot convert literal type: ${node.literal.kind}`);
+			}
+		}
 	}
 	
+	private getUnionType(base: { optional?: boolean; }, type: UnionType, node: ts.UnionTypeNode): InternalTypeDefinition {
+		const union: InternalTypeDefinition = {
+			...base,
+			type: 'union',
+			types: type.types
+				.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t))
+				.filter(t => !!t),
+			typename: type.aliasSymbol ? type.aliasSymbol.escapedName.toString() : undefined,
+			uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
+		};
+
+		if (union.types && union.types.every(t => (t.type === 'string' || t.type === 'number') && Array.isArray(t.schema?.enum))) {
+			// This union can be collapsed to an enum
+			let type = 'enum';
+			if (union.types.every(t => t.type === 'string')) {
+				type = 'string';
+			} else if (union.types.every(t => t.type === 'number')) {
+				type = 'number';
+			}
+			return <InternalEnumTypeDefinition> {
+				...base,
+				type,
+				schema: {
+					enum: union.types.reduce(
+						(p, c: IntrinsicTypeDefinitionString | IntrinsicTypeDefinitionNumber) =>
+							p.concat(c.schema?.enum || []), []),
+				},
+				typename: union.typename,
+				uniqueTypename: union.uniqueTypename,
+			};
+		}
+
+		return union;
+	}
+
 	private getTypeForSymbolWithId(symbol: any, base: { optional?: boolean; }) {
 		let schema = this.generator.getSchemaForSymbol(symbol.name, true);
 		let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;

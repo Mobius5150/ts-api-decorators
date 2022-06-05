@@ -282,6 +282,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return ManagedApi.namespace.get(ManagedApi.ContextNamespace);
 	}
 
+	protected static getExecutionContext<TransportParamsType extends object>(): IApiInvocationContextPostInvoke<TransportParamsType> {
+		return ManagedApi.namespace.get(ManagedApi.ContextNamespace);
+	}
+
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
 		// Resolve handler arguments
 		let useCallback: PromiseCallbackHelper<any>;
@@ -510,9 +514,9 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		} else if (def.type === ApiParamType.Transport) {
 			if (invocationParams.transportParams[def.transportTypeId]) {
 				return invocationParams.transportParams[def.transportTypeId];
-			} else if (args.initializer) {
+			} else if (args?.initializer) {
 				return args.initializer();
-			} else if (!args.optional) {
+			} else if (!args?.optional) {
 				throw new HttpRequiredTransportParamMissingError(def.transportTypeId);
 			} else {
 				return undefined;
@@ -704,6 +708,20 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 		return headers[name];
 	}
+	
+	/**
+	 * Gets the value of a header in the current request
+	 * @param name The name of the header to get. Case insensitive.
+	 */
+	 public static getHeader(name: string): string | string[] | undefined {
+		const context = this.getExecutionContext();
+		const headers = context.invocationParams.headers;
+		if (!headers) {
+			return;
+		}
+
+		return headers[name];
+	}
 
 	/**
 	 * Sets the value of a header in the current response
@@ -711,12 +729,21 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param value The value of the header to set
 	 */
 	public abstract setHeader(name: string, value: string | number): void;
+	
+	/**
+	 * Sets the HTTP status code for the response
+	 * @param status The HTTP status code to return in the request
+	 */
+	public setResponseStatus(status: number): void {
+		const context = this.getExecutionContext();
+		context.result.statusCode = status;
+	}
 
 	/**
 	 * Sets the HTTP status code for the response
 	 * @param status The HTTP status code to return in the request
 	 */
-	 public setResponseStatus(status: number): void {
+	public static setResponseStatus(status: number): void {
 		const context = this.getExecutionContext();
 		context.result.statusCode = status;
 	}

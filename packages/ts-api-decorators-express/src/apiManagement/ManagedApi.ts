@@ -212,4 +212,24 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		context.result.headers[name] = value;
 		context.invocationParams.transportParams['express.response'].header(name, value);
 	}
+
+	/**
+	 * Sets the value of a header in the current response
+	 * @param name The name of the header to set. Case insensitive.
+	 * @param value The value of the header to set
+	 */
+	public static setHeader(name: string, value: string): void {
+		const context = this.getExecutionContext();
+		context.result.headers[name] = value;
+		context.invocationParams.transportParams['express.response'].header(name, value);
+	}
+
+	/**
+	 * Sets the HTTP status code for the response
+	 * @param status The HTTP status code to return in the request
+	 */
+	 public static setResponseStatus(status: number): void {
+		const context = this.getExecutionContext();
+		context.result.statusCode = status;
+	}
 }
