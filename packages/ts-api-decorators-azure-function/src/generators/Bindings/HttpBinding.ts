@@ -55,6 +55,7 @@ export class HttpBindingTriggerFactory {
 		const method = this.GetMethodForRequestContext(context);
 		const contentType = this.getHeader(context.req.headers, ApiStdHeaderName.ContentType);
 		const contentLength = this.getHeader(context.req.headers, ApiStdHeaderName.ContentLength);
+		const parsedContentType = parseApiMimeType(contentType);
 		return {
 			method,
 			invocationParams: {
@@ -70,7 +71,7 @@ export class HttpBindingTriggerFactory {
 							readStreamToStringAsync: () => context.req.rawBody,
 							readStreamToStringCb: (cb: (err: any, str: string) => void) => cb(null, context.req.rawBody),
 							streamContentsMimeRaw: contentType,
-							streamContentsMimeType: parseApiMimeType(contentType),
+							streamContentsMimeType: parsedContentType.mimeType,
 						}
 						: undefined
 				),

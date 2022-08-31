@@ -53,7 +53,10 @@ export interface ITransformerArguments {
 }
 
 export default function transformer(program: ts.Program, args: ITransformerArguments = {}): ts.TransformerFactory<ts.SourceFile> {
-	const generator = tjs.buildGenerator(program, TJSDefaultOptions());
+	const generator = tjs.buildGenerator(program, {
+		...TJSDefaultOptions(),
+		ignoreErrors: true,
+	});
     
 	let metadataManager = new MetadataManager();
 	OpenApiMetadataExtractors.RegisterMetadataExtractors(metadataManager);

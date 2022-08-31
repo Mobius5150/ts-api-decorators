@@ -95,6 +95,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 			try {
 				const contentType = req.header(ApiStdHeaderName.ContentType);
 				const contentLength = req.header(ApiStdHeaderName.ContentLength);
+				const parsedContentType = parseApiMimeType(contentType);
 				const invocationParams = {
 					queryParams: this.getRequestQueryParams(req),
 					pathParams: this.getRequestPathParams(req),
@@ -105,10 +106,10 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 							{
 								contentsStream: req,
 								// TODO: Add text encoding?
-								readStreamToStringAsync: readStreamToStringUtil(req),
-								readStreamToStringCb: readStreamToStringUtilCb(req),
+								readStreamToStringAsync: readStreamToStringUtil(req, parsedContentType.charset),
+								readStreamToStringCb: readStreamToStringUtilCb(req, parsedContentType.charset),
 								streamContentsMimeRaw: contentType,
-								streamContentsMimeType: parseApiMimeType(contentType),
+								streamContentsMimeType: parsedContentType.mimeType,
 							}
 							: undefined
 					),

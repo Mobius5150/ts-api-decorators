@@ -94,7 +94,7 @@ describe('http header params', () => {
 
 		it(`[${verbUpper}] is case insensitive`, async () => {
 			const str = 'caseTest';
-			Promise.all([
+			await Promise.all([
 				request
 					[verb](`/echo`)
 					.set('X-ECHO', str)

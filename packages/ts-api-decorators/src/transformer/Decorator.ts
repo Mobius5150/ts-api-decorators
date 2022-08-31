@@ -6,7 +6,7 @@ import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } from './TransformerMetadata';
 import { isNamedNode } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
-import { exception } from 'console';
+import { CompilationError } from '../Util/CompilationError';
 
 export enum DecoratorNodeType {
 	Class,
@@ -163,7 +163,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 			} else if (ts.isIdentifier(node.name)) {
 				name = node.name.text;
 			} else {
-				throw new Error('Unknown node name type');
+				throw new CompilationError('Unknown node name type', node);
 			}
 
 			return {

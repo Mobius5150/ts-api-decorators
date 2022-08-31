@@ -10,7 +10,7 @@ const versionRegex = /\d+\.\d+\.\d+/;
 const packageJsonFile = 'package.json';
 const projectDirectories = initDirectories();
 const toolPackageJson = loadPackageJson(path.join(projectDirectories.publishTool, packageJsonFile));
-
+let enableSubcommandSpew: boolean = false;
 const program = new commander.Command();
 if (toolPackageJson) {
     program.version(toolPackageJson.version);
@@ -23,6 +23,7 @@ interface PublishCommandArgs {
     publish: boolean;
     list: boolean;
     build: boolean;
+    liveOutput: boolean;
 }
 
 program
@@ -39,10 +40,13 @@ program
     .option('--dry-run', 'Whether to do a dry run of the publish without publishing', false)
     .option('--publish', 'Whether to publish packages to npm', false)
     .option('--build', 'Build and test the updated packages - automatic if publish is set', false)
+    .option('--live-output', 'Show live output of commands run', false)
     .action(async (version: string, opts: PublishCommandArgs) => {
         if (!versionRegex.test(version)) {
             throw new Error('Supplied version did not match expected pattern: major.minor.incremental');
         }
+
+        enableSubcommandSpew = opts.liveOutput;
 
         console.log(chalk.green(`Setting package versions and dependencies to: ${version}`));
         if (opts.dryRun) {
@@ -201,15 +205,33 @@ function runCommand(command: string, args: string[], cwd: string): Promise<void>
         const spinner = ora({
             text: `Running ${[command, ...args].join(' ')}`,
             prefixText: '\t',
+            isEnabled: enableSubcommandSpew ? false : undefined,
         }).start();
         const proc = spawn(command, args, { cwd });
-        const logs: { stream: 'stdout' | 'stderr', data: any }[] = [];
+        let logs: { stream: 'stdout' | 'stderr', data: any }[] = [];
+        function logData(stream: 'stdout' | 'stderr', data: any) {
+            logs.push({ stream, data });
+            if (enableSubcommandSpew) {
+                outputLog();
+            }
+        }
+        function outputLog() {
+            for (const log of logs) {
+                if (log.stream === 'stdout') {
+                    console.log(chalk.gray(`\t${log.data}`));
+                } else {
+                    console.log(chalk.red(`\t${log.data}`));
+                }
+            }
+
+            logs = [];
+        }
         proc.stdout.on("data", data => {
-            logs.push({ stream: 'stdout', data });
+            logData('stdout', data);
         });
         
         proc.stderr.on("data", data => {
-            logs.push({ stream: 'stderr', data });
+            logData('stderr', data);
         });
         proc.on('error', reject);
         proc.on('close', code => {
@@ -218,13 +240,7 @@ function runCommand(command: string, args: string[], cwd: string): Promise<void>
             });
 
             if (code) {
-                for (const log of logs) {
-                    if (log.stream === 'stdout') {
-                        console.log(chalk.gray(`\t${log.data}`));
-                    } else {
-                        console.log(chalk.red(`\t${log.data}`));
-                    }
-                }
+                outputLog();
                 reject(new Error(`Child process exited with code ${code}`))
             } else {
                 resolve();

@@ -9,6 +9,7 @@ import { treeRootNode, treeHandlerMethodNode, treeHandlerParameterNode, treeNode
 import { ApiParamType } from '../../src/apiManagement/ApiDefinition';
 import { InternalTypeUtil } from '../../src/apiManagement/InternalTypes';
 import { BuiltinMetadata } from '../../src/transformer/TransformerMetadata';
+import { CompilationError } from '../../src/Util/CompilationError';
 
 describe('transformer', () => {
 	const defaultOpts = getDefaultCompilerOptions();
@@ -444,7 +445,7 @@ describe('transformer', () => {
 
 	it('ApiQueryParam invalid with object type', () => {
 		const file = path.resolve(__dirname, './sources/invalid-usage-badtype-ApiQueryParam-object.ts');
-		assert.throws(() => compileSourceFile(file, defaultOpts, transformers));
+		assert.throws(() => compileSourceFile(file, defaultOpts, transformers), CompilationError);
 	});
 
 	it('ApiQueryParam invalid with function type', () => {

@@ -6,6 +6,7 @@ import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, BuiltinMetadata } from './TransformerMetadata';
 import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
 import { ExpressionWrapper } from './ExpressionWrapper';
+import { CompilationError } from '../Util/CompilationError';
 
 export class ClassPropertyDecorator extends Decorator<ts.PropertyDeclaration, IClassPropertyDecoratorDefinition> implements IClassPropertyDecoratorDefinition {
 	public constructor(
@@ -54,7 +55,7 @@ export class ClassPropertyDecorator extends Decorator<ts.PropertyDeclaration, IC
 			internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);
 			if (this.memberTypeRestrictions
 				&& !this.memberTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error('Invalid type for decorator: ' + internalType.type);
+				throw new CompilationError('Invalid type for decorator: ' + internalType.type, node);
 			}
 		}
 
@@ -70,7 +71,7 @@ export class ClassPropertyDecorator extends Decorator<ts.PropertyDeclaration, IC
 			let internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);
 			if (this.memberTypeRestrictions
 				&& !this.memberTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new Error('Invalid type for decorator: ' + internalType.type);
+				throw new CompilationError('Invalid type for decorator: ' + internalType.type, node);
 			}
 
 			if (internalType.type === 'object' && type.isClass() && ts.isTypeReferenceNode(node.type)) {

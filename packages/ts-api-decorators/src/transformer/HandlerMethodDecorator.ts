@@ -5,6 +5,7 @@ import { ITransformContext } from './ITransformContext';
 import { getMetadataValueByDescriptor, BuiltinMetadata } from './TransformerMetadata';
 import { ApiMethod } from '../apiManagement';
 import { Decorator, DecoratorNodeType } from './Decorator';
+import { CompilationError } from '../Util/CompilationError';
 
 export class HandlerMethodDecorator extends Decorator<ts.MethodDeclaration, IMethodDecoratorDefinition> implements IMethodDecoratorDefinition {
 	constructor(
@@ -25,11 +26,11 @@ export class HandlerMethodDecorator extends Decorator<ts.MethodDeclaration, IMet
 		const apiMethod = getMetadataValueByDescriptor<ApiMethod>(argumentResult.metadata, BuiltinMetadata.ApiMethod);
 		const route = getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.Route);
 		if (typeof apiMethod !== 'string') {
-			throw new Error('Handler did not have apiMethod metadata');
+			throw new CompilationError('Handler did not have apiMethod metadata', node);
 		}
 
 		if (typeof route !== 'string') {
-			throw new Error('Handler did not have route metadata');
+			throw new CompilationError('Handler did not have route metadata', node);
 		}
 
 		const decoratorTreeNode: IHandlerTreeNodeHandler = {
