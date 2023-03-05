@@ -16,8 +16,10 @@ import { Func, Func0, OptionalAsyncFunc1 } from "../Util/Func";
 import { StreamCoercionMode, StreamCoercer } from "../Util/StreamCoercer";
 import { StreamIntermediary } from "../Util/StreamIntermediary";
 import * as stream from 'stream';
+import { DefaultApiResponseCode } from "../Constants";
 
 export type ApiParamsDict = { [param: string]: string };
+export type ApiBodyParamsDict = { [param: string]: ApiParamsDict }
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
 export type ManagedApiPreInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContext<TransportParamsType>, IApiInvocationContext<TransportParamsType> | undefined>;
 export type ManagedApiPostInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContextPostInvoke<TransportParamsType>, IApiInvocationResult | undefined>;
@@ -37,6 +39,7 @@ export interface IApiInvocationParams<TransportParamsType extends object = {}> {
 	pathParams: ApiParamsDict;
 	headers: ApiHeadersDict;
 	bodyContents?: IApiBodyContents;
+	bodyParams?: ApiParamsDict;
 	transportParams: TransportParamsType;
 }
 
@@ -196,7 +199,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 							invocationParams,
 						}, def.processors),
 						result: {
-							statusCode: 200,
+							statusCode: def.responseCodes?.[0] ?? DefaultApiResponseCode,
 							body: null,
 							headers: {},
 							streamMode: StreamCoercionMode.None,
@@ -279,11 +282,15 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	}
 
 	public getExecutionContext(): IApiInvocationContextPostInvoke<TransportParamsType> {
-		return ManagedApi.namespace.get(ManagedApi.ContextNamespace);
+		return ManagedApi.namespace?.get(ManagedApi.ContextNamespace);
 	}
 
 	protected static getExecutionContext<TransportParamsType extends object>(): IApiInvocationContextPostInvoke<TransportParamsType> {
-		return ManagedApi.namespace.get(ManagedApi.ContextNamespace);
+		return ManagedApi.namespace?.get(ManagedApi.ContextNamespace);
+	}
+
+	public static HasExecutionContext(): boolean {
+		return Boolean(ManagedApi.getExecutionContext<object>());
 	}
 
 	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
@@ -312,7 +319,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				output = parsed;
 			}
 
-			if (!def.args) {
+			if (!def.args || (typeof parsed === 'undefined' && def.args.optional)) {
 				return parsed;
 			}
 
@@ -371,7 +378,11 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 	}
 
-	protected validateEnumParam({typedef, name}: __ApiParamArgs, parsed: any) {
+	protected validateEnumParam({typedef, name, optional}: __ApiParamArgs, parsed: any) {
+		if (typeof parsed === 'undefined' && optional) {
+			return;
+		}
+
 		if (typedef?.type === 'number' || typedef?.type === 'string' || typedef?.type === 'enum') {
 			if (typedef.schema && typedef.schema.enum && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
 				throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)

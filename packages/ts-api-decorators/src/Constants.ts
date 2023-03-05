@@ -1,0 +1,1 @@
+export const DefaultApiResponseCode = 200;

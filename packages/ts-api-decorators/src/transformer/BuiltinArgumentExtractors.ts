@@ -5,6 +5,7 @@ import { BuiltinMetadata } from "./TransformerMetadata";
 import { ITransformContext } from './ITransformContext';
 import { ExpressionWrapper } from './ExpressionWrapper';
 import { ApiProcessorTime, ApiProcessorScope } from '../apiManagement/ApiProcessing/ApiProcessing';
+import { DefaultApiResponseCode } from '../Constants';
 
 export abstract class BuiltinArgumentExtractors {
 	public static readonly RouteArgument: IDecoratorArgument = {
@@ -12,6 +13,15 @@ export abstract class BuiltinArgumentExtractors {
 		metadataExtractor: (args) => ({
 			...BuiltinMetadata.Route,
 			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly ResponseCodesArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeNumberArray,
+		defaultExpression: ts.createArrayLiteral([ts.createNumericLiteral(DefaultApiResponseCode.toString())]),
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.ResponseCodes,
+			value: args.transformContext.typeSerializer.compileExpressionToArrayConstant(args.argumentExpression),
 		}),
 	};
 

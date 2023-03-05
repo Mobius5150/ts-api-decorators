@@ -185,15 +185,16 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 		const exprArguments: IExprWithMetadata[] = [];
 		for (let index = 0; index < this.arguments.length; ++index) {
 			const argDef = this.arguments[index];
-			const arg = this.getUnparenthesizedExpression(decorator.expression.arguments[index]);
-			exprArguments[index] = {expression: arg};
+			let arg = this.getUnparenthesizedExpression(decorator.expression.arguments[index]);
 			const isUndefined =
 				typeof arg === 'undefined'
 				|| arg.kind === ts.SyntaxKind.NullKeyword
 				|| arg.kind === ts.SyntaxKind.UndefinedKeyword
 				|| (ts.isIdentifier(arg) && arg.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword);
 			if (isUndefined) {
-				if (argDef.optional) {
+				if (argDef.defaultExpression) {
+					arg = argDef.defaultExpression;
+				} else if (argDef.optional) {
 					if (!argDef.transformer) {
 						continue;
 					}
@@ -204,6 +205,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 				this.checkTypeCompatibility(argDef, arg, context);
 			}
 
+			exprArguments[index] = {expression: arg};
 			if (argDef.metadataExtractor || argDef.transformer) {
 				const processorArgs: IDecoratorArgumentProcessorArgs = {
 					node,

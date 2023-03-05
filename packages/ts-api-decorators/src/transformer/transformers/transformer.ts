@@ -7,7 +7,7 @@ import {
 	ApiQueryParamNumber,
 	GetQueryParamDecorator
 } from '../../decorators/QueryParams';
-import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator, ApiBodyParamStream, ApiBodyParamRawString } from '../../decorators/BodyParams';
+import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator, ApiBodyParamStream, ApiBodyParamRawString, } from '../../decorators/BodyParams';
 import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
 import { GetApiMethodDecorator, ApiGetMethod, ApiPostMethod, ApiPutMethod, ApiDeleteMethod } from '../..';
 import { MetadataManager } from '../MetadataManager';
@@ -127,6 +127,9 @@ export function registerDefaultDecorators(resolver: IDecoratorResolver) {
 		GetBodyParamDecorator(ApiBodyParamNumber),
 		GetBodyParamDecorator(ApiBodyParamStream),
 		GetBodyParamDecorator(ApiBodyParamRawString),
+		// GetBodyParamDecorator(ApiBodyParamMultipartFormFileName),
+		// GetBodyParamDecorator(ApiBodyParamMultipartFormFileString),
+		// GetBodyParamDecorator(ApiBodyParamMultipartFormFileStream),
 
 		GetHeaderParamDecorator(ApiHeaderParam),
 		GetHeaderParamDecorator(ApiHeaderParamNumber),

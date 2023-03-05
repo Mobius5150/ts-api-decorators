@@ -194,22 +194,35 @@ export class OpenApiV3Extractor implements IExtractor {
         }
 
         const params = Array.from(WalkChildrenByType(api, isHandlerParameterNode));
-        const bodyParam = params.find(p => p.paramDef.type === ApiParamType.Body || p.paramDef.type === ApiParamType.RawBody);
+        const bodyParams = params.filter(p => this.isBodyParam(p));
         const metadataTags = getAllMetadataValues(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Tag);
+        const response = this.getResponseObject(api);
+        const responses: OpenAPIV3.OperationObject['responses'] = {};
+        let responseCodes: (string | number)[] = getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ResponseCodes);
+        if (!Array.isArray(responseCodes) || responseCodes.length === 0) {
+            responseCodes = ['default'];
+        }
+        
+        for (const responseCode of responseCodes) {
+            responses[responseCode] = response;
+        }
+
         return {
             operationId: getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.Name),
             description: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Description),
             summary: getMetadataValue(api.metadata, IMetadataType.OpenApi, undefined, OpenApiMetadataType.Summary),
             tags: metadataTags.map(t => this.recordTagObject(t)),
             parameters: params
-                .filter(p => p.paramDef.type !== ApiParamType.Body && p.paramDef.type !== ApiParamType.RawBody)
+                .filter(p => !this.isBodyParam(p))
                 .map(p => this.getParametersObject(p))
                 .filter(p => !!p),
-            requestBody: bodyParam ? this.getRequestBody(bodyParam) : undefined,
-            responses: {
-                default: this.getResponseObject(api),
-            }
+            requestBody: bodyParams ? this.getRequestBody(bodyParams) : undefined,
+            responses,
         };
+    }
+
+    private isBodyParam(p: IHandlerTreeNodeParameter): unknown {
+        return p.paramDef.type === ApiParamType.Body || p.paramDef.type === ApiParamType.RawBody || p.paramDef.type === ApiParamType.FormFileSingle;
     }
 
     private getResponseObject(api: IHandlerTreeNodeHandler): OpenAPIV3.ResponseObject {
@@ -421,6 +434,10 @@ export class OpenApiV3Extractor implements IExtractor {
             if (redef.additionalProperties.properties) {
                 redef.additionalProperties.properties = this._fixDefinitionPropertiesCollection(redef.additionalProperties.properties);
             }
+
+            if (Array.isArray(redef.additionalProperties.type)) {
+                redef.additionalProperties.type = redef.additionalProperties.type[0];
+            }
         } else if (redef.additionalProperties === true && !this.opts.outputAdditionalPropertiesTrue) {
             delete redef.additionalProperties;
         }
@@ -435,7 +452,7 @@ export class OpenApiV3Extractor implements IExtractor {
 
         let removeProps = [];
         for (const property of Object.keys(props)) {
-            const pdef = props[property];
+            const pdef: IJsonSchema = props[property];
             if (typeof pdef['$ref'] !== 'undefined') {
                 continue;
             }
@@ -463,6 +480,14 @@ export class OpenApiV3Extractor implements IExtractor {
 
                     delete pdef.type;
                     // (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
+                }
+            }
+
+            if (typeof pdef.additionalProperties === 'object' && Array.isArray(pdef.additionalProperties.type)) {
+                if (this.opts.outputAdditionalPropertiesTrue) {
+                    pdef.additionalProperties = true;
+                } else {
+                    pdef.additionalProperties.type = pdef.additionalProperties.type[0]
                 }
             }
 
@@ -528,7 +553,14 @@ export class OpenApiV3Extractor implements IExtractor {
     
     private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject | null {
         let inStr: string;
+        let name: string = p.paramDef.propertyKey.toString();
         switch (p.paramDef.type) {
+            case ApiParamType.FormFileSingle:
+                const formFieldName = getMetadataValueByDescriptor(p.metadata, BuiltinMetadata.FormDataFieldName);
+                if (formFieldName) {
+                    name = formFieldName;
+                }
+                // Intentional flow-through
             case ApiParamType.Body:
                 inStr = 'body';
                 break;
@@ -565,28 +597,127 @@ export class OpenApiV3Extractor implements IExtractor {
         }
 
         return {
-            name: p.paramDef.propertyKey.toString(),
+            name,
             in: inStr,
-            required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
+            required: this.isParameterRequired(p),
             description: p.paramDef.args.description,
             schema,
         };
     }
 
-    getRequestBody(p: IHandlerTreeNodeParameter): OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject {
-        let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject = this.getInlineTypeSchema(p.paramDef.args.typedef);
-        let enumVals: any[];
-        if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
-            if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
-                enumVals = p.paramDef.args.typedef.schema.enum;
+    private isParameterRequired(p: IHandlerTreeNodeParameter): boolean {
+        return !p.paramDef.args.optional && !p.paramDef.args.initializer;
+    }
+
+    getRequestBody(p: IHandlerTreeNodeParameter[]): OpenAPIV3.ReferenceObject | OpenAPIV3.RequestBodyObject {
+        if (p.find(p => p.paramDef.type === ApiParamType.FormFileSingle)) {
+            if (p.find(p => p.paramDef.type !== ApiParamType.FormFileSingle)) {
+                throw new Error('Multipart body types cannot be mixed with body params of other types.');
             }
+
+            return this.getMultipartRequestBodySchema(p);
+        }
+
+        if (p.find(p => p.paramDef.type === ApiParamType.Body || p.paramDef.type === ApiParamType.RawBody)) {
+            // uses traditional body params
+            const bodyParams = p.filter(p => p.paramDef.args.typedef || p.paramDef.args.typeref);
+            if (bodyParams.length > 1) {
+                throw new Error('Unsupported: multiple type-asserting body parameters');
+            }
+
+            if (bodyParams.length === 0) {
+                if (p.length === 1) {
+                    return this.getSingleRequestBody(p[0]);
+                }
+
+                return undefined;
+            }
+
+            return this.getSingleRequestBody(bodyParams[0]);
+        }
+
+        return undefined;
+    }
+
+    private getMultipartRequestBodySchema(params: IHandlerTreeNodeParameter[]): OpenAPIV3.RequestBodyObject {
+        const properties: OpenAPIV3.BaseSchemaObject['properties'] = {};
+        const requiredProperties: string[] = [];
+
+        for (const p of params) {
+            let param: OpenAPIV3.ParameterObject;
+            if (p.paramDef.type === ApiParamType.FormFileSingle) {
+                const name = getMetadataValueByDescriptor(p.metadata, BuiltinMetadata.FormDataFieldName);
+                if (properties[name]) {
+                    throw new Error('Multiple form files are not yet supported');
+                }
+
+                param = {
+                    name,
+                    in: 'body',
+                    required: this.isParameterRequired(p),
+                    description: p.paramDef.args.description,
+                    schema: {
+                        type: 'string',
+                        format: getMetadataValueByDescriptor(p.metadata, BuiltinMetadata.SchemaFormat) ?? 'binary',
+                    },
+                };
+            } else {
+                param = this.getParametersObject(p);
+            }
+
+            if (param.required) {
+                requiredProperties.push(param.name);
+            }
+
+            properties[param.name] = {
+                description: param.description,
+                ...(param.schema),
+            };
         }
 
         return {
-            required: !p.paramDef.args.optional && !p.paramDef.args.initializer,
+            content: {
+                [ApiMimeType.MultipartFormData]: {
+                    schema: {
+                        type: 'object',
+                        properties,
+                        required: requiredProperties.length > 0 ? requiredProperties : undefined,
+                    }
+                }
+            }
+        };;
+    }
+
+    private getSingleRequestBody(p: IHandlerTreeNodeParameter): OpenAPIV3.RequestBodyObject {
+        let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject;
+        if (p.paramDef.args.typedef) {
+            schema = this.getInlineTypeSchema(p.paramDef.args.typedef);
+
+            let enumVals: any[];
+            if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
+                if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
+                    enumVals = p.paramDef.args.typedef.schema.enum;
+                }
+            }
+        } else if (p.paramDef.type === ApiParamType.RawBody) {
+            schema = {
+                type: 'string',
+                format: getMetadataValueByDescriptor(p.metadata, BuiltinMetadata.SchemaFormat) ?? 'binary',
+            };
+        } else {
+            return undefined;
+        }
+
+        const mimeType = (
+            getMetadataValueByDescriptor(p.metadata, BuiltinMetadata.MimeType)
+            ?? ApiMimeType.ApplicationJson
+        );
+
+        return {
+            required: this.isParameterRequired(p),
             description: p.paramDef.args.description,
             content: {
-                [ApiMimeType.ApplicationJson]: {
+                [mimeType]: {
                     schema,
                 }
             }

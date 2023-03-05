@@ -92,6 +92,13 @@ describe('openapi metadata', () => {
 						description: 'A group of methods for greeting'
 					}
 				),
+				treeNodeMetadata(
+					{
+						type: IMetadataType.Builtin,
+						key: BuiltinMetadata.ResponseCodes.key,
+					},
+					[ 200 ]
+				)
 			]),
 		]));
 	});
@@ -105,7 +112,14 @@ describe('openapi metadata', () => {
 				treeNodeMetadata({
 					type: IMetadataType.OpenApi,
 					key: OpenApiMetadataType.Private,
-				}, { "name": "private" })
+				}, { "name": "private" }),
+				treeNodeMetadata(
+					{
+						type: IMetadataType.Builtin,
+						key: BuiltinMetadata.ResponseCodes.key,
+					},
+					[ 200, 204 ]
+				)
 			]),
 		]));
 	});

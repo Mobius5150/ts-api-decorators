@@ -21,6 +21,7 @@ export const enum ApiParamType {
 	Dependency,
 	Out,
 	Custom,
+	FormFileSingle,
 }
 
 export const enum ApiRawBodyParamType {
@@ -51,6 +52,7 @@ export interface IApiHandlerIdentifier {
 export interface IApiDefinitionBase extends IApiHandlerIdentifier {
 	handlerKey: string | symbol;
 	returnType?: InternalTypeDefinition;
+	responseCodes?: number[];
 }
 
 export interface IApiDefinition extends IApiDefinitionBase {
@@ -68,11 +70,17 @@ interface IApiParamDefinitionBase {
 }
 
 export interface IApiParamDefinitionCommon extends IApiParamDefinitionBase {
-	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback | ApiParamType.Dependency;
+	type: ApiParamType.Body | ApiParamType.Query | ApiParamType.Path | ApiParamType.Header | ApiParamType.Callback | ApiParamType.Dependency | ApiParamType.FormFileSingle;
 }
 
 export interface IApiRawBodyParamDefinition extends IApiParamDefinitionBase {
 	type: ApiParamType.RawBody;
+	bodyType: ApiRawBodyParamType;
+	mimeType?: string;
+}
+
+export interface IApiFormFileSingleDefinition extends IApiParamDefinitionBase {
+	type: ApiParamType.FormFileSingle;
 	bodyType: ApiRawBodyParamType;
 	mimeType?: string;
 }
@@ -92,7 +100,7 @@ export interface IApiCustomTypeParamDefinition extends IApiParamDefinitionBase {
 	paramId: string;
 }
 
-export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition | IApiRawBodyParamDefinition | IApiOutTypeParamDefinition;
+export type IApiParamDefinition = IApiParamDefinitionCommon | IApiTransportTypeParamDefinition | IApiCustomTypeParamDefinition | IApiRawBodyParamDefinition | IApiOutTypeParamDefinition | IApiFormFileSingleDefinition;
 
 export interface IApiModifierDefinition<T = object> {
 	propertyKey: string | symbol;

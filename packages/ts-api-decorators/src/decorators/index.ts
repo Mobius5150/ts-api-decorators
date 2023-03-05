@@ -8,6 +8,11 @@ export {
 	ApiBodyParam,
 	ApiBodyParamNumber,
 	ApiBodyParamString,
+	ApiBodyParamStream,
+	ApiBodyParamRawString,
+	// ApiBodyParamMultipartFormFileName,
+	// ApiBodyParamMultipartFormFileString,
+	// ApiBodyParamMultipartFormFileStream,
 } from './BodyParams';
 export {
 	ApiHeaderParam,

@@ -139,6 +139,11 @@ export interface IDecoratorArgument {
 	optional?: boolean; // Defaults to false
 
 	/**
+	 * A default value if the argument is not specified.
+	 */
+	defaultExpression?: ts.Expression;
+
+	/**
 	 * Function called to transform the argument
 	 */
 	transformer?: IDecoratorArgumentTransformerFunction; // Defaults to false

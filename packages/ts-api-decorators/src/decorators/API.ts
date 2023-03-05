@@ -9,6 +9,7 @@ import { BuiltinArgumentExtractors } from "../transformer/BuiltinArgumentExtract
 import { ClassDecorator } from "../transformer/ClassDecorator";
 import { HandlerCollectionDecorator } from '../transformer/HandlerCollectionDecorator';
 import { ClassConstructor } from '../Util/ClassConstructors';
+import { DefaultApiResponseCode } from '../Constants';
 
 export type ApiMethodDecoratorReturnType<T, K = (...args: any[]) => T> = (
 	target: object,
@@ -32,16 +33,17 @@ abstract class ApiClassDecorators {
 export const Api = ApiClassDecorators.Api;
 
 abstract class ApiMethodDecorators {
-	public static ApiGetMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiGetMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiGetMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiGetMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
+	public static ApiGetMethod<T extends string>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiGetMethod<T extends void, K extends (string | object)>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
+	public static ApiGetMethod<T extends object>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiGetMethod<T extends void>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
 			BuiltinArgumentExtractors.RouteArgument,
+			BuiltinArgumentExtractors.ResponseCodesArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
 		metadata: [
@@ -49,28 +51,29 @@ abstract class ApiMethodDecorators {
 			BuiltinMetadata.ApiMethodTypeHttp,
 		],
 	})
-	public static ApiGetMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition): ApiMethodDecoratorReturnType<T> {
+	public static ApiGetMethod<T extends ApiMethodReturnType>(route: string, responseCodes?: number[], returnType?: InternalTypeDefinition): ApiMethodDecoratorReturnType<T> {
 		return (
 			target: object,
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 		) => {
 			ManagedApiInternal.AddApiMetadataToObject(
-				ApiMethodDecorators.wrapApiMethod(ApiMethod.GET, route, propertyKey, descriptor, returnType),
+				ApiMethodDecorators.wrapApiMethod(ApiMethod.GET, route, propertyKey, descriptor, responseCodes, returnType),
 				target.constructor);
 		}
 	}
 
-	public static ApiPostMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiPostMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiPostMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiPostMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
+	public static ApiPostMethod<T extends string>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPostMethod<T extends void, K extends (string | object)>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
+	public static ApiPostMethod<T extends object>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPostMethod<T extends void>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
 			BuiltinArgumentExtractors.RouteArgument,
+			BuiltinArgumentExtractors.ResponseCodesArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
 		metadata: [
@@ -78,28 +81,29 @@ abstract class ApiMethodDecorators {
 			BuiltinMetadata.ApiMethodTypeHttp,
 		],
 	})
-	public static ApiPostMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
+	public static ApiPostMethod<T extends ApiMethodReturnType>(route: string, responseCodes?: number[], returnType?: InternalTypeDefinition) {
 		return (
 			target: object,
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 		) => {
 			ManagedApiInternal.AddApiMetadataToObject(
-				ApiMethodDecorators.wrapApiMethod(ApiMethod.POST, route, propertyKey, descriptor, returnType),
+				ApiMethodDecorators.wrapApiMethod(ApiMethod.POST, route, propertyKey, descriptor, responseCodes, returnType),
 				target.constructor);
 		}
 	}
 
-	public static ApiPutMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiPutMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiPutMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiPutMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
+	public static ApiPutMethod<T extends string>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPutMethod<T extends void, K extends (string | object)>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
+	public static ApiPutMethod<T extends object>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiPutMethod<T extends void>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
 			BuiltinArgumentExtractors.RouteArgument,
+			BuiltinArgumentExtractors.ResponseCodesArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
 		metadata: [
@@ -107,28 +111,29 @@ abstract class ApiMethodDecorators {
 			BuiltinMetadata.ApiMethodTypeHttp,
 		],
 	})
-	public static ApiPutMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
+	public static ApiPutMethod<T extends ApiMethodReturnType>(route: string, responseCodes?: number[], returnType?: InternalTypeDefinition) {
 		return (
 			target: object,
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 		) => {
 			ManagedApiInternal.AddApiMetadataToObject(
-				ApiMethodDecorators.wrapApiMethod(ApiMethod.PUT, route, propertyKey, descriptor, returnType),
+				ApiMethodDecorators.wrapApiMethod(ApiMethod.PUT, route, propertyKey, descriptor, responseCodes, returnType),
 				target.constructor);
 		}
 	}
 
-	public static ApiDeleteMethod<T extends string>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiDeleteMethod<T extends void, K extends (string | object)>(route: string): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
-	public static ApiDeleteMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<T | Promise<T>>;
-	public static ApiDeleteMethod<T extends void>(route: string): ApiMethodDecoratorReturnType<void | Promise<void>>;
+	public static ApiDeleteMethod<T extends string>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiDeleteMethod<T extends void, K extends (string | object)>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
+	public static ApiDeleteMethod<T extends object>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
+	public static ApiDeleteMethod<T extends void>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<void | Promise<void>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
 			BuiltinArgumentExtractors.RouteArgument,
+			BuiltinArgumentExtractors.ResponseCodesArgument,
 			BuiltinArgumentExtractors.ReturnSchemaArgument,
 		],
 		metadata: [
@@ -136,26 +141,39 @@ abstract class ApiMethodDecorators {
 			BuiltinMetadata.ApiMethodTypeHttp,
 		],
 	})
-	public static ApiDeleteMethod<T extends ApiMethodReturnType>(route: string, returnType?: InternalTypeDefinition) {
+	public static ApiDeleteMethod<T extends ApiMethodReturnType>(route: string, responseCodes?: number[], returnType?: InternalTypeDefinition) {
 		return (
 			target: object,
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<(...args: any[]) => T>
 		) => {
 			ManagedApiInternal.AddApiMetadataToObject(
-				ApiMethodDecorators.wrapApiMethod(ApiMethod.DELETE, route, propertyKey, descriptor, returnType),
+				ApiMethodDecorators.wrapApiMethod(ApiMethod.DELETE, route, propertyKey, descriptor, responseCodes, returnType),
 				target.constructor);
 		}
 	}
 
-	private static wrapApiMethod<T extends ApiMethodFunction>(method: ApiMethod, route: string, handlerKey: string | symbol, descriptor: TypedPropertyDescriptor<T>, returnType?: InternalTypeDefinition): IApiDefinition {
+	private static wrapApiMethod<T extends ApiMethodFunction>(method: ApiMethod, route: string, handlerKey: string | symbol, descriptor: TypedPropertyDescriptor<T>, responseCodes?: number[], returnType?: InternalTypeDefinition): IApiDefinition {
 		return {
 			method,
 			route,
 			handlerKey,
 			handler: descriptor.value,
 			returnType,
+			responseCodes: this.toResponseCodesArray(responseCodes),
 		}
+	}
+
+	private static toResponseCodesArray(responseCodes?: number[]): number[] {
+		if (typeof responseCodes === 'number') {
+			return [responseCodes];
+		}
+
+		if (!responseCodes || !Array.isArray(responseCodes) || responseCodes.length === 0) {
+			return [ DefaultApiResponseCode ];
+		}
+
+		return responseCodes;
 	}
 }
 

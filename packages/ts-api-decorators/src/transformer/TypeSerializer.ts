@@ -1,7 +1,7 @@
 import * as ts from 'typescript';
 import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil, InternalEnumTypeDefinition, IntrinsicTypeDefinitionString, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments, UnionType } from './TransformerUtil';
+import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments, UnionType, nodeHasElements } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 
 export class TypeSerializer {
@@ -305,7 +305,7 @@ export class TypeSerializer {
 		return !!this.compileExpressionToConstant(expression);
 	}
 
-	public  compileExpressionToStringConstant(expression: ts.Expression): string {
+	public compileExpressionToStringConstant(expression: ts.Expression): string {
 		const compiled = this.compileExpressionToConstant(expression);
 		if (typeof compiled === 'number' || typeof compiled === 'bigint') {
 			return compiled.toString();
@@ -318,6 +318,40 @@ export class TypeSerializer {
 		} else {
 			throw new Error('Unknown compilation result type: ' + typeof compiled);
 		}
+	}
+
+	public compileExpressionToArrayConstant(expression: ts.Expression): Array<number | boolean | string> {
+		if (expression.kind !== ts.SyntaxKind.ArrayLiteralExpression) {
+			throw new Error('Expression was of invalid kind to compile to array: ' + expression.kind);
+		}
+
+		if (nodeHasElements(expression)) {
+			return expression.elements.map(c => this.arrayNodeToConstant(c)).filter(c => Boolean(c));
+		}
+
+		try {
+			return expression.getChildren().map(c => this.arrayNodeToConstant(c)).filter(c => Boolean(c));
+		} catch (e) {
+
+		}
+
+		return expression.forEachChild(undefined, (children) => children.map(c => this.arrayNodeToConstant(c))).filter(c => Boolean(c));
+	}
+	
+	private arrayNodeToConstant(c: ts.Node) {
+		if (!ts.isLiteralExpression(c)) {
+			if (ts.isToken(c)) {
+				return null;
+			}
+
+			throw new Error('Array elements must be literals');
+		}
+
+		if (c.kind === ts.SyntaxKind.SyntaxList && c.getChildCount() === 1) {
+			return this.compileExpressionToConstant(c.getChildAt(0) as ts.Expression);
+		}
+
+		return this.compileExpressionToConstant(c);
 	}
 
 	protected compileExpressionToConstant(expression: ts.Expression) {

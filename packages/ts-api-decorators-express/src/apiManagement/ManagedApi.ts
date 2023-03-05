@@ -10,7 +10,8 @@ import {
 	ApiParamsDict,
 	ManagedApiInternal,
 	IApiInvocationResult,
-	IApiInvocationParams
+	IApiInvocationParams,
+	IApiInvocationContextPostInvoke
 } from 'ts-api-decorators';
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
@@ -130,6 +131,10 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				next(e);
 			}
 		};
+	}
+
+	public static HasExecutionContext() {
+		return Boolean(BaseManagedApi.HasExecutionContext());
 	}
 
 	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IApiInvocationParams<IExpressManagedApiContext>): stream.Writable {

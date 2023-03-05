@@ -114,6 +114,12 @@ export abstract class BuiltinMetadata {
         key: 'route',
     }
 
+    public static readonly ResponseCodes: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'responseCodes',
+    }
+
     public static readonly ApiProcessorStage: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,
@@ -208,5 +214,17 @@ export abstract class BuiltinMetadata {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,
         key: 'propertyKey',
+    }
+
+    public static readonly FormDataFieldName: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'formDataFieldName',
+    }
+
+    public static readonly SchemaFormat: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'schemaFormat',
     }
 }

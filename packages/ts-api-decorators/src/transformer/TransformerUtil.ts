@@ -43,6 +43,10 @@ export interface ParameterizedType extends ts.Type {
     typeArguments: ts.Type[];
 }
 
+export interface NodeWithElements extends ts.Node {
+    elements: ts.Node[];
+}
+
 export function isNamedNode(n: ts.Node & Partial<NamedNode>): n is NamedNode {
     return typeof n.name !== 'undefined';
 }
@@ -61,6 +65,10 @@ export function isBuiltinSymbol(s: ts.Symbol): s is BuiltinSymbol {
 
 export function isIntrinsicType(s: ts.Type & Partial<IntrinsicType>): s is IntrinsicType {
     return typeof s.intrinsicName === 'string';
+}
+
+export function nodeHasElements(s: ts.Node): s is NodeWithElements {
+    return s && Array.isArray((s as any).elements);
 }
 
 export function isUnionType(n: ts.TypeNode, s: ts.Type & Partial<UnionType>): s is UnionType {

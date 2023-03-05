@@ -67,6 +67,12 @@ abstract class BodyParams {
 		arguments: [
 			BuiltinArgumentExtractors.OptionalMimeTypeArgument,
 		],
+		metadata: [
+			{
+				...BuiltinMetadata.SchemaFormat,
+				value: 'binary',
+			}
+		],
 	})
 	public static ApiBodyParamStream(a?: any) {
 		const args = <__ApiParamArgs>a;
@@ -78,6 +84,111 @@ abstract class BodyParams {
 					parameterIndex,
 					propertyKey,
 					type: ApiParamType.RawBody,
+					bodyType: ApiRawBodyParamType.Stream,
+				},
+				target.constructor);
+		}
+	}
+
+	public static ApiBodyParamMultipartFormFileName(stringValidationRegex?: RegExp);
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.FormFileSingle,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		skipOutputTypeDefinitions: true,
+		arguments: [
+			BuiltinArgumentExtractors.RegexpArgument,
+		],
+	})
+	public static ApiBodyParamMultipartFormFileName(a?: any) {
+		const args = <__ApiParamArgs>a;
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					...a,
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.Body,
+					bodyType: ApiRawBodyParamType.Stream,
+				},
+				target.constructor);
+		}
+	}
+
+	public static ApiBodyParamMultipartFormFileString(mimeType?: string);
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.FormFileSingle,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeString ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		arguments: [
+			BuiltinArgumentExtractors.OptionalMimeTypeArgument,
+		],
+		metadata: [
+			{
+				...BuiltinMetadata.FormDataFieldName,
+				value: 'fileName',
+			},
+			{
+				...BuiltinMetadata.SchemaFormat,
+				value: 'binary',
+			},
+		],
+	})
+	public static ApiBodyParamMultipartFormFileString(a?: any) {
+		const args = <__ApiParamArgs>a;
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					...a,
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.Body,
+					bodyType: ApiRawBodyParamType.String,
+				},
+				target.constructor);
+		}
+	}
+
+	public static ApiBodyParamMultipartFormFileStream(mimeType?: string);
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.FormFileSingle,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeAnyObject ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		arguments: [
+			BuiltinArgumentExtractors.OptionalMimeTypeArgument,
+		],
+		metadata: [
+			{
+				...BuiltinMetadata.FormDataFieldName,
+				value: 'fileName',
+			},
+			{
+				...BuiltinMetadata.SchemaFormat,
+				value: 'binary',
+			},
+		],
+	})
+	public static ApiBodyParamMultipartFormFileStream(a?: any) {
+		const args = <__ApiParamArgs>a;
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					...a,
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.Body,
 					bodyType: ApiRawBodyParamType.Stream,
 				},
 				target.constructor);
@@ -163,3 +274,6 @@ export const ApiBodyParamString = BodyParams.ApiBodyParamString;
 export const ApiBodyParamNumber = BodyParams.ApiBodyParamNumber;
 export const ApiBodyParamStream = BodyParams.ApiBodyParamStream;
 export const ApiBodyParamRawString = BodyParams.ApiBodyParamRawString;
+// export const ApiBodyParamMultipartFormFileName = BodyParams.ApiBodyParamMultipartFormFileName;
+// export const ApiBodyParamMultipartFormFileString = BodyParams.ApiBodyParamMultipartFormFileString;
+// export const ApiBodyParamMultipartFormFileStream = BodyParams.ApiBodyParamMultipartFormFileStream;

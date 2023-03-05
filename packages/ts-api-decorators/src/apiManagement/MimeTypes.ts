@@ -92,4 +92,5 @@ export enum ApiMimeType {
     ApplicationOctetStream = 'application/octet-stream',
     Text = 'text/plain',
     TextXml = 'text/xml',
+    MultipartFormData = 'multipart/form-data',
 }

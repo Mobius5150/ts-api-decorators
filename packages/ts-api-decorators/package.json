@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators",
-  "version": "0.1.47",
+  "version": "0.1.57",
   "description": "API Decorators for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "tsapi": "./dist/tsapi.js"
   },
   "optionalDependencies": {
-    "ts-api-decorators-azure-function": "^0.1.47"
+    "ts-api-decorators-azure-function": "^0.1.57"
   },
   "dependencies": {
     "@azure/functions": "^1.0.3",

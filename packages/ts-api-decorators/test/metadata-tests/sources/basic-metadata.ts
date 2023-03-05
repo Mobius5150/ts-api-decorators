@@ -13,7 +13,7 @@ class MyApi {
 	 * @tags greeters A group of methods for greeting
 	 * @returns The greeting
 	 */
-	@ApiGetMethod<string>('/hello')
+	@ApiGetMethod<string>('/hello', [200])
 	greet(
 		@ApiQueryParam() name: string,
 		@ApiQueryParam() times: number = 1,
@@ -30,7 +30,7 @@ class MyApi {
 	/**
 	 * @private
 	 */
-	@ApiGetMethod<string>('/helloPrivate')
+	@ApiGetMethod<string>('/helloPrivate', [200, 204])
 	greetPrivate(
 		@ApiQueryParam() name: string,
 		@ApiQueryParam() times: number = 1,
