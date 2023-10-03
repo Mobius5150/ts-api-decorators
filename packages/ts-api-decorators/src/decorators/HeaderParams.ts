@@ -26,7 +26,7 @@ abstract class HeaderParams {
 		],
 	})
 	public static ApiHeaderParamString(a?: any): ParameterDecorator {
-		return this.ApiHeaderParam(a);
+		return HeaderParams.ApiHeaderParam(a);
 	}
 
 	/**
@@ -50,7 +50,7 @@ abstract class HeaderParams {
 		],
 	})
 	public static ApiHeaderParamNumber(a?: any): ParameterDecorator {
-		return this.ApiHeaderParam(a);
+		return HeaderParams.ApiHeaderParam(a);
 	}
 
 	/**

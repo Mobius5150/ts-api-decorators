@@ -56,6 +56,24 @@ export abstract class BuiltinArgumentExtractors {
 		}),
 	};
 
+	public static readonly FunctionArgumentNameArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeString,
+		optional: false,
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.FunctionArgumentName,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
+	public static readonly SchemaOutputRefOverrideArgument: IDecoratorArgument = {
+		type: InternalTypeUtil.TypeString,
+		optional: true,
+		metadataExtractor: (args) => ({
+			...BuiltinMetadata.SchemaRefOverride,
+			value: args.transformContext.typeSerializer.compileExpressionToStringConstant(args.argumentExpression),
+		}),
+	};
+
 	public static readonly OptionalNameArgument: IDecoratorArgument = {
 		...BuiltinArgumentExtractors.NameArgument,
 		optional: true,

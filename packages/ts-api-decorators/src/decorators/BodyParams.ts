@@ -25,7 +25,7 @@ abstract class BodyParams {
 		],
 	})
 	public static ApiBodyParamString(a?: any) {
-		return this.ApiBodyParam(a);
+		return BodyParams.ApiBodyParam(a);
 	}
 
 	/**
@@ -48,7 +48,7 @@ abstract class BodyParams {
 		],
 	})
 	public static ApiBodyParamNumber(a?: any) {
-		return this.ApiBodyParam(a);
+		return BodyParams.ApiBodyParam(a);
 	}
 
 	/**

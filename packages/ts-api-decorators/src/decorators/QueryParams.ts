@@ -26,7 +26,7 @@ abstract class QueryParams {
 		],
 	})
 	public static ApiQueryParamString(a?: any): ParameterDecorator {
-		return this.ApiQueryParam(a);
+		return QueryParams.ApiQueryParam(a);
 	}
 
 	/**
@@ -49,7 +49,7 @@ abstract class QueryParams {
 		],
 	})
 	public static ApiQueryParamNumber(a?: any): ParameterDecorator {
-		return this.ApiQueryParam(a);
+		return QueryParams.ApiQueryParam(a);
 	}
 
 	/**

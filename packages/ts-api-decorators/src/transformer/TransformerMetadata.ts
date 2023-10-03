@@ -102,6 +102,18 @@ export abstract class BuiltinMetadata {
         key: 'name',
     }
 
+    public static readonly FunctionArgumentName: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'functionargname',
+    }
+
+	public static readonly SchemaRefOverride: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'schemarefoverride',
+    }
+
     public static readonly MimeType: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,

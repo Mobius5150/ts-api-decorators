@@ -63,6 +63,57 @@ abstract class ApiMethodDecorators {
 		}
 	}
 
+	public static ApiGetSchemaMethod(route: string, parameter: string, schemaRefOverride?: string): ApiMethodDecoratorReturnType<any | Promise<any>>;
+	@ApiDecorator(HandlerMethodDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		arguments: [
+			BuiltinArgumentExtractors.RouteArgument,
+			BuiltinArgumentExtractors.FunctionArgumentNameArgument,
+			BuiltinArgumentExtractors.SchemaOutputRefOverrideArgument,
+		],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.GET),
+			BuiltinMetadata.ApiMethodTypeHttp,
+		],
+	})
+	public static ApiGetSchemaMethod(route: string, parameter: string, schemaRefOverride?: string): ApiMethodDecoratorReturnType<any> {
+		return (
+			target: object,
+			propertyKey: string,
+			descriptor: TypedPropertyDescriptor<any>
+		) => {
+			ManagedApiInternal.AddApiMetadataToObject(
+				ApiMethodDecorators.wrapApiMethodWithHandler(ApiMethod.GET, route, propertyKey + '##tsapi_getschema', () => {
+					const definitions = ManagedApiInternal.GetHandlerParamDefinitionsOnObject(target.constructor, propertyKey);
+					const typedef = definitions.find(d => d.args.name === parameter)?.args.typedef;
+					if (!typedef) {
+						throw new Error('Could not find typedef');
+					}
+
+					if (typedef.type !== 'object') {
+						throw new Error('ApiGetSchemaMethod only supports object types');
+					}
+
+					if (schemaRefOverride) {
+						return {
+							...typedef.schema,
+							$ref: schemaRefOverride,
+						}
+					}
+
+					return typedef.schema;
+				}, undefined, {
+					type: 'object',
+					schema: {
+						"$schema": "http://json-schema.org/draft-07/schema#",
+					},
+				}),
+			target.constructor);
+		}
+	}
+
 	public static ApiPostMethod<T extends string>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
 	public static ApiPostMethod<T extends void, K extends (string | object)>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T, (callback: ApiMethodCallbackFunction<K>, ...args: any[]) => T>;
 	public static ApiPostMethod<T extends object>(route: string, responseCodes?: number[]): ApiMethodDecoratorReturnType<T | Promise<T>>;
@@ -154,13 +205,17 @@ abstract class ApiMethodDecorators {
 	}
 
 	private static wrapApiMethod<T extends ApiMethodFunction>(method: ApiMethod, route: string, handlerKey: string | symbol, descriptor: TypedPropertyDescriptor<T>, responseCodes?: number[], returnType?: InternalTypeDefinition): IApiDefinition {
+		return this.wrapApiMethodWithHandler(method, route, handlerKey, descriptor.value, responseCodes, returnType);
+	}
+
+	private static wrapApiMethodWithHandler<T extends ApiMethodFunction>(method: ApiMethod, route: string, handlerKey: string | symbol, handler: T, responseCodes?: number[], returnType?: InternalTypeDefinition): IApiDefinition {
 		return {
 			method,
 			route,
 			handlerKey,
-			handler: descriptor.value,
+			handler,
 			returnType,
-			responseCodes: this.toResponseCodesArray(responseCodes),
+			responseCodes: ApiMethodDecorators.toResponseCodesArray(responseCodes),
 		}
 	}
 
@@ -184,3 +239,4 @@ export const ApiGetMethod = ApiMethodDecorators.ApiGetMethod;
 export const ApiPutMethod = ApiMethodDecorators.ApiPutMethod;
 export const ApiPostMethod = ApiMethodDecorators.ApiPostMethod;
 export const ApiDeleteMethod = ApiMethodDecorators.ApiDeleteMethod;
+export const ApiGetSchemaMethod = ApiMethodDecorators.ApiGetSchemaMethod;

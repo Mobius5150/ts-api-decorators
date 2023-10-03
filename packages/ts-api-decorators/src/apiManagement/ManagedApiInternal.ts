@@ -186,23 +186,23 @@ export class ManagedApiInternal {
 		return Reflect.getMetadata(this.ApiMethodModifierMetadataKey, target, propertyKey) || [];
 	}
 
-	private static GetGlobalApiProcessorOnObject(target: object): IApiGlobalProcessor[] {
+	public static GetGlobalApiProcessorOnObject(target: object): IApiGlobalProcessor[] {
 		return Reflect.getMetadata(this.GlobalApiProcessorMetadataKey, target) || [];
 	}
 
-	private static GetApiProcessorsOnObject(target: object): IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] {
+	public static GetApiProcessorsOnObject(target: object): IApiProcessor<IApiInvocationParams<any> | IApiInvocationResult>[] {
 		return Reflect.getMetadata(this.ApiMethodProcessorsMetadataKey, target) || [];
 	}
 
-	private static GetHandlerParamDefinitionsOnObject(target: object, key: string | symbol): IApiParamDefinition[] {
+	public static GetHandlerParamDefinitionsOnObject(target: object, key: string | symbol): IApiParamDefinition[] {
 		return Reflect.getMetadata(this.ApiMethodParamsMetadataKey, target, key) || [];
 	}
 
-	private static GetDependencyDefinitionsOnObject(target: object): IDependency[] {
+	public static GetDependencyDefinitionsOnObject(target: object): IDependency[] {
 		return Reflect.getMetadata(this.DependencyMetadataKey, target) || [];
 	}
 
-	private static GetDependencyParamDefinitionsOnObject(target: object, key: string | symbol): IDependencyParam[] {
+	public static GetDependencyParamDefinitionsOnObject(target: object, key: string | symbol): IDependencyParam[] {
 		return Reflect.getMetadata(this.DependencyParamMetadataKey, target, key) || [];
 	}
 }
