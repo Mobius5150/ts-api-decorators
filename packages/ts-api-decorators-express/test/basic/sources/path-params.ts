@@ -76,6 +76,16 @@ export default <ITestServer>{
 		});
 	},
 	stop: () => {
-		server.close();
+		return new Promise((resolve, reject) => {
+			server.once('close', (e?: any) => {
+				if (e) {
+					reject(e);
+				} else {
+					setTimeout(resolve, 1);
+				}
+			});
+
+			server.close();
+		});
 	},
 };

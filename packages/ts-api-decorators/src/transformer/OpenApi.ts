@@ -112,7 +112,7 @@ export class OpenApiMetadataExtractors {
 				node.tags
 					.filter(t => t.tagName.text === OpenApiMetadataExtractors.JsDocTagTag)
 					.map(t => {
-						const parts = t.comment.split(/\s+/);
+						const parts = typeof t.comment === 'string' ? t.comment?.split(/\s+/) : t.comment?.map(c => c.text);
 						return {
 							name: parts.shift(),
 							description: parts.join(' '),
@@ -129,7 +129,7 @@ export class OpenApiMetadataExtractors {
 			if (node.tags) {
 				return node.tags.filter(t => t.tagName.text === tag)
 					.map(t => {
-						const parts = t.comment?.split(/\s+/);
+						const parts = typeof t.comment === 'string' ? t.comment?.split(/\s+/) : t.comment?.map(c => c.text);
 						return {
 							name: parts ? parts.shift() : tag,
 							description: parts?.join(' '),
@@ -143,7 +143,7 @@ export class OpenApiMetadataExtractors {
 
 	private static jsdocTagString(tag: ts.JSDocTag | undefined): string {
 		if (tag) {
-			return tag.comment;
+			return  typeof tag.comment === 'string' ? tag.comment : tag.comment?.map(c => c.text).join(' ');
 		}
 
 		return undefined;

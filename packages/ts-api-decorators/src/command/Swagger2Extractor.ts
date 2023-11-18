@@ -273,8 +273,12 @@ export class Swagger2Extractor implements IExtractor {
         
         let enumVals: any[];
         if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
-            if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
-                enumVals = p.paramDef.args.typedef.schema.enum;
+            if (p.paramDef.args.typedef.schema) {
+                if ('enum' in p.paramDef.args.typedef.schema) {
+					enumVals = p.paramDef.args.typedef.schema.enum;
+				} else if ('const' in p.paramDef.args.typedef.schema) {
+					enumVals = [p.paramDef.args.typedef.schema.const];
+				}
             }
         }
 

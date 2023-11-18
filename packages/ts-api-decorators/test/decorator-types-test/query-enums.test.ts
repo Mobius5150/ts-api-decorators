@@ -195,7 +195,7 @@ describe('transformer enum support', () => {
 						typedef: {
 							...InternalTypeUtil.TypeString,
 							schema: {
-								enum: ['single']
+								const: 'single',
 							}
 						}
 					},
@@ -216,7 +216,7 @@ describe('transformer enum support', () => {
 						typedef: {
 							...InternalTypeUtil.TypeNumber,
 							schema: {
-								enum: [0]
+								const: 0,
 							}
 						}
 					},

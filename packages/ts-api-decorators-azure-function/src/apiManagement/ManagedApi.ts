@@ -1,4 +1,3 @@
-import { Context } from "@azure/functions";
 import {
 	ManagedApi as BaseManagedApi,
 	IApiHandlerInstance,
@@ -18,12 +17,14 @@ import { IAzureStorageBlobProperties } from "../decorators";
 import { IApiProcessor } from "ts-api-decorators/dist/apiManagement/ApiProcessing/ApiProcessing";
 import { getMetadataValueByDescriptor } from "ts-api-decorators/dist/transformer/TransformerMetadata";
 import { AzFuncArgumentExtractors } from "../decorators/ArgumentExtractors";
+import { InvocationContext as Context, InvocationContext } from '@azure/functions';
 
 export function registerApiProcessorsOnHandler(handlerMethod: object, processors: IApiProcessor<IApiInvocationParams<IAzureFunctionManagedApiContext> | IApiInvocationResult>[]): void {
 	ManagedApiInternal.AddApiProcessorsToObject(processors, handlerMethod);
 }
 
 export interface IAzureFunctionManagedApiContext {
+	
 	context: Context;
 	timer?: IAzureFunctionsTimer;
 	inputBlob?: Buffer;
@@ -72,7 +73,7 @@ export class ManagedApi extends BaseManagedApi<IAzureFunctionManagedApiContext> 
 				
 				const handler = singleton.getHandler(method, descr.route);
 				const result = await handler.wrappedHandler(invocationParams);
-				if (!context.res && result.statusCode >= 300) {
+				if (!context && result.statusCode >= 300) {
 					// TODO: Need to handle error responses in non-http functions
 					if (typeof result.body === 'string') {
 						throw new HttpError(result.body, result.statusCode);

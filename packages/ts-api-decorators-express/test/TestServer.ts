@@ -5,7 +5,7 @@ import {compileSourceFile, getDefaultCompilerOptions, getTransformer} from 'ts-a
 
 export interface ITestServer {
 	start: (portNo: number, started: (err?: any, server?: http.Server) => void) => void;
-	stop: () => void;
+	stop: () => Promise<void>;
 }
 
 export class TestServer {

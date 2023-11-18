@@ -96,7 +96,7 @@ export interface ITransformedTreeElement<T extends ts.Node> {
 	decoratorTreeNode: IHandlerTreeNode;
 }
 
-function isNodeByType<T extends any>(type: HandlerTreeNodeType): (node: IHandlerTreeNode) => node is T {
+function isNodeByType<T extends IHandlerTreeDecoratorNode>(type: HandlerTreeNodeType): (node: IHandlerTreeNode) => node is T {
 	return (node): node is T => {
 		return node.type === type;
 	};

@@ -18,7 +18,7 @@ export abstract class BuiltinArgumentExtractors {
 
 	public static readonly ResponseCodesArgument: IDecoratorArgument = {
 		type: InternalTypeUtil.TypeNumberArray,
-		defaultExpression: ts.createArrayLiteral([ts.createNumericLiteral(DefaultApiResponseCode.toString())]),
+		defaultExpression: ts.factory.createArrayLiteralExpression([ts.factory.createNumericLiteral(DefaultApiResponseCode.toString())]),
 		metadataExtractor: (args) => ({
 			...BuiltinMetadata.ResponseCodes,
 			value: args.transformContext.typeSerializer.compileExpressionToArrayConstant(args.argumentExpression),
@@ -184,7 +184,11 @@ export abstract class BuiltinArgumentExtractors {
 		type: { type: 'any' },
 		optional: true,
 		metadataExtractor: (args) => {
-			const decorator = args.node.decorators?.find(d => (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
+			if (!ts.canHaveDecorators(args.node)) {
+				return;
+			}
+
+			const decorator = args.node.modifiers?.find(d => d.kind === ts.SyntaxKind.Decorator && (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
 			let returnType = BuiltinArgumentExtractors.GetTypeArgumentType(decorator, args.transformContext, argNo);
 			if (returnType) {
 				return {
@@ -194,7 +198,11 @@ export abstract class BuiltinArgumentExtractors {
 			}
 		},
 		transformer: (args) => {
-			const decorator = args.node.decorators?.find(d => (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
+			if (!ts.canHaveDecorators(args.node)) {
+				return;
+			}
+			
+			const decorator = args.node.modifiers?.find(d => d.kind === ts.SyntaxKind.Decorator && (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
 			let returnType = BuiltinArgumentExtractors.GetTypeArgumentType(decorator, args.transformContext, argNo);
 			if (returnType) {
 				return args.transformContext.typeSerializer.objectToLiteral(returnType);
@@ -234,7 +242,7 @@ export abstract class BuiltinArgumentExtractors {
 	private static parenthesizeExpression(expression: ts.Expression) {
 		return ts.isParenthesizedExpression(expression)
 			? expression
-			: ts.createParen(expression);
+			: ts.factory.createParenthesizedExpression(expression);
     }
 
 	private static 

@@ -4,6 +4,7 @@ import 'mocha';
 import { getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
+import { DeepPartial, definitionPathWithSymbolChecker } from '../../src/Testing/TreeTestUtil';
 
 interface IGetInitHandlers {
 	getInitHandlers: ManagedApi<{}>['initHandlers'];
@@ -44,9 +45,9 @@ describe('TypeSerializer', () => {
 		const apiPath = '/hello';
 		
 		assert(handlers.has(ApiMethod.GET));
-		assert(handlers.get(ApiMethod.GET).has(apiPath));
+		assert(handlers.get(ApiMethod.GET)!.has(apiPath));
 
-		const handlerInstance = handlers.get(ApiMethod.GET).get(apiPath);
+		const handlerInstance = handlers.get(ApiMethod.GET)!.get(apiPath)!;
 		assert.equal(handlerInstance.handlerArgs.length, 1);
 
 		const bodyArg = handlerInstance.handlerArgs[0];
@@ -54,12 +55,13 @@ describe('TypeSerializer', () => {
 
 		const typedef: InternalObjectTypeDefinition = <InternalObjectTypeDefinition>bodyArg.args.typedef;
 		assert.equal(typedef.typename, 'IRequestBody');
-		assert.deepNestedInclude(
+		const requestBody = Symbol('IRequestBody'), bodyParams = Symbol('IBodyParams');
+		assertRealInclude(
 			typedef.schema,
 			{
-				$ref: '#/definitions/IRequestBody',
+				$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, requestBody, 'IRequestBody', ctx),
 				definitions: {
-					IRequestBody: {
+					[requestBody]: {
 						type: 'object',
 						required: ['params', 'version'],
 						properties: {
@@ -67,17 +69,17 @@ describe('TypeSerializer', () => {
 								type: 'string'
 							},
 							params: {
-								'$ref': '#/definitions/IBodyParams',
+								'$ref': (actual, ctx) => definitionPathWithSymbolChecker(actual, bodyParams, 'IBodyParams', ctx),
 							}
 						}
 					},
-					IBodyParams: {
+					[bodyParams]: {
 						type: 'object',
 						required: ['params', 'source'],
 						properties: {
 							source: {
 								type: 'string',
-								enum: ['a'],
+								const: 'a',
 							},
 							params: {
 								type: 'array',
@@ -88,23 +90,32 @@ describe('TypeSerializer', () => {
 						}
 					}
 				},
+			},
+			undefined,
+			{
+				funcmode: 'matcher',
+				symbols: {
+					[requestBody]: {},
+					[bodyParams]: {},
+				}
 			}
 		)
 	});
 
 	it('should parse return types', async () => {
 		assert(handlers.has(ApiMethod.GET));
-		const getHandlers = handlers.get(ApiMethod.GET);
-		const routeAssertions: {[key: string]: IApiHandlerInstance<object>['returnType']} = {
+		const getHandlers = handlers.get(ApiMethod.GET)!;
+		const responseBody = Symbol('IResponseBody');
+		const routeAssertions: {[key: string]: DeepPartial<IApiHandlerInstance<object>['returnType']>} = {
 			'/hello': {
 				type: 'string'
 			},
 			'/helloDep': {
 				type: 'object',
 				schema: {
-					$ref: '#/definitions/IResponseBody',
+					$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, responseBody, 'IResponseBody', ctx),
 					definitions: {
-						IResponseBody: {
+						[<any>responseBody]: {
 							type: 'object',
 							properties: {
 								message: {
@@ -126,7 +137,9 @@ describe('TypeSerializer', () => {
 
 			assertRealInclude(
 				instance.returnType,
-				routeAssertions[route]);
+				routeAssertions[route]!,
+				undefined,
+				{ funcmode: 'matcher', symbols: { [responseBody]: {} } });
 		}
 	});
 });

@@ -142,7 +142,7 @@ export class TypeSerializer {
 			uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
 		};
 
-		if (union.types && union.types.every(t => (t.type === 'string' || t.type === 'number') && Array.isArray(t.schema?.enum))) {
+		if (union.types && union.types.every(t => (t.type === 'string' || t.type === 'number') && t.schema && 'enum' in t.schema && Array.isArray(t.schema?.enum))) {
 			// This union can be collapsed to an enum
 			let type = 'enum';
 			if (union.types.every(t => t.type === 'string')) {
@@ -156,7 +156,7 @@ export class TypeSerializer {
 				schema: {
 					enum: union.types.reduce(
 						(p, c: IntrinsicTypeDefinitionString | IntrinsicTypeDefinitionNumber) =>
-							p.concat(c.schema?.enum || []), []),
+							p.concat('enum' in c.schema ? c.schema.enum : []), []),
 				},
 				typename: union.typename,
 				uniqueTypename: union.uniqueTypename,
@@ -173,14 +173,23 @@ export class TypeSerializer {
 			const refDefParts = schema.$ref.split('/');
 			const refDefName = refDefParts[refDefParts.length - 1];
 			const def = schema.definitions[refDefName];
-			if (def.type !== InternalTypeUtil.TypeAnyObject.type && def.enum) {
-				type = def.type || InternalTypeUtil.TypeEnum.type;
-				schema = {
-					...def,
-					...schema,
-				};
+			if (typeof def === 'boolean') {
+				throw new Error('Boolean definition: ' + refDefName);
+			}
+			if (def.type !== InternalTypeUtil.TypeAnyObject.type) {
+				if (def.enum) {
+					type = (def.type && !Array.isArray(def.type)) ? def.type : InternalTypeUtil.TypeEnum.type;
+					schema = {
+						...def,
+						...schema,
+					};
+				} else {
+					type = def.type;
+					schema = def;
+				}
 			}
 		}
+
 		return {
 			...base,
 			type,
@@ -200,7 +209,12 @@ export class TypeSerializer {
 			definitions: {},
 		};
 		const refs: string[] = [this.getRefShortName(schema.$ref)];
-		this.getRefsRecursive(schema.definitions[refs[0]], schema.definitions, refs);
+		const def = schema.definitions[refs[0]];
+		if (typeof def === 'boolean') {
+			throw new Error('Boolean definition: ' + schema.$ref);
+		}
+
+		this.getRefsRecursive(def, schema.definitions, refs);
 		refs.forEach(v => newSchema.definitions[v] = schema.definitions[v]);
 
 		return newSchema;
@@ -246,20 +260,23 @@ export class TypeSerializer {
 			throw new Error('Reference not found: ' + reference.$ref);
 		}
 
-		return def;
+		// TODO: This is a hack to get around the fact that the generator have the same json schema def
+		return def as any as IJsonSchemaWithRefs;
 	}
 
 	protected valueToLiteral(val: any): ts.Expression {
 		switch (typeof val) {
 			case 'string':
+				return ts.factory.createStringLiteral(val);
 			case 'number':
+				return ts.factory.createNumericLiteral(val);
 			case 'boolean':
-				return ts.createLiteral(val);
+				return val ? ts.factory.createTrue() : ts.factory.createFalse();
 			case 'bigint':
-				return ts.createBigIntLiteral(val.toString());
+				return ts.factory.createBigIntLiteral(val.toString());
 			case 'object':
 				if (Array.isArray(val)) {
-					return ts.createArrayLiteral(val.map(v => this.valueToLiteral(v)));
+					return ts.factory.createArrayLiteralExpression(val.map(v => this.valueToLiteral(v)));
 				}
 				else if (val instanceof ExpressionWrapper) {
 					return val.node;
@@ -268,21 +285,21 @@ export class TypeSerializer {
 					return this.objectToLiteral(val);
 				}
 			case 'undefined':
-				return ts.createIdentifier('undefined');
+				return ts.factory.createIdentifier('undefined');
 			default:
 				throw new Error(`Unknown type serialization path: ${typeof val}`);
 		}
     }
     
 	public objectToLiteral(val: object): ts.ObjectLiteralExpression {
-		return ts.createObjectLiteral(
+		return ts.factory.createObjectLiteralExpression(
 			Object.keys(val).map(k => {
 				let propName: string | ts.StringLiteral = k;
 				if (/[^a-zA-Z0-9_]/.test(<string>k)) {
-					propName = ts.createLiteral(k);
+					propName = ts.factory.createStringLiteral(k);
 				}
 
-				return ts.createPropertyAssignment(propName, this.valueToLiteral(<any>val[<any>k]))
+				return ts.factory.createPropertyAssignment(propName, this.valueToLiteral(<any>val[<any>k]))
 			}), false);
 	}
 	

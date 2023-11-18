@@ -21,30 +21,23 @@
     "ts-api-decorators": "^0.1.61"
   },
   "devDependencies": {
-    "@azure/functions": "^1.0.3",
+    "@azure/functions": "^4.1.0",
     "@azure/storage-blob": "^12.5.0",
     "@types/bent": "^7.3.0",
     "@types/chai": "^4.2.0",
     "@types/mocha": "^5.2.7",
     "@types/node": "^12.7.2",
     "@types/rimraf": "^3.0.0",
-    "@types/supertest": "^2.0.8",
-    "azure-functions-core-tools": "^4.0.4736",
+    "azure-functions-core-tools": "^4.0.5455",
     "bent": "^7.3.10",
     "chai": "^4.2.0",
     "copyfiles": "^2.1.1",
     "mocha": "^6.2.0",
     "rimraf": "^3.0.2",
     "strip-dirs": "^3.0.0",
-    "supertest": "^4.0.2",
+    "supertest": "^6.3.3",
     "ts-node": "^8.3.0",
-    "typescript": "^3.7 < 3.8",
+    "typescript": "~5.1.0",
     "uuid": "^3.4.0"
-  },
-  "peerDependencies": {
-    "typescript": "^3.7 < 3.8"
-  },
-  "resolutions": {
-    "typescript": "^3.7 < 3.8"
   }
 }

@@ -6,12 +6,13 @@ import { ApiMethod, StreamCoercionMode } from '../../src';
 import { TestManagedApi } from '../../src/Testing/TestTransport';
 import * as streamBuffer from 'stream-buffers';
 import { StreamCoercer, ICoercedStream } from '../../src/Util/StreamCoercer';
+import { definitionPathWithSymbolChecker } from '../../src/Testing/TreeTestUtil';
 
 describe('Out Param Runtime', () => {
     let api: TestManagedApi;
 
-    function streamToString(stream: ICoercedStream): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
+    function streamToString(stream: ICoercedStream): Promise<string | null> {
+        return new Promise<string | null>((resolve, reject) => {
             const outBuf = new streamBuffer.WritableStreamBuffer();
             outBuf.on('error', e => reject(e));
             outBuf.on('finish', () => resolve(outBuf.getContentsAsString('utf8') || null));
@@ -79,11 +80,25 @@ describe('Out Param Runtime', () => {
 
 		assert.equal(result.statusCode, 200);
 		const bodyObj = typeof result.body === 'string' ? JSON.parse(result.body) : result.body;
+		const response = Symbol('IGreetResponse');
 		assertRealInclude(bodyObj, {
-			"$ref": "#/definitions/IGreetResponse",
+			$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, response, 'IGreetResponse', ctx),
 			definitions: {
-				IGreetResponse: {},
+				[response]: {
+					type: 'object',
+					properties: {
+						response: {
+							type: 'string'
+						}
+					},
+					required: ['response']
+				},
 			},
+		}, undefined, {
+			funcmode: 'matcher',
+			symbols: {
+				[response]: {},
+			}
 		});
     });
 });

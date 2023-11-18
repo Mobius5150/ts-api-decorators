@@ -100,7 +100,7 @@ export class ClassPropertyDecorator extends Decorator<ts.PropertyDeclaration, IC
 			let parenExpr = this.parenthesizeExpression(node.initializer);
 			return {
 				...BuiltinMetadata.Initializer,
-				value: new ExpressionWrapper(ts.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr)),
+				value: new ExpressionWrapper(ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr)),
 			}
 		}
 	}

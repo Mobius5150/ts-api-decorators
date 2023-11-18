@@ -301,7 +301,7 @@ export class OpenApiV3Extractor implements IExtractor {
             case 'string':
                 return {
                     type: returnType.type,
-                    enum: (returnType.schema && returnType.schema.enum) ? returnType.schema.enum : undefined,
+                    enum: this.getEeturnTypeEnumValue(returnType),
                 };
 
             case 'enum':
@@ -319,6 +319,20 @@ export class OpenApiV3Extractor implements IExtractor {
                 throw new Error(`Unable to serialize inline type: ${returnType.typename} (type: ${returnType.type})`);
         }
     }
+
+	private getEeturnTypeEnumValue(returnType: import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").IntrinsicTypeDefinitionString | import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").IntrinsicTypeDefinitionNumber | import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").InternalObjectTypeDefinition): any[] {
+		if (returnType.schema) {
+			if ('enum' in returnType.schema) {
+				return returnType.schema.enum;
+			}
+
+			if ('const' in returnType.schema) {
+				return [returnType.schema.const];
+			}
+		}
+
+		return undefined;
+	}
 
     private getEnumTypeInline(returnType: InternalEnumTypeDefinition): OpenAPIV3.ReferenceObject | OpenAPIV3.SchemaObject {
         if (!returnType.schema || !returnType.schema.enum || returnType.schema.enum.length === 0) {
@@ -594,8 +608,12 @@ export class OpenApiV3Extractor implements IExtractor {
         let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject = this.getInlineTypeSchema(p.paramDef.args.typedef);
         let enumVals: any[];
         if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
-            if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
-                enumVals = p.paramDef.args.typedef.schema.enum;
+            if (p.paramDef.args.typedef.schema) {
+                if ('enum' in p.paramDef.args.typedef.schema) {
+					enumVals = p.paramDef.args.typedef.schema.enum;
+				} else if ('const' in p.paramDef.args.typedef.schema) {
+					enumVals = [p.paramDef.args.typedef.schema.const];
+				}
             }
         }
 
@@ -698,9 +716,13 @@ export class OpenApiV3Extractor implements IExtractor {
 
             let enumVals: any[];
             if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
-                if (p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema.enum) {
-                    enumVals = p.paramDef.args.typedef.schema.enum;
-                }
+                if (p.paramDef.args.typedef.schema) {
+					if ('enum' in p.paramDef.args.typedef.schema) {
+						enumVals = p.paramDef.args.typedef.schema.enum;
+					} else if ('const' in p.paramDef.args.typedef.schema) {
+						enumVals = [p.paramDef.args.typedef.schema.const];
+					}
+				}
             }
         } else if (p.paramDef.type === ApiParamType.RawBody) {
             schema = {

@@ -1,6 +1,5 @@
 import { expect, assert } from 'chai';
 import * as path from 'path';
-import * as ts from 'typescript';
 import 'mocha';
 import { compileSourcesDir, getDefaultCompilerOptions, getTransformer, asyncGlob, compileSourceFile, getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
 import { IHandlerTreeNodeRoot, HandlerTreeNodeType, IHandlerTreeNode } from '../../src/transformer/HandlerTree';
@@ -14,7 +13,7 @@ import { CompilationError } from '../../src/Util/CompilationError';
 describe('transformer', () => {
 	const defaultOpts = getDefaultCompilerOptions();
 	const transformers = [getTransformer()];
-	let tree: IHandlerTreeNode;
+	let tree: IHandlerTreeNode | undefined;
 	function loadBasicTree() {
 		if (!tree) {
 			assert.doesNotThrow(() => {
@@ -276,8 +275,9 @@ describe('transformer', () => {
 			// greetWithStringParamValidation()
 			treeHandlerMethodNode(ApiMethod.GET, '/helloSchema', undefined,
 			[
-				treeNodeMetadata(BuiltinMetadata.DecoratorTypeArgType, { type: "object", schema: { "$ref": "#/definitions/IGreetResponse", } }),
+				treeNodeMetadata(BuiltinMetadata.DecoratorTypeArgType, { type: "object", schema: { "$ref": a => a?.startsWith('#/definitions/IGreetResponse'), } }),
 			]),
+			undefined, { funcmode: 'matcher' }
 		);
 	});
 
@@ -397,7 +397,7 @@ describe('transformer', () => {
 					...InternalTypeUtil.TypeAnyObject,
 					typename: 'IGreetResponse',
 					schema: {
-						'$ref': '#/definitions/IGreetResponse',
+						'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 					}
 				}),
 			]),
@@ -425,12 +425,12 @@ describe('transformer', () => {
 						...InternalTypeUtil.TypeAnyObject,
 						typename: 'IGreetResponse',
 						schema: {
-							'$ref': '#/definitions/IGreetResponse',
+							'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 						}
 					}
 				}),
 			]),
-		]));
+		]), undefined, { funcmode: 'matcher' });
 	});
 	
 	it('should parse object return types with promises', async () => {
@@ -442,11 +442,11 @@ describe('transformer', () => {
 					...InternalTypeUtil.TypeAnyObject,
 					typename: 'IGreetResponse',
 					schema: {
-						'$ref': '#/definitions/IGreetResponse',
+						'$ref': a => a?.startsWith('#/definitions/IGreetResponse'),
 					}
 				}),
 			]),
-		]));
+		]), undefined, { funcmode: 'matcher' });
 	});
 
 	it('should parse string return types with promises', async () => {

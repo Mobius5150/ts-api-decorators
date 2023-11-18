@@ -165,7 +165,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			let parenExpr = this.parenthesizeExpression(node.initializer);
 			return {
 				...BuiltinMetadata.Initializer,
-				value: new ExpressionWrapper(ts.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr)),
+				value: new ExpressionWrapper(ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr)),
 			}
 		}
 	}
@@ -210,7 +210,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 	private getParamDescription(param: ts.ParameterDeclaration): string | undefined {
 		const paramTags = ts.getJSDocParameterTags(param);
 		if (paramTags.length) {
-			return paramTags[0].comment;
+			return typeof paramTags[0].comment === 'string' ? paramTags[0].comment : paramTags[0].comment?.map(c => c.text).join(' ');
 		}
 
 		return undefined;

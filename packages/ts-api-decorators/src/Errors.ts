@@ -95,6 +95,15 @@ export class HttpEnumParamInvalidValueError extends HttpBadRequestError {
     }
 }
 
+export class HttpConstParamInvalidValueError extends HttpBadRequestError {
+    constructor(paramName: string, value: any) {
+        super(`Invalid value for const parameter '${paramName}'. Value must be '${value}'`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpConstParamInvalidValueError.prototype);
+    }
+}
+
 export class HttpParamInvalidError extends HttpBadRequestError {
     constructor(paramName: string) {
         super(`Invalid value for parameter '${paramName}'.`);

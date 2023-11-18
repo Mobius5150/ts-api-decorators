@@ -13,7 +13,7 @@
     "publish-tool": "npx ts-node src/publish.ts"
   },
   "dependencies": {
-    "@types/node": "^17.0.21",
+    "@types/node": "^20.9.1",
     "chalk": "^4.x.x",
     "cli-spinners": "^2.6.1",
     "commander": "^9.0.0",
@@ -22,6 +22,6 @@
   },
   "devDependencies": {
     "ts-node": "^10.7.0",
-    "typescript": "^4.6.2"
+    "typescript": "~5.1.0"
   }
 }

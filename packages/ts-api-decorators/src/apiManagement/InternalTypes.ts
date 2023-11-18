@@ -37,13 +37,13 @@ export interface IntrinsicNamedType {
 export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType{
 	type: 'string';
 	validationRegex?: RegExp;
-	schema?: { enum?: string[]; };
+	schema?: { enum?: string[]; } | { const?: string; };
 	typename?: string;
 }
 
 export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType{
 	type: 'number';
-	schema?: { enum?: number[]; };
+	schema?: { enum?: number[]; } | { const?: number; };
 	typename?: string;
 }
 

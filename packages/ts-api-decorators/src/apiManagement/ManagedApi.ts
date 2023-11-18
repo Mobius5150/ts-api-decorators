@@ -1,7 +1,7 @@
 import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
 import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors, ApiRawBodyParamType } from "./ApiDefinition";
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError } from "../Errors";
+import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError, HttpConstParamInvalidValueError } from "../Errors";
 import { HttpError } from "../HttpError";
 import { Readable } from "stream";
 import { ApiMimeType } from "./MimeTypes";
@@ -384,8 +384,14 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 
 		if (typedef?.type === 'number' || typedef?.type === 'string' || typedef?.type === 'enum') {
-			if (typedef.schema && typedef.schema.enum && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
-				throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)
+			if (typedef.schema) {
+				if ('enum' in typedef.schema && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
+					throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)
+				}
+
+				if ('const' in typedef.schema && typeof typedef.schema.const !== 'undefined' && typedef.schema.const !== parsed) {
+					throw new HttpConstParamInvalidValueError(name, typedef.schema.const);
+				}
 			}
 		}
 	}

@@ -18,6 +18,10 @@ if (toolPackageJson) {
     throw new Error(`Could not find the package.json for this tool at: ` + path.join(projectDirectories.publishTool, packageJsonFile));
 }
 
+const disabled = [
+	'ts-api-decorators-azure-function',
+];
+
 interface PublishCommandArgs {
     dryRun: boolean;
     publish: boolean;
@@ -75,6 +79,11 @@ program
         const packageNames = packages.map(p => p.name);
 
         for (const pkg of packages) {
+			if (disabled.includes(pkg.name)) {
+				console.log(chalk.yellow(`Skipping disabled package: ${pkg.name}`));
+				continue;
+			}
+
             console.log(chalk.green(`Updating package ${pkg.name}...`));
             let madeUpdate = false;
             if (pkg.packageContents.version != version) {
@@ -110,6 +119,11 @@ program
         if (opts.publish) {
             console.warn(chalk.yellow(`🚨 STARTING PUBLISH 🚨`));
             for (const pkg of packages) {
+				if (disabled.includes(pkg.name)) {
+					console.log(chalk.yellow(`Skipping disabled package: ${pkg.name}`));
+					continue;
+				}
+
                 console.log(chalk.yellow(`Building ${pkg.name}@${pkg.packageContents.version}`));
                 await runCommand('yarn', ['build'], pkg.path);
                 console.log(chalk.yellow(`Publishing ${pkg.name}@${pkg.packageContents.version}`));
@@ -207,7 +221,10 @@ function runCommand(command: string, args: string[], cwd: string): Promise<void>
             prefixText: '\t',
             isEnabled: enableSubcommandSpew ? false : undefined,
         }).start();
-        const proc = spawn(command, args, { cwd });
+        const proc = spawn(command, args, {
+			cwd,
+			shell: true,
+		});
         let logs: { stream: 'stdout' | 'stderr', data: any }[] = [];
         function logData(stream: 'stdout' | 'stderr', data: any) {
             logs.push({ stream, data });

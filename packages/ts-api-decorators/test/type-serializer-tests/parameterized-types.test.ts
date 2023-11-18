@@ -4,6 +4,7 @@ import 'mocha';
 import { getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
+import { definitionPathWithSymbolChecker } from '../../src/Testing/TreeTestUtil';
 
 interface IGetInitHandlers {
 	getInitHandlers: ManagedApi<{}>['initHandlers'];
@@ -43,32 +44,43 @@ describe('TypeSerializer', () => {
 		const apiPath = '/hello';
 		
 		assert(handlers.has(ApiMethod.GET));
-		assert(handlers.get(ApiMethod.GET).has(apiPath));
+		assert(handlers.get(ApiMethod.GET)!.has(apiPath));
 
-		const handlerInstance = handlers.get(ApiMethod.GET).get(apiPath);
+		const handlerInstance = handlers.get(ApiMethod.GET)!.get(apiPath)!;
 		assert.exists(handlerInstance, 'Handler');
 
 		const returnType: InternalObjectTypeDefinition = <InternalObjectTypeDefinition>handlerInstance.returnType!;
 		assert.exists(handlerInstance.returnType, 'Return type');
 		assert.equal(returnType.typename, 'IResponse');
-		assert.deepNestedInclude(
+		const response = Symbol('IResponse<P>'), typeP = Symbol('P');
+		assertRealInclude(
 			returnType.schema,
 			{
-				$ref: '#/definitions/IResponse<P>',
+				$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, response, 'IResponse<P>', ctx),
 				definitions: {
-					'IResponse<P>': {
+					// Something like IResponse<P>.<x>
+					[response]: {
 						type: 'object',
 						required: ['response'],
 						properties: {
 							response: {
-								'$ref': '#/definitions/P',
+								'$ref': (actual, ctx) => definitionPathWithSymbolChecker(actual, typeP, 'P', ctx),
 							}
 						}
 					},
-					P: {
+					// Something like P.<x>
+					[typeP]: {
 						type: 'object',
 					}
 				},
+			},
+			undefined,
+			{
+				funcmode: 'matcher',
+				symbols: {
+					[response]: {},
+					[typeP]: {},
+				}
 			}
 		)
 	});
@@ -77,29 +89,32 @@ describe('TypeSerializer', () => {
 		const apiPath = '/helloHidden';
 		
 		assert(handlers.has(ApiMethod.GET));
-		assert(handlers.get(ApiMethod.GET).has(apiPath));
+		assert(handlers.get(ApiMethod.GET)!.has(apiPath));
 
-		const handlerInstance = handlers.get(ApiMethod.GET).get(apiPath);
+		const handlerInstance = handlers.get(ApiMethod.GET)!.get(apiPath)!;
 		assert.exists(handlerInstance, 'Handler');
 
 		const returnType: InternalObjectTypeDefinition = <InternalObjectTypeDefinition>handlerInstance.returnType!;
 		assert.exists(handlerInstance.returnType, 'Return type');
 		assert.equal(returnType.typename, 'IHiddenResponse');
-		assert.deepNestedInclude(
-			returnType.schema,
+		const hiddenResponse = Symbol('IHiddenResponse'), responseBody = Symbol('IResponseBody'), response = Symbol('IResponse<IResponseBody>');
+		assertRealInclude(
+			returnType.schema!,
 			{
-				$ref: '#/definitions/IHiddenResponse',
+				$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, hiddenResponse, 'IHiddenResponse', ctx),
 				definitions: {
-					IHiddenResponse: {
+					// IHiddenResponse.<x>
+					[hiddenResponse]: {
 						type: 'object',
 						required: ['response'],
 						properties: {
 							response: {
-								'$ref': '#/definitions/IResponse<IResponseBody>',
+								'$ref': (actual, ctx) => definitionPathWithSymbolChecker(actual, response, 'IResponse<IResponseBody>', ctx),
 							}
 						}
 					},
-					IResponseBody: {
+					// IResponseBody.<x>
+					[responseBody]: {
 						type: 'object',
 						required: ['greeting'],
 						properties: {
@@ -108,15 +123,25 @@ describe('TypeSerializer', () => {
 							}
 						}
 					},
-					'IResponse<IResponseBody>': {
+					// IResponse<IResponseBody>.<x>
+					[response]: {
 						type: 'object',
 						required: ['response'],
 						properties: {
 							response: {
-								'$ref': '#/definitions/IResponseBody',
+								'$ref': (actual, ctx) => definitionPathWithSymbolChecker(actual, responseBody, 'IResponseBody', ctx),
 							}
 						}
 					},
+				},
+			},
+			undefined,
+			{
+				funcmode: 'matcher',
+				symbols: {
+					[hiddenResponse]: {},
+					[responseBody]: { matcher: (a: string) => !!a?.startsWith('IResponseBody') },
+					[response]: {},
 				},
 			}
 		)

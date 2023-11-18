@@ -197,7 +197,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 				typeof arg === 'undefined'
 				|| arg.kind === ts.SyntaxKind.NullKeyword
 				|| arg.kind === ts.SyntaxKind.UndefinedKeyword
-				|| (ts.isIdentifier(arg) && arg.originalKeywordKind === ts.SyntaxKind.UndefinedKeyword);
+				|| (ts.isIdentifier(arg) && ts.identifierToKeywordKind(arg) === ts.SyntaxKind.UndefinedKeyword);
 			if (isUndefined) {
 				if (argDef.defaultExpression) {
 					arg = argDef.defaultExpression;
@@ -250,7 +250,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 
 		return {
 			metadata,
-			decorator: ts.createDecorator(this.getOutputDecoratorArgs(decorator.expression, exprArguments, metadata, context)),
+			decorator: ts.factory.createDecorator(this.getOutputDecoratorArgs(decorator.expression, exprArguments, metadata, context)),
 		}
 	}
 	
@@ -274,7 +274,6 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 	}
 
 	protected getOutputDecoratorArgs(expression: ts.CallExpression, exprArguments: IExprWithMetadata[], metadataCollection: ITransformerMetadata[], context: ITransformContext) {
-		const clonedExpression: ts.CallExpression = { ...expression };
 		if (this.definition.transformArgumentsToObject) {
 			let paramArgs: object = {};
 			if (Array.isArray(this.definition.transformArgumentsToObject)) {
@@ -304,18 +303,24 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 				}
 			}
 
-			clonedExpression.arguments = ts.createNodeArray([context.typeSerializer.objectToLiteral(paramArgs)]);
+			expression = ts.factory.createCallExpression(
+				expression.expression,
+				expression.typeArguments,
+				ts.factory.createNodeArray([context.typeSerializer.objectToLiteral(paramArgs)]));
 		} else {
-			clonedExpression.arguments = ts.createNodeArray(exprArguments.filter(arg => !!arg.expression).map(arg => arg.expression));
+			expression = ts.factory.createCallExpression(
+				expression.expression,
+				expression.typeArguments,
+				ts.factory.createNodeArray(exprArguments.filter(arg => !!arg.expression).map(arg => arg.expression)));
 		}
 
-		return clonedExpression;
+		return expression;
 	}
 
 	protected parenthesizeExpression(expression: ts.Expression) {
 		return ts.isParenthesizedExpression(expression)
 			? expression
-			: ts.createParen(expression);
+			: ts.factory.createParenthesizedExpression(expression);
 	}
 	
 	public isSourceFileMatch(sourceFile: ts.SourceFile): boolean {

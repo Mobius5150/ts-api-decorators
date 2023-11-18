@@ -4,6 +4,7 @@ import 'mocha';
 import { getCompiledProgram, assertRealInclude } from '../../src/Testing/TestUtil';
 import { ManagedApi, ApiMethod, IApiHandlerInstance } from '../../src';
 import { InternalArrayTypeDefinition, InternalObjectTypeDefinition } from '../../src/apiManagement/InternalTypes';
+import { definitionPathWithSymbolChecker } from '../../src/Testing/TreeTestUtil';
 
 interface IGetInitHandlers {
 	getInitHandlers: ManagedApi<{}>['initHandlers'];
@@ -43,9 +44,9 @@ describe('TypeSerializer', () => {
 		const apiPath = '/hello';
 		
 		assert(handlers.has(ApiMethod.GET));
-		assert(handlers.get(ApiMethod.GET).has(apiPath));
+		assert(handlers.get(ApiMethod.GET)!.has(apiPath));
 
-		const handlerInstance = handlers.get(ApiMethod.GET).get(apiPath);
+		const handlerInstance = handlers.get(ApiMethod.GET)!.get(apiPath)!;
 		assert.equal(handlerInstance.handlerArgs.length, 1);
 
 		const bodyArg = handlerInstance.handlerArgs[0];
@@ -54,6 +55,7 @@ describe('TypeSerializer', () => {
 		const typedef: InternalArrayTypeDefinition = <InternalArrayTypeDefinition>bodyArg.args.typedef;
 
 		// Check the typeof the body argument
+		const requestBody = Symbol('IRequestBody');
 		assertRealInclude(
 			typedef,
 			{
@@ -62,9 +64,9 @@ describe('TypeSerializer', () => {
 					type: "object",
 					typename: "IRequestBody",
 					schema: {
-						$ref: '#/definitions/IRequestBody',
+						$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, requestBody, 'IRequestBody', ctx),
 						definitions: {
-							IRequestBody: {
+							[requestBody]: {
 								type: 'object',
 								required: ['prompt'],
 								properties: {
@@ -76,21 +78,28 @@ describe('TypeSerializer', () => {
 						},
 					}
 				}
+			},
+			undefined, {
+				funcmode: 'matcher',
+				symbols: {
+					[requestBody]: {},
+				},
 			}
 		)
 
 		// Check the return type
+		const responseBody = Symbol('IResponseBody');
 		assertRealInclude(
-			handlerInstance.returnType,
+			handlerInstance.returnType!,
 			{
 				type: "array",
 				elementType: {
 					type: "object",
 					typename: "IResponseBody",
 					schema: {
-						$ref: '#/definitions/IResponseBody',
+						$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, responseBody, 'IResponseBody', ctx),
 						definitions: {
-							IResponseBody: {
+							[responseBody]: {
 								type: 'object',
 								required: ['response'],
 								properties: {
@@ -101,6 +110,12 @@ describe('TypeSerializer', () => {
 							}
 						},
 					}
+				}
+			},
+			undefined, {
+				funcmode: 'matcher',
+				symbols: {
+					[responseBody]: {},
 				}
 			}
 		)
@@ -110,16 +125,16 @@ describe('TypeSerializer', () => {
 		const apiPath = '/helloPromise';
 		
 		assert(handlers.has(ApiMethod.GET));
-		assert(handlers.get(ApiMethod.GET).has(apiPath));
+		assert(handlers.get(ApiMethod.GET)!.has(apiPath)!);
 
-		const handlerInstance = handlers.get(ApiMethod.GET).get(apiPath);
+		const handlerInstance = handlers.get(ApiMethod.GET)!.get(apiPath)!;
 		assert.equal(handlerInstance.handlerArgs.length, 1);
 
 		const bodyArg = handlerInstance.handlerArgs[0];
 		assert.equal(bodyArg.args.name, 'body');
 
 		const typedef: InternalArrayTypeDefinition = <InternalArrayTypeDefinition>bodyArg.args.typedef;
-
+		const requestBody = Symbol('IRequestBody');
 		// Check the typeof the body argument
 		assertRealInclude(
 			typedef,
@@ -129,9 +144,9 @@ describe('TypeSerializer', () => {
 					type: "object",
 					typename: "IRequestBody",
 					schema: {
-						$ref: '#/definitions/IRequestBody',
+						$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, requestBody, 'IRequestBody', ctx),
 						definitions: {
-							IRequestBody: {
+							[requestBody]: {
 								type: 'object',
 								required: ['prompt'],
 								properties: {
@@ -143,21 +158,28 @@ describe('TypeSerializer', () => {
 						},
 					}
 				}
+			},
+			undefined, {
+				funcmode: 'matcher',
+				symbols: {
+					[requestBody]: {},
+				}
 			}
-		)
+		);
 
 		// Check the return type
+		const responseBody = Symbol('IResponseBody');
 		assertRealInclude(
-			handlerInstance.returnType,
+			handlerInstance.returnType!,
 			{
 				type: "array",
 				elementType: {
 					type: "object",
 					typename: "IResponseBody",
 					schema: {
-						$ref: '#/definitions/IResponseBody',
+						$ref: (actual, ctx) => definitionPathWithSymbolChecker(actual, responseBody, 'IResponseBody', ctx),
 						definitions: {
-							IResponseBody: {
+							[responseBody]: {
 								type: 'object',
 								required: ['response'],
 								properties: {
@@ -169,7 +191,13 @@ describe('TypeSerializer', () => {
 						},
 					}
 				}
+			},
+			undefined, {
+				funcmode: 'matcher',
+				symbols: {
+					[responseBody]: {},
+				}
 			}
-		)
+		);
 	});
 });

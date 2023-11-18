@@ -65,11 +65,13 @@ export class TreeTransformer implements ITransformer {
 		if (typeof nodeType === 'undefined' || !this.nodeHasDecorators(node)) {
 			if (parent) {
 				return this.visitNodeChildrenInTreeContext(node, context, parent);
-			} else {
-				return this.visitNodeChildren(node, context);
 			}
+
+			return this.visitNodeChildren(node, context);
+			
 		}
 
+		let nodeWithDecorators = node as ts.HasDecorators & Required<Pick<ts.HasDecorators, 'modifiers'>>;
 		const decorators = this.decorators.getDecoratorsForNodeType(nodeType, parent);
 		const nodeDecorators: ts.Decorator[] = [];
 		const nodeTypes = {
@@ -77,8 +79,14 @@ export class TreeTransformer implements ITransformer {
 			[DecoratorNodeTreeHierarchyType.Modifier]: <IHandlerTreeNode[]>[],
 		};
 
-		for (let i = 0; i < node.decorators.length; ++i) {
-			nodeDecorators[i] = node.decorators[i];
+		for (let i = 0; i < nodeWithDecorators.modifiers.length; ++i) {
+			const modifier = nodeWithDecorators.modifiers[i];
+			if (!ts.isDecorator(modifier)) {
+				nodeDecorators[i] = undefined;
+				continue;
+			}
+
+			nodeDecorators[i] = modifier;
 			for (const definition of decorators) {
 				if (
 					(definition.isCallExpression && this.isArgumentDecoratorCallExpression(nodeDecorators[i].expression, definition))
@@ -92,7 +100,7 @@ export class TreeTransformer implements ITransformer {
 						this.cacheDecoratorTreeElement(node, nodeDecorators[i], treeNode);
 					}
 
-					node = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode);
+					nodeWithDecorators = this.visitNodeChildrenInTreeContext(node, context, treeNode.decoratorTreeNode) as typeof nodeWithDecorators;
 				}
 			}
 		}
@@ -105,10 +113,13 @@ export class TreeTransformer implements ITransformer {
 		}
 
 		if (this.applyTransformation) {
-			node.decorators = ts.createNodeArray(nodeDecorators);
+			nodeWithDecorators = {
+				...nodeWithDecorators,
+				modifiers: ts.factory.createNodeArray(nodeDecorators.map((d, i) => d ?? nodeWithDecorators.modifiers[i])),
+			};
 		}
 
-		return node;
+		return nodeWithDecorators;
 	}
 
 	private getDecoratorTreeElement(definition: IDecorator<ts.Node>, parent: IHandlerTreeNode, node: ts.Node, decorator: ts.Decorator): ITransformedTreeElement<ts.Decorator> {
@@ -139,8 +150,12 @@ export class TreeTransformer implements ITransformer {
 		return ts.visitEachChild(node, node => this.visitNodeInTreeContext(node, context, parent), context);
 	}
 
-	private nodeHasDecorators(node: ts.Node) {
-		return node.decorators && node.decorators.length > 0;
+	private nodeHasDecorators(node: ts.Node): node is ts.HasDecorators & Required<Pick<ts.HasDecorators, 'modifiers'>> {
+		return (
+			ts.canHaveDecorators(node)
+			&& node.modifiers
+			&& node.modifiers.some(m => m.kind as ts.SyntaxKind === ts.SyntaxKind.Decorator)
+		);
 	}
 
 	/**
