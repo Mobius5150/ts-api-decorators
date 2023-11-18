@@ -180,6 +180,28 @@ export abstract class BuiltinArgumentExtractors {
 		}
 	}
 
+	public static readonly DecoratorTypeArgTypeArgument: ((argNo: number) => IDecoratorArgument) = (argNo: number) => ({
+		type: { type: 'any' },
+		optional: true,
+		metadataExtractor: (args) => {
+			const decorator = args.node.decorators?.find(d => (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
+			let returnType = BuiltinArgumentExtractors.GetTypeArgumentType(decorator, args.transformContext, argNo);
+			if (returnType) {
+				return {
+					...BuiltinMetadata.DecoratorTypeArgType,
+					value: returnType
+				}
+			}
+		},
+		transformer: (args) => {
+			const decorator = args.node.decorators?.find(d => (d.expression as any)?.expression?.escapedText === args.decorator.magicFunctionName)
+			let returnType = BuiltinArgumentExtractors.GetTypeArgumentType(decorator, args.transformContext, argNo);
+			if (returnType) {
+				return args.transformContext.typeSerializer.objectToLiteral(returnType);
+			}
+		}
+	});
+
 	private static GetNodeReturnType(node: ts.Node, context: ITransformContext): InternalTypeDefinition {
 		if (ts.isMethodDeclaration(node)) {
 			const type = context.typeChecker.getTypeAtLocation(node);
@@ -194,9 +216,26 @@ export abstract class BuiltinArgumentExtractors {
 		}
 	}
 
+	private static GetTypeArgumentType(node: ts.Node, context: ITransformContext, argNo: number): InternalTypeDefinition {
+		if (ts.isDecorator(node) && ts.isCallExpression(node.expression)) {
+			if (node.expression.typeArguments.length <= argNo) {
+				return undefined;
+			}
+
+			const type = context.typeChecker.getTypeAtLocation(node.expression.typeArguments[argNo]);
+			return context.typeSerializer.getInternalTypeRepresentation(
+				node.expression.typeArguments[argNo],
+				type);
+		}
+
+		return undefined;
+	}
+
 	private static parenthesizeExpression(expression: ts.Expression) {
 		return ts.isParenthesizedExpression(expression)
 			? expression
 			: ts.createParen(expression);
     }
+
+	private static 
 }

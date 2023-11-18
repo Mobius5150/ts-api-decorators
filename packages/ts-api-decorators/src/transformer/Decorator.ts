@@ -7,6 +7,7 @@ import { ITransformerMetadata, BuiltinMetadata, getMetadataValueByDescriptor } f
 import { isNamedNode } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 import { CompilationError } from '../Util/CompilationError';
+import { BuiltinArgumentExtractors } from './BuiltinArgumentExtractors';
 
 export enum DecoratorNodeType {
 	Class,
@@ -153,6 +154,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 
 	protected * getDefaultMetadataGetters() {
 		yield (node: N, decorator: ts.Decorator, context: ITransformContext) => this.getNodeNameMetadata(node);
+		yield (node: N, decorator: ts.Decorator, context: ITransformContext) => this.getDecoratorTypeArgumentsMetadata(node, decorator);
 	}
 
 	protected getNodeNameMetadata(node: N): ITransformerMetadata {
@@ -171,6 +173,11 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 				value: name,
 			}
 		}
+	}
+
+	protected getDecoratorTypeArgumentsMetadata(node: N, decorator: ts.Decorator): ITransformerMetadata {
+		// return BuiltinArgumentExtractors.DecoratorTypeArgTypeArgument.metadataExtractor()
+		return undefined;
 	}
 
 	protected applyArguments(node: N, decorator: ts.Decorator, context: ITransformContext) {
@@ -213,6 +220,7 @@ export abstract class Decorator<N extends ts.Node, DT extends IDecoratorDefiniti
 					argumentExpression: arg,
 					index,
 					transformContext: context,
+					decorator: this,
 				};
 
 				let meta: ITransformerMetadata | undefined;

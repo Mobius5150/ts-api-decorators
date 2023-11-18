@@ -38,7 +38,7 @@ export class TestServer {
 	}
 
 	public async stop() {
-		this.module.stop();
+		await this.module.stop();
 		delete this.module;
 		const name = require.resolve(this.jsModuleName);
 		delete require.cache[name];

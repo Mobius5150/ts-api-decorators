@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber, ApiQueryParam } from "../../../src";
+import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber, ApiQueryParam, ApiGetSchemaMethod } from "../../../src";
 
 const validator = (name: string, value: string) => {};
 
@@ -169,6 +169,11 @@ class MyApi {
 		return new Promise<IGreetResponse>((resolve, ) => {
 			resolve({ response: this.greet('Default') });
 		});
+	}
+
+	@ApiGetSchemaMethod<IGreetResponse>('/helloSchema')
+	greetGetResponseSchema() {
+		return;
 	}
 
 }

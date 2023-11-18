@@ -63,49 +63,41 @@ abstract class ApiMethodDecorators {
 		}
 	}
 
-	public static ApiGetSchemaMethod(route: string, parameter: string, schemaRefOverride?: string): ApiMethodDecoratorReturnType<any | Promise<any>>;
+	public static ApiGetSchemaMethod<T extends object>(route: string): ApiMethodDecoratorReturnType<any | Promise<any>>;
 	@ApiDecorator(HandlerMethodDecorator, {
 		indexTs: __filename,
 		dependencies: [ DecoratorParentNameDependency(Api.name) ],
 		provider: BuiltinMetadata.BuiltinComponent,
 		arguments: [
 			BuiltinArgumentExtractors.RouteArgument,
-			BuiltinArgumentExtractors.FunctionArgumentNameArgument,
+			BuiltinArgumentExtractors.DecoratorTypeArgTypeArgument(0),
 			BuiltinArgumentExtractors.SchemaOutputRefOverrideArgument,
 		],
 		metadata: [
 			BuiltinMetadata.ApiMethodWithValue(ApiMethod.GET),
 			BuiltinMetadata.ApiMethodTypeHttp,
+			BuiltinMetadata.GetSchemaReturnSchema,
 		],
 	})
-	public static ApiGetSchemaMethod(route: string, parameter: string, schemaRefOverride?: string): ApiMethodDecoratorReturnType<any> {
+	public static ApiGetSchemaMethod(route: string, outTypeDef?: InternalTypeDefinition): ApiMethodDecoratorReturnType<any> {
 		return (
 			target: object,
 			propertyKey: string,
 			descriptor: TypedPropertyDescriptor<any>
 		) => {
 			ManagedApiInternal.AddApiMetadataToObject(
-				ApiMethodDecorators.wrapApiMethodWithHandler(ApiMethod.GET, route, propertyKey + '##tsapi_getschema', () => {
-					const definitions = ManagedApiInternal.GetHandlerParamDefinitionsOnObject(target.constructor, propertyKey);
-					const typedef = definitions.find(d => d.args.name === parameter)?.args.typedef;
-					if (!typedef) {
+				ApiMethodDecorators.wrapApiMethodWithHandler(ApiMethod.GET, route, propertyKey, () => {
+					if (!outTypeDef) {
 						throw new Error('Could not find typedef');
 					}
 
-					if (typedef.type !== 'object') {
+					if (outTypeDef.type !== 'object') {
 						throw new Error('ApiGetSchemaMethod only supports object types');
 					}
 
-					if (schemaRefOverride) {
-						return {
-							...typedef.schema,
-							$ref: schemaRefOverride,
-						}
-					}
-
-					return typedef.schema;
+					return outTypeDef.schema;
 				}, undefined, {
-					type: 'object',
+					type: 'external',
 					schema: {
 						"$schema": "http://json-schema.org/draft-07/schema#",
 					},

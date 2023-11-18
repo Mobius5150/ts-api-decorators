@@ -1,6 +1,10 @@
-import { Api, ApiOutParamStream, ApiGetMethod, ApiQueryParam, HttpBadRequestError } from "../../../src";
+import { Api, ApiOutParamStream, ApiGetMethod, ApiQueryParam, HttpBadRequestError, ApiGetSchemaMethod } from "../../../src";
 import { TestManagedApi } from "../../../src/Testing/TestTransport";
 import { Writable } from "stream";
+
+interface IGreetResponse {
+	response: string;
+}
 
 @Api
 class MyApi {
@@ -48,6 +52,11 @@ class MyApi {
 				reject(e);
 			}
 		});
+	}
+
+	@ApiGetSchemaMethod<IGreetResponse>('/helloSchema')
+	greetGetResponseSchema() {
+		return;
 	}
 
 	private getStreamChunks(name: string): string[] {

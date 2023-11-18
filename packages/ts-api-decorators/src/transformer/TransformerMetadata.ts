@@ -180,6 +180,24 @@ export abstract class BuiltinMetadata {
         key: 'returnSchema',
     }
 
+    public static readonly GetSchemaReturnSchema: ITransformerMetadata = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'returnSchema',
+		value: {
+			type: 'object',
+			schema: {
+				"$schema": "http://json-schema.org/draft-07/schema#",
+			},
+		}
+    }
+
+	public static readonly DecoratorTypeArgType: IMetadataDescriptor = {
+		type: IMetadataType.Builtin,
+		component: BuiltinMetadata.BuiltinComponent,
+		key: 'decoratorTypeArgType',
+	}
+
     public static readonly ValidationFunction: IMetadataDescriptor = {
         type: IMetadataType.Builtin,
         component: BuiltinMetadata.BuiltinComponent,

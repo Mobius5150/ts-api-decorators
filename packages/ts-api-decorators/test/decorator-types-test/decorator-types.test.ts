@@ -265,6 +265,22 @@ describe('transformer', () => {
 		}
 	});
 
+	it('should support ApiGetSchemaMethod', async () => {
+		loadBasicTree();
+
+		// Find the node for this handler
+		const handlerNode = tree.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloSchema');
+
+		// Assert that the handler looks right
+		assertRealInclude(handlerNode,
+			// greetWithStringParamValidation()
+			treeHandlerMethodNode(ApiMethod.GET, '/helloSchema', undefined,
+			[
+				treeNodeMetadata(BuiltinMetadata.DecoratorTypeArgType, { type: "object", schema: { "$ref": "#/definitions/IGreetResponse", } }),
+			]),
+		);
+	});
+
 	it('should perform deep string parameter validation', async () => {
 		loadBasicTree();
 

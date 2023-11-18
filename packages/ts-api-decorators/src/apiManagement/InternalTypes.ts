@@ -52,6 +52,7 @@ export type InternalTypeDefinition =
 	| IntrinsicTypeDefinitionString
 	| IntrinsicTypeDefinitionNumber
 	| InternalObjectTypeDefinition
+	| InternalExternalSchemaTypeDefinition
 	| InternalBuiltinObjectTypeDefinition
 	| InternalUnionTypeDefinition
 	| InternalIntersectionTypeDefinition
@@ -72,6 +73,12 @@ export interface InternalDateTypeDefinition extends IntrinsicNamedType {
 export interface InternalObjectTypeDefinition extends IntrinsicNamedType {
 	type: 'object';
 	schema?: IJsonSchemaWithRefs;
+}
+
+type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+export interface InternalExternalSchemaTypeDefinition extends IntrinsicNamedType {
+	type: 'external';
+	schema: WithRequired<IJsonSchemaWithRefs, '$schema'>;
 }
 
 export interface InternalEnumTypeDefinition extends IntrinsicNamedType {

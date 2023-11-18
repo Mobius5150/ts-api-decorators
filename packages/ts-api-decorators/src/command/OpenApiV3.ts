@@ -287,6 +287,9 @@ export class OpenApiV3Extractor implements IExtractor {
 
                 break;
 
+			case 'external':
+				return returnType.schema as any;
+
             case 'object':
                 if (returnType.schema) {
                     return this.getInternalSchemaToOutputSchema(returnType.schema);

@@ -5,6 +5,7 @@ import { ITransformContext } from './ITransformContext';
 import { ApiParamType, ApiRawBodyParamType } from '../apiManagement/ApiDefinition';
 import { Func1 } from '../Util/Func';
 import { IHandlerTreeNode } from './HandlerTree';
+import { IDecorator } from './Decorator';
 
 export enum DecoratorType {
 	Class,
@@ -160,6 +161,7 @@ export interface IDecoratorArgumentProcessorArgs {
 	argumentExpression: ts.Expression;
 	argument: IDecoratorArgument;
 	index: number;
+	decorator: IDecorator;
 }
 
 export type IDecoratorArgumentTransformerFunction = (args: IDecoratorArgumentProcessorArgs) => ts.Expression | void;

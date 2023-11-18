@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import * as path from 'path';
 import 'mocha';
-import { getCompiledProgram } from '../../src/Testing/TestUtil';
+import { assertRealInclude, getCompiledProgram } from '../../src/Testing/TestUtil';
 import { ApiMethod, StreamCoercionMode } from '../../src';
 import { TestManagedApi } from '../../src/Testing/TestTransport';
 import * as streamBuffer from 'stream-buffers';
@@ -68,5 +68,22 @@ describe('Out Param Runtime', () => {
             ['John', 200, 'Hello John!'],
             ['bad', 400, ''],
         ]);
+    });
+
+	it('should support schema returns', async () => {
+		const result = await api.invokeApiCall(ApiMethod.GET, '/helloSchema', {
+			headers: {},
+			queryParams: {},
+			transportParams: {},
+		});
+
+		assert.equal(result.statusCode, 200);
+		const bodyObj = typeof result.body === 'string' ? JSON.parse(result.body) : result.body;
+		assertRealInclude(bodyObj, {
+			"$ref": "#/definitions/IGreetResponse",
+			definitions: {
+				IGreetResponse: {},
+			},
+		});
     });
 });
