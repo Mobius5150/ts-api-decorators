@@ -5,7 +5,7 @@ import { getMetadataValue, IMetadataType, getAllMetadataValues, getMetadataValue
 import { OpenApiMetadataType } from "../transformer/OpenApi";
 import * as yaml from 'js-yaml';
 import { IProgramInfo } from "./IProgramInfo";
-import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalEnumTypeDefinition } from "../apiManagement/InternalTypes";
+import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalEnumTypeDefinition, InternalObjectTypeDefinition, IntrinsicTypeDefinitionNumber, IntrinsicTypeDefinitionString } from "../apiManagement/InternalTypes";
 import { IExtractedTag } from "../transformer/IExtractedTag";
 import { IHandlerTreeNodeRoot, IHandlerTreeNodeHandler, WalkChildrenByType, isHandlerParameterNode, IHandlerTreeNodeParameter, WalkTreeByType, isHandlerNode, HandlerTreeNodeType } from "../transformer/HandlerTree";
 import { ManagedApi, ApiMimeType } from "../apiManagement";
@@ -31,6 +31,8 @@ export class OpenApiV3Extractor implements IExtractor {
 
     private tags = new Map<string, IExtractedTag>();
     private definitions = new Map<string, OpenAPIV3.SchemaObject>();
+	private definitionNameMap = new Map<string, string>();
+
 
     constructor(
         private readonly apiTree: IHandlerTreeNodeRoot,
@@ -301,7 +303,7 @@ export class OpenApiV3Extractor implements IExtractor {
             case 'string':
                 return {
                     type: returnType.type,
-                    enum: this.getEeturnTypeEnumValue(returnType),
+                    enum: this.getReturnTypeEnumValue(returnType),
                 };
 
             case 'enum':
@@ -320,7 +322,7 @@ export class OpenApiV3Extractor implements IExtractor {
         }
     }
 
-	private getEeturnTypeEnumValue(returnType: import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").IntrinsicTypeDefinitionString | import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").IntrinsicTypeDefinitionNumber | import("/Users/mblouin/Documents/work/ts-api-decorators/packages/ts-api-decorators/src/apiManagement/InternalTypes").InternalObjectTypeDefinition): any[] {
+	private getReturnTypeEnumValue(returnType: IntrinsicTypeDefinitionString | IntrinsicTypeDefinitionNumber | InternalObjectTypeDefinition): any[] {
 		if (returnType.schema) {
 			if ('enum' in returnType.schema) {
 				return returnType.schema.enum;
@@ -350,7 +352,7 @@ export class OpenApiV3Extractor implements IExtractor {
             })
 
             return {
-                $ref: `#/components/schemas/${returnType.typename}`,
+                $ref: `#/components/schemas/${this.renameDefinition(returnType.typename)}`,
             };
         }
 
@@ -407,15 +409,34 @@ export class OpenApiV3Extractor implements IExtractor {
         return <OpenAPIV3.SchemaObject><any>schema;
     }
 
+	private expectedDefinitions = new Set<string>();
+
     private addDefinitions(definitions: { [name: string]: IJsonSchema; }) {
         for (const definition of Object.keys(definitions)) {
-            if (!this.definitions.has(definition)) {
-                this.definitions.set(definition, 
-                    this.fixDefinitionProperties(
-                        this.fixDefinitionRefs(definitions[definition])));
-            }
+			const renamedDef = this.renameDefinition(definition);
+			this.definitions.set(
+				renamedDef,
+				this.fixDefinitionProperties(
+					this.fixDefinitionRefs(definitions[definition])));
         }
     }
+
+	private renameDefinition(definition: string) {
+		if (!this.definitionNameMap.has(definition)) {
+			let defName = definition.includes('.') ? definition.substring(0, definition.lastIndexOf('.')) : definition;
+
+			if (definition.includes('.')) {
+				let i = 0;
+				while (this.definitions.has(defName)) {
+					defName = `${defName}${++i}`;
+				}
+			}
+
+			this.definitionNameMap.set(definition, defName);
+		}
+		
+		return this.definitionNameMap.get(definition)!;
+	}
 
     private fixDefinitionProperties(_: IJsonSchema): OpenAPIV3.SchemaObject {
         const redef = _;
@@ -434,6 +455,10 @@ export class OpenApiV3Extractor implements IExtractor {
         if (redef.properties) {
             redef.properties = this._fixDefinitionPropertiesCollection(redef.properties);
         }
+
+		if (redef.definitions) {
+			redef.definitions = this._fixDefinitionPropertiesCollection(redef.definitions);
+		}
         
         if (typeof redef.additionalProperties === 'object') {
             if (redef.additionalProperties.anyOf) {
@@ -471,10 +496,25 @@ export class OpenApiV3Extractor implements IExtractor {
         for (const property of Object.keys(props)) {
             const pdef: IJsonSchema = props[property];
             if (typeof pdef['$ref'] !== 'undefined') {
+				pdef['$ref'] = this.replaceRefStr(pdef['$ref']);
                 continue;
             }
 
-            if (typeof pdef.type === 'string') {
+			if (pdef.type === 'array') {
+				if (pdef.items && pdef.items['$ref']) {
+					let items: IJsonSchema[] = [];
+					if (Array.isArray(pdef.items)) {
+						items = pdef.items;
+					} else {
+						items.push(pdef.items);
+					}
+
+					pdef.items = this._fixDefinitionPropertiesCollection(items);
+					if (pdef.items.length === 0) {
+						pdef.items = pdef.items[0];
+					}
+				}
+			} else if (typeof pdef.type === 'string') {
                 if (this.removableTypes.indexOf(pdef.type) !== -1) {
                     removeProps.push(property);
                 }
@@ -550,7 +590,16 @@ export class OpenApiV3Extractor implements IExtractor {
     }
 
     private replaceRefStr(refStr: string): string {
-        return refStr.replace('#/definitions', '#/components/schemas')
+		if (refStr.includes('/')) {
+			refStr = refStr.substring(refStr.lastIndexOf('/') + 1);
+		}
+
+		const expected = this.renameDefinition(refStr);
+		if (!this.definitions.has(expected)) {
+			this.expectedDefinitions.add(refStr);
+		}
+		
+		return `#/components/schemas/${expected}`;
     }
 
     private recordTagObject(t: IExtractedTag): string {

@@ -1,11 +1,12 @@
 {
   "name": "ts-api-decorators",
-  "version": "0.2.9",
+  "version": "0.2.11",
   "description": "API Decorators for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc -w",
     "extract": "ts-node src/tsapi.ts",
     "test": "nyc mocha -r ts-node/register -t 20000 test/**/*.test.ts",
     "prepublishOnly": "npm run build",
