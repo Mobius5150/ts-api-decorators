@@ -5,8 +5,8 @@ This folder contains a minimal sample for using TS API Decorators with the Expre
 To run the sample, run the following commands in the sample directory:
 
 ```
-npm i
-npm run build
+yarn
+yarn build
 node dist/index.js
 ```
 
@@ -30,34 +30,45 @@ You should receive the response:
 Hello Developer!
 ```
 
-## Generate Swagger Documentation
+## Generate OpenApi Documentation
 One of the benefits of using this library, is that it makes generation of documentation and client libraries very easy. For example, let's get a Swagger/OpenAPI specification for the sample API. Run the following command:
 ```
-npx tsapi extract ./src
+npx tsapi extract --type openapiv3 ./src
 ```
 
 The output should look something like:
 ```yaml
-swagger: '2.0'
+openapi: 3.0.1
 info:
   title: ts-api-decorators-examples-express-simple
   version: 1.0.0
   description: A simple example API using Express and ts-api-decorators-express
   license:
     name: Apache-2.0
+  contact: {}
+servers:
+  - url: undefined
 paths:
   /hello:
     get:
       operationId: greet
+      description: A friendly greeter method!
+      summary: A friendly greeter method!
+      tags: []
       parameters:
         - name: name
           in: query
           required: false
-          type: string
-      responses:
-        default:
+          description: The name to greet
           schema:
             type: string
+      responses:
+        '200':
+          description: A friendly greeting
+          content:
+            text/plain:
+              schema:
+                type: string
 ```
 
 With the above definition, you can then consider another tool such as [`openapi-generator`](https://github.com/openapitools/openapi-generator) to generate a client SDK in the language of your choice that can call the API.
@@ -73,19 +84,19 @@ Firstly, in the `tsconfig.json`, `experimentalDecorators` must be set to `true` 
         "experimentalDecorators": true,
         "plugins": [
             {
-                "transform": "ts-api-decorators/dist/transformer"
+                "transform": "ts-api-decorators-express/dist/transformer"
             }
         ]
     }
 }
 ```
 
-This configuration tells ttypescript which transformer to run. ttypescript is invoked using our build script from `package.json`:
+This configuration tells ts-patch which transformer to run. `tspc` is invoked using our build script from `package.json`:
 ```json
 // package.json
 {
     "scripts": {
-        "build": "ttsc"
+        "build": "tspc",
     }
 }
 ```

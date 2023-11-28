@@ -3,6 +3,12 @@ import { ManagedApi, Api, ApiGetMethod, ApiQueryParam } from 'ts-api-decorators-
 
 @Api
 class MyApi {
+
+	/**
+	 * A friendly greeter method!
+	 * @param name The name to greet
+	 * @returns A friendly greeting
+	 */
 	@ApiGetMethod('/hello')
 	greet(
 		@ApiQueryParam() name?: string
@@ -20,6 +26,8 @@ const api = new ManagedApi();
 api.addHandlerClass(MyApi);
 
 // Setup express
+const port = process.env.PORT || 3000;
 const app = express();
 app.use(api.init());
-app.listen(process.env.port || 3000);
+app.listen(port);
+console.log(`Listening on port ${port}`);

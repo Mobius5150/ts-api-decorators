@@ -510,7 +510,7 @@ export class OpenApiV3Extractor implements IExtractor {
 					}
 
 					pdef.items = this._fixDefinitionPropertiesCollection(items);
-					if (pdef.items.length === 0) {
+					if (pdef.items.length === 1) {
 						pdef.items = pdef.items[0];
 					}
 				}
