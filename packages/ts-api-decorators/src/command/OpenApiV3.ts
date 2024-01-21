@@ -216,7 +216,7 @@ export class OpenApiV3Extractor implements IExtractor {
             tags: metadataTags.map(t => this.recordTagObject(t)),
             parameters: params
                 .filter(p => !this.isBodyParam(p))
-                .map(p => this.getParametersObject(p))
+                .flatMap(p => this.getParametersObject(p))
                 .filter(p => !!p),
             requestBody: bodyParams ? this.getRequestBody(bodyParams) : undefined,
             responses,
@@ -621,7 +621,23 @@ export class OpenApiV3Extractor implements IExtractor {
         };
     }
     
-    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject | null {
+    private getParametersObject(p: IHandlerTreeNodeParameter): OpenAPIV3.ParameterObject[] {
+		if (p.paramDef.isDestructuredObject) {
+			if (!p.paramDef.args.properties) {
+				throw new Error(`Unable to get parameters object for destructured object parameter: ${p.paramDef.propertyKey.toString()}`);
+			}
+
+			return p.paramDef.args.properties.flatMap(pi => this.getParametersObject({
+				...p,
+				paramDef: {
+					...p.paramDef,
+					isDestructuredObject: false,
+					propertyKey: pi.name,
+					args: pi,
+				},
+			})).filter(p => !!p);
+		}
+
         let inStr: string;
         let name: string = p.paramDef.propertyKey.toString();
         switch (p.paramDef.type) {
@@ -652,7 +668,7 @@ export class OpenApiV3Extractor implements IExtractor {
             case ApiParamType.Dependency:
             case ApiParamType.Out:
             case ApiParamType.Custom:
-                return null;
+                return [];
 
             default:
                 throw new Error(`Unknown Api Parameter Type: ${p.type}`);
@@ -660,6 +676,10 @@ export class OpenApiV3Extractor implements IExtractor {
 
         let schema: OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject = this.getInlineTypeSchema(p.paramDef.args.typedef);
         let enumVals: any[];
+		if (p.paramDef.args.typedef.type === 'object' && p.paramDef.args.typedef.schema && p.paramDef.args.typedef.schema?.type !== 'object') {
+			p.paramDef.args.typedef.type = p.paramDef.args.typedef.schema.type as any;
+		}
+
         if (p.paramDef.args.typedef.type === 'string' || p.paramDef.args.typedef.type === 'number' || p.paramDef.args.typedef.type === 'enum') {
             if (p.paramDef.args.typedef.schema) {
                 if ('enum' in p.paramDef.args.typedef.schema) {
@@ -670,13 +690,13 @@ export class OpenApiV3Extractor implements IExtractor {
             }
         }
 
-        return {
+        return [{
             name,
             in: inStr,
             required: this.isParameterRequired(p),
             description: p.paramDef.args.description,
             schema,
-        };
+        }];
     }
 
     private isParameterRequired(p: IHandlerTreeNodeParameter): boolean {
@@ -736,7 +756,7 @@ export class OpenApiV3Extractor implements IExtractor {
                     },
                 };
             } else {
-                param = this.getParametersObject(p);
+                param = this.getParametersObject(p)[0];
             }
 
             if (param.required) {
