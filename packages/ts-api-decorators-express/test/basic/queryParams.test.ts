@@ -76,4 +76,25 @@ describe('Query Params', () => {
 				.expect(200, str);
 		});
 	}
+
+	it(`supports destructured objects`, async () => {
+		const name = 'test';
+		return request(httpServer)
+			.get(`/helloDestructuredObject?name=${name}&times=3&optional=preamble`)
+			.expect(200, `preambleHi ${name}! Hi ${name}! Hi ${name}! `);
+	});
+
+	it(`supports destructured objects with defaults`, async () => {
+		const name = 'default';
+		return request(httpServer)
+			.get(`/greetDestructuredObjectWithDefault`)
+			.expect(200, `Hi ${name}! `);
+	});
+
+	it(`supports destructured objects with defaults and partial assignment`, async () => {
+		const name = 'default';
+		return request(httpServer)
+			.get(`/greetDestructuredObjectWithDefault?times=3&optional=preamble`)
+			.expect(200, `preambleHi ${name}! Hi ${name}! Hi ${name}! `);
+	});
 });

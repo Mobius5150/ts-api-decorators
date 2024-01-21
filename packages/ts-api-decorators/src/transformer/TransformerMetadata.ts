@@ -257,4 +257,10 @@ export abstract class BuiltinMetadata {
         component: BuiltinMetadata.BuiltinComponent,
         key: 'schemaFormat',
     }
+
+    public static readonly DestructuredObjectProperties: IMetadataDescriptor = {
+        type: IMetadataType.Builtin,
+        component: BuiltinMetadata.BuiltinComponent,
+        key: 'properties',
+    }
 }

@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber, ApiQueryParam, ApiGetSchemaMethod } from "../../../src";
+import { Api, ApiGetMethod, ApiBodyParam, ApiPostMethod, ApiQueryParamString, ApiQueryParamNumber, ApiQueryParamDestructuredObject, ApiQueryParam, ApiGetSchemaMethod } from "../../../src";
 
 const validator = (name: string, value: string) => {};
 
@@ -14,6 +14,12 @@ interface IGreetArgs {
 
 interface IGreetResponse {
 	response: string;
+}
+
+interface IObjectParams {
+	name: string;
+	times: number;
+	optional?: string;
 }
 
 @Api
@@ -124,6 +130,30 @@ class MyApi {
 			name5,
 			name6,
 		});
+	}
+
+	@ApiGetMethod<string>('/helloDestructuredObjectQueryParam')
+	greetWithDestructuredObjectParamValidation(
+		@ApiQueryParamDestructuredObject() obj: IObjectParams,
+	): string {
+		let result = obj.optional ? obj.optional : '';
+		for (let i = 0; i < obj.times; ++i) {
+			result += `Hi ${obj.name}! `;
+		}
+
+		return result;
+	}
+
+	@ApiGetMethod<string>('/helloDestructuredObjectQueryParamWithDefaults')
+	greetWithDestructuredObjectParamValidationWithDefaults(
+		@ApiQueryParamDestructuredObject() obj: IObjectParams = { name: 'Default', times: 1 },
+	): string {
+		let result = obj.optional ? obj.optional : '';
+		for (let i = 0; i < obj.times; ++i) {
+			result += `Hi ${obj.name}! `;
+		}
+
+		return result;
 	}
 
 	/**

@@ -1,5 +1,7 @@
 import { IJsonSchema } from "openapi-types";
 import { ClassConstructor } from "../Util/ClassConstructors";
+import { CompilationError } from "../Util/CompilationError";
+import ts = require("typescript");
 
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
@@ -8,6 +10,7 @@ export interface __ApiParamArgsBase {
 	typedef?: InternalTypeDefinition;
 	optional?: boolean;
 	description?: string;
+	properties?: __ApiParamArgs[];
 }
 
 type Func<T1, R> = (t1: T1) => R;
@@ -23,6 +26,10 @@ export interface __ApiParamArgsFuncs {
 export type BuiltinTypeNames = 'Buffer' | 'Promise';
 
 export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
+}
+
+export interface __ApiParamArgs_DestructuredObject extends __ApiParamArgs {
+	properties: __ApiParamArgs[];
 }
 
 export interface IntrinsicTypeDefinition extends IntrinsicNamedType {
@@ -60,6 +67,9 @@ export type InternalTypeDefinition =
 	| InternalDateTypeDefinition
 	| InternalFunctionTypeDefinition
 	| InternalEnumTypeDefinition;
+
+export type InternalTypeDefinitionRestriction<T extends InternalTypeDefinition = InternalTypeDefinition>
+	= T & { assertValid?: (def: T, atNode: ts.Node) => void; };
 
 export interface InternalFunctionTypeDefinition extends IntrinsicNamedType {
 	type: 'function';
@@ -138,6 +148,42 @@ export abstract class InternalTypeUtil {
 
 	public static readonly TypeAnyObject: InternalObjectTypeDefinition = {
 		type: 'object',
+	};
+
+	public static readonly TypeSimpleObject: InternalTypeDefinitionRestriction<InternalObjectTypeDefinition> = {
+		type: 'object',
+		assertValid(def: InternalObjectTypeDefinition, node) {
+			const validTypes = ['string', 'number', 'boolean', 'null', 'undefined'];
+			if (def.type !== 'object' || typeof def.schema !== 'object') {
+				throw new CompilationError('Invalid type definition: expected object', node);
+			}
+
+			let schema = def.schema;
+			if (schema.$ref) {
+				const ref = schema.$ref.split('/');
+				const def = schema.definitions[ref[ref.length - 1]];
+				if (!def) {
+					throw new CompilationError(`Invalid type definition: schema reference '${schema.$ref}' not found`, node);
+				}
+
+				schema = {
+					...schema,
+					...def,
+				}
+			}
+
+			if (schema?.type !== 'object') {
+				throw new CompilationError('Invalid type definition: expected object', node);
+			}
+
+			for (const [name, property] of Object.entries(schema.properties ?? {})) {
+				const types = typeof property.type === 'string' ? [property.type] : property.type;
+				const badType = types.find(t => !validTypes.includes(t))
+				if (badType) {
+					throw new CompilationError(`Invalid type definition: unsupported type '${badType}' on object property ${name}. Expected one of ${validTypes.join(', ')}`, node);
+				}
+			}
+		}
 	};
 
 	public static readonly TypeAnyArray: InternalArrayTypeDefinition = {

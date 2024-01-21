@@ -1,21 +1,26 @@
 import * as ts from 'typescript';
 import { IParameterDecoratorDefinition, DecoratorType, IDecoratorMagicFuncAssignment } from './DecoratorDefinition';
 import { ITransformedTreeElement, HandlerTreeNodeType, IHandlerTreeNodeParameter, IHandlerTreeNode } from './HandlerTree';
-import { InternalTypeDefinition, InternalTypeUtil } from '../apiManagement/InternalTypes';
+import { InternalObjectTypeDefinition, InternalTypeDefinition, InternalTypeUtil, __ApiParamArgs } from '../apiManagement/InternalTypes';
 import { ITransformContext } from './ITransformContext';
 import { ITransformerMetadata, getMetadataValueByDescriptor, BuiltinMetadata } from './TransformerMetadata';
 import { Decorator, DecoratorNodeType } from './Decorator';
 import { ExpressionWrapper, ParamArgsInitializer } from './ExpressionWrapper';
 import { CompilationError } from '../Util/CompilationError';
+import { IApiParamDefinition } from '../apiManagement/ApiDefinition';
 
-export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDeclaration, IParameterDecoratorDefinition> implements IParameterDecoratorDefinition {
-	constructor(
-		definition: Omit<IParameterDecoratorDefinition, 'decoratorType'>,
-	) {
-		super({
-			...definition,
-			decoratorType: DecoratorType.MethodParameter,
-		}, DecoratorNodeType.Parameter);
+export class HandlerMethodParameterDecorator
+	extends Decorator<ts.ParameterDeclaration, IParameterDecoratorDefinition>
+	implements IParameterDecoratorDefinition
+{
+	constructor(definition: Omit<IParameterDecoratorDefinition, 'decoratorType'>) {
+		super(
+			{
+				...definition,
+				decoratorType: DecoratorType.MethodParameter,
+			},
+			DecoratorNodeType.Parameter,
+		);
 	}
 
 	public get parameterTypeRestrictions() {
@@ -46,7 +51,16 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		return !!this.definition.overrideOutput;
 	}
 
-	public getDecoratorTreeElement(parent: IHandlerTreeNode | undefined, node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformedTreeElement<ts.Decorator> {
+	public get isDestructuredObject() {
+		return !!this.definition.isDestructuredObject;
+	}
+
+	public getDecoratorTreeElement(
+		parent: IHandlerTreeNode | undefined,
+		node: ts.ParameterDeclaration,
+		decorator: ts.Decorator,
+		context: ITransformContext,
+	): ITransformedTreeElement<ts.Decorator> {
 		const argumentResult = this.applyArguments(node, decorator, context);
 		const decoratorTreeNode: IHandlerTreeNodeParameter = {
 			type: HandlerTreeNodeType.HandlerParameter,
@@ -64,6 +78,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 					regexp: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationRegExp),
 					typeref: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.Typeref),
 					validationFunc: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.ValidationFunction),
+					properties: getMetadataValueByDescriptor(argumentResult.metadata, BuiltinMetadata.DestructuredObjectProperties),
 				},
 				parameterIndex: node.parent.parameters.indexOf(node),
 				propertyKey: this.getParameterName(node),
@@ -72,23 +87,24 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 				paramId: this.paramId,
 				bodyType: this.bodyType,
 				overrideOutput: this.overrideOutput,
-			},
+				isDestructuredObject: this.isDestructuredObject,
+			} as IApiParamDefinition,
 			metadata: argumentResult.metadata,
 		};
 
-		decoratorTreeNode.metadata = decoratorTreeNode.metadata.concat(
-			context.metadataManager.getApiMetadataForApiMethodParam(decoratorTreeNode, node, this));
-		
+		decoratorTreeNode.metadata = decoratorTreeNode.metadata.concat(context.metadataManager.getApiMetadataForApiMethodParam(decoratorTreeNode, node, this));
+
 		return {
 			decoratorTreeNode,
 			transformedDecorator: argumentResult.decorator,
 		};
 	}
 
-	protected * getDefaultMetadataGetters() {
-		yield * super.getDefaultMetadataGetters();
+	protected *getDefaultMetadataGetters() {
+		yield* super.getDefaultMetadataGetters();
 		yield (node, decorator, context) => this.getNodeTyperefMetadata(node, decorator, context);
 		yield (node, decorator, context) => this.getNodeTypedefMetadata(node, decorator, context);
+		yield (node, decorator, context) => this.getNodeDestructuredPropertiesMetadata(node, decorator, context);
 		yield (node, decorator, context) => this.getNodeOptionalMetadata(node, decorator, context);
 		yield (node, decorator, context) => this.getNodeInitializerMetadata(node, decorator, context);
 		yield (node, decorator, context) => this.getNodeDescriptionMetadata(node, decorator, context);
@@ -111,31 +127,36 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			if (!internalType) {
 				internalType = InternalTypeUtil.TypeAny;
 			}
-			if (this.parameterTypeRestrictions
-				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
-				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+			if (this.parameterTypeRestrictions) {
+				const typedef = this.parameterTypeRestrictions.find((t) => t.type === internalType.type || t.type === 'any');
+				if (!typedef) {
+					throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+				}
+
+				if (typedef.assertValid) {
+					typedef.assertValid(internalType, node);
+				}
 			}
 		}
 
 		return {
 			...BuiltinMetadata.Typedef,
 			value: internalType,
-		}
+		};
 	}
 
 	private getNodeTypedefMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
 		if (this.skipOutputTypeDefinitions) {
 			return;
 		}
-		
+
 		if (node.type) {
 			const type = context.typeChecker.getTypeFromTypeNode(node.type);
 			let internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type);
 			if (!internalType) {
 				internalType = InternalTypeUtil.TypeAny;
 			}
-			if (this.parameterTypeRestrictions
-				&& !this.parameterTypeRestrictions.find(t => t.type === internalType.type || t.type === 'any')) {
+			if (this.parameterTypeRestrictions && !this.parameterTypeRestrictions.find((t) => t.type === internalType.type || t.type === 'any')) {
 				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
 			}
 
@@ -144,10 +165,88 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 					return {
 						...BuiltinMetadata.Typeref,
 						value: new ExpressionWrapper(node.type.typeName),
-					}
+					};
 				}
 			}
 		}
+	}
+
+
+	private getNodeDestructuredPropertiesMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
+		if (!this.isDestructuredObject) {
+			return;
+		}
+
+		let internalType: InternalObjectTypeDefinition = {
+			type: 'object',
+		};
+
+		if (node.type) {
+			const type = context.typeChecker.getTypeFromTypeNode(node.type);
+			internalType = context.typeSerializer.getInternalTypeRepresentation(node.type, type) as InternalObjectTypeDefinition;
+			if (!internalType) {
+				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': any`, node);
+			}
+
+			if (internalType.type !== 'object') {
+				throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+			}
+
+			if (this.parameterTypeRestrictions) {
+				const typedef = this.parameterTypeRestrictions.find((t) => t.type === internalType.type || t.type === 'any');
+				if (!typedef) {
+					throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+				}
+
+				if (typedef.assertValid) {
+					typedef.assertValid(internalType, node);
+				}
+			}
+		}
+
+		if (internalType.type !== 'object') {
+			throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+		}
+
+
+		let schema = internalType.schema;
+		if (schema.$ref) {
+			const ref = schema.$ref.split('/');
+			const def = schema.definitions[ref[ref.length - 1]];
+			if (!def) {
+				throw new CompilationError(`Invalid type definition: schema reference '${schema.$ref}' not found`, node);
+			}
+
+			schema = {
+				...schema,
+				...def,
+			}
+		}
+
+		if (schema?.type !== 'object') {
+			throw new CompilationError('Invalid type definition: expected object', node);
+		}
+		if (!schema?.properties) {
+			throw new CompilationError(`Could not determine property types for destructured object decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+		}
+
+		const value: __ApiParamArgs[] = Object.entries(schema.properties).map(([n, p]) => {
+			const prop: __ApiParamArgs = {
+				name: n,
+				optional: !schema.required?.includes(n),
+				typedef: {
+					type: 'object',
+					schema: p,
+				},
+			};
+
+			return prop;
+		});
+
+		return {
+			...BuiltinMetadata.DestructuredObjectProperties,
+			value,
+		};
 	}
 
 	private getNodeOptionalMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
@@ -156,7 +255,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			return {
 				...BuiltinMetadata.Optional,
 				value: optional,
-			}
+			};
 		}
 	}
 
@@ -166,7 +265,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			return {
 				...BuiltinMetadata.Initializer,
 				value: new ExpressionWrapper(ts.factory.createArrowFunction(undefined, undefined, [], undefined, undefined, parenExpr)),
-			}
+			};
 		}
 	}
 
@@ -176,7 +275,7 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 			return {
 				...BuiltinMetadata.Description,
 				value: description,
-			}
+			};
 		}
 	}
 
@@ -184,14 +283,14 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 		return {
 			...BuiltinMetadata.ParameterIndex,
 			value: node.parent.parameters.indexOf(node),
-		}
+		};
 	}
 
 	private getNodePropertyKeyMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
 		return {
 			...BuiltinMetadata.PropertyKey,
 			value: this.getParameterName(node),
-		}
+		};
 	}
 
 	private getParameterName(node: ts.ParameterDeclaration) {
@@ -206,11 +305,11 @@ export class HandlerMethodParameterDecorator extends Decorator<ts.ParameterDecla
 
 		return name;
 	}
-	
+
 	private getParamDescription(param: ts.ParameterDeclaration): string | undefined {
 		const paramTags = ts.getJSDocParameterTags(param);
 		if (paramTags.length) {
-			return typeof paramTags[0].comment === 'string' ? paramTags[0].comment : paramTags[0].comment?.map(c => c.text).join(' ');
+			return typeof paramTags[0].comment === 'string' ? paramTags[0].comment : paramTags[0].comment?.map((c) => c.text).join(' ');
 		}
 
 		return undefined;

@@ -3,6 +3,7 @@ import * as tjs from "typescript-json-schema";
 import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil, InternalEnumTypeDefinition, IntrinsicTypeDefinitionString, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
 import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments, UnionType, nodeHasElements } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
+import { IJsonSchema } from "openapi-types";
 
 export class TypeSerializer {
 	private static readonly ReferencePreamble = '#/definitions/';
@@ -353,6 +354,19 @@ export class TypeSerializer {
 		}
 
 		return expression.forEachChild(undefined, (children) => children.map(c => this.arrayNodeToConstant(c))).filter(c => Boolean(c));
+	}
+
+	public jsonSchemaToInternalTypeDefinition(schema: IJsonSchema): InternalTypeDefinition {
+		switch (schema.type) {
+			case 'string':
+			case 'number':
+			case 'boolean':
+			case 'object':
+				return {
+					type: schema.type,
+					schema,
+				};
+		}
 	}
 	
 	private arrayNodeToConstant(c: ts.Node) {

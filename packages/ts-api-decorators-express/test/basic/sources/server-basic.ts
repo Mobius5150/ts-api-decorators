@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiBodyParam } from "../../../src";
+import { Api, ApiGetMethod, ApiQueryParam, ManagedApi, ApiPostMethod, ApiPutMethod, ApiDeleteMethod, ApiBodyParam, ApiQueryParamDestructuredObject } from "../../../src";
 import { ITestServer } from '../../TestServer';
 import * as express from 'express';
 import * as http from 'http';
@@ -32,6 +32,20 @@ class MyApi {
 		@ApiQueryParam() optional?: string,
 	) {
 		return this.getResult({name, times, optional});
+	}
+
+	@ApiGetMethod('/helloDestructuredObject')
+	greetDestructuredObject(
+		@ApiQueryParamDestructuredObject() args: IGreetArgs,
+	) {
+		return this.getResult(args);
+	}
+
+	@ApiGetMethod('/greetDestructuredObjectWithDefault')
+	greetDestructuredObjectWithDefault(
+		@ApiQueryParamDestructuredObject() args: IGreetArgs = { name: 'default', times: 1 },
+	) {
+		return this.getResult(args);
 	}
 
 	@ApiPostMethod('/hello')

@@ -3,6 +3,7 @@ export {
 	ApiQueryParam,
 	ApiQueryParamString,
 	ApiQueryParamNumber,
+	ApiQueryParamDestructuredObject,
 } from './QueryParams';
 export {
 	ApiBodyParam,

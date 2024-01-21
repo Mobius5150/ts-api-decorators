@@ -68,6 +68,15 @@ export class HttpQueryParamInvalidTypeError extends HttpBadRequestError {
     }
 }
 
+export class HttpQueryParamValidationError extends HttpBadRequestError {
+    constructor(queryParamName: string, message: string) {
+        super(`Error validating query parameter '${queryParamName}': ${message}.`);
+
+        // Set the prototype explicitly.
+        Object.setPrototypeOf(this, HttpQueryParamValidationError.prototype);
+    }
+}
+
 export class HttpRegexParamInvalidTypeError extends HttpBadRequestError {
     constructor(paramName: string, regex: string) {
         super(`Invalid value for parameter '${paramName}'. Must match regular expression: ${regex}.`);
@@ -124,7 +133,7 @@ export class HttpBodyParamInvalidTypeError extends HttpBadRequestError {
 
 export class HttpBodyParamValidationError extends HttpBadRequestError {
     constructor(validationError: ValidationError) {
-        super(`Error request validating body: ` + validationError.toString());
+        super(`Error validating request body: ` + validationError.toString());
 
         // Set the prototype explicitly.
         Object.setPrototypeOf(this, HttpBodyParamValidationError.prototype);

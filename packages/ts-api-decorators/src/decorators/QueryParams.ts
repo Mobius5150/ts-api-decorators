@@ -52,6 +52,32 @@ abstract class QueryParams {
 		return QueryParams.ApiQueryParam(a);
 	}
 
+	public static ApiQueryParamDestructuredObject();
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		parameterType: ApiParamType.Query,
+		parameterTypeRestrictions: [ InternalTypeUtil.TypeSimpleObject ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		transformArgumentsToObject: true,
+		isDestructuredObject: true,
+		arguments: [],
+	})
+	public static ApiQueryParamDestructuredObject(a?: any): ParameterDecorator {
+			const args = <__ApiParamArgs>a;
+			return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+				ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+					{
+						args,
+						parameterIndex,
+						propertyKey,
+						type: ApiParamType.Query,
+						isDestructuredObject: true,
+					},
+					target.constructor);
+			}
+		}
+
 	/**
 	 * A query parameter.
 	 * @param validator 
@@ -96,3 +122,4 @@ export const GetQueryParamDecorator = ApiMethodDecoratorGetFunction<HandlerMetho
 export const ApiQueryParam = QueryParams.ApiQueryParam;
 export const ApiQueryParamString = QueryParams.ApiQueryParamString;
 export const ApiQueryParamNumber = QueryParams.ApiQueryParamNumber;
+export const ApiQueryParamDestructuredObject = QueryParams.ApiQueryParamDestructuredObject;

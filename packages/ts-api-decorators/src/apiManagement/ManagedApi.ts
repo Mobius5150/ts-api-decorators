@@ -1,28 +1,60 @@
-import { ManagedApiInternal, IApiClassDefinition } from "./ManagedApiInternal";
-import { IApiDefinition, ApiMethod, IApiParamDefinition, ApiParamType, IApiTransportTypeParamDefinition, IApiDefinitionWithProcessors, IApiProcessors, ApiRawBodyParamType } from "./ApiDefinition";
+import { ManagedApiInternal, IApiClassDefinition } from './ManagedApiInternal';
+import {
+	IApiDefinition,
+	ApiMethod,
+	IApiParamDefinition,
+	ApiParamType,
+	IApiTransportTypeParamDefinition,
+	IApiDefinitionWithProcessors,
+	IApiProcessors,
+	ApiRawBodyParamType,
+} from './ApiDefinition';
 import { createNamespace, getNamespace, Namespace } from 'cls-hooked';
-import { HttpRequiredQueryParamMissingError, HttpQueryParamInvalidTypeError, HttpRequiredBodyParamMissingError, HttpBodyParamInvalidTypeError, HttpBodyParamValidationError, HttpRequiredTransportParamMissingError, HttpRequiredHeaderParamMissingError, HttpRegexParamInvalidTypeError, HttpParamInvalidError, HttpNumberParamOutOfBoundsError, HttpRequiredPathParamMissingError, HttpEnumParamInvalidValueError, HttpTransportConfigurationError, HttpUnsupportedMediaTypeError, HttpConstParamInvalidValueError } from "../Errors";
-import { HttpError } from "../HttpError";
-import { Readable } from "stream";
-import { ApiMimeType } from "./MimeTypes";
-import { __ApiParamArgs } from "./InternalTypes";
+import {
+	HttpRequiredQueryParamMissingError,
+	HttpQueryParamInvalidTypeError,
+	HttpRequiredBodyParamMissingError,
+	HttpBodyParamInvalidTypeError,
+	HttpBodyParamValidationError,
+	HttpRequiredTransportParamMissingError,
+	HttpRequiredHeaderParamMissingError,
+	HttpRegexParamInvalidTypeError,
+	HttpParamInvalidError,
+	HttpNumberParamOutOfBoundsError,
+	HttpRequiredPathParamMissingError,
+	HttpEnumParamInvalidValueError,
+	HttpTransportConfigurationError,
+	HttpUnsupportedMediaTypeError,
+	HttpConstParamInvalidValueError,
+	HttpQueryParamValidationError,
+} from '../Errors';
+import { HttpError } from '../HttpError';
+import { Readable } from 'stream';
+import { ApiMimeType } from './MimeTypes';
+import { __ApiParamArgs, __ApiParamArgs_DestructuredObject } from './InternalTypes';
 import { Validator as JsonSchemaValidator } from 'jsonschema';
-import { PromiseCallbackHelper } from "./CallbackPromiseHelper";
+import { PromiseCallbackHelper } from './CallbackPromiseHelper';
 import * as p2r from 'path-to-regexp';
-import { ApiDependencyCollection, ApiDependency } from "./ApiDependency";
-import { ClassConstructor } from "../Util/ClassConstructors";
-import { ApiProcessorTime } from "./ApiProcessing/ApiProcessing";
-import { Func, Func0, OptionalAsyncFunc1 } from "../Util/Func";
-import { StreamCoercionMode, StreamCoercer } from "../Util/StreamCoercer";
-import { StreamIntermediary } from "../Util/StreamIntermediary";
+import { ApiDependencyCollection, ApiDependency } from './ApiDependency';
+import { ClassConstructor } from '../Util/ClassConstructors';
+import { ApiProcessorTime } from './ApiProcessing/ApiProcessing';
+import { Func, Func0, OptionalAsyncFunc1 } from '../Util/Func';
+import { StreamCoercionMode, StreamCoercer } from '../Util/StreamCoercer';
+import { StreamIntermediary } from '../Util/StreamIntermediary';
 import * as stream from 'stream';
-import { DefaultApiResponseCode } from "../Constants";
+import { DefaultApiResponseCode } from '../Constants';
 
 export type ApiParamsDict = { [param: string]: string };
-export type ApiBodyParamsDict = { [param: string]: ApiParamsDict }
+export type ApiBodyParamsDict = { [param: string]: ApiParamsDict };
 export type ApiHeadersDict = { [paramNameLowercase: string]: string | string[] };
-export type ManagedApiPreInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContext<TransportParamsType>, IApiInvocationContext<TransportParamsType> | undefined>;
-export type ManagedApiPostInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<IApiInvocationContextPostInvoke<TransportParamsType>, IApiInvocationResult | undefined>;
+export type ManagedApiPreInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<
+	IApiInvocationContext<TransportParamsType>,
+	IApiInvocationContext<TransportParamsType> | undefined
+>;
+export type ManagedApiPostInvokeHandlerType<TransportParamsType extends object> = OptionalAsyncFunc1<
+	IApiInvocationContextPostInvoke<TransportParamsType>,
+	IApiInvocationResult | undefined
+>;
 
 export interface IApiBodyContents {
 	contentsStream: Readable;
@@ -55,7 +87,7 @@ export interface IApiInvocationContext<TransportParamsType extends object = {}> 
 	invocationParams: IApiInvocationParams<TransportParamsType>;
 }
 
-export interface IApiInvocationContextPostInvoke<TransportParamsType extends object = {}> extends IApiInvocationContext<TransportParamsType>{
+export interface IApiInvocationContextPostInvoke<TransportParamsType extends object = {}> extends IApiInvocationContext<TransportParamsType> {
 	result: IApiInvocationResult;
 }
 
@@ -99,9 +131,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	protected streamCoercionMode: StreamCoercionMode = StreamCoercionMode.Any;
 
-	public constructor(
-		private readonly useGlobal: boolean = false
-	) {
+	public constructor(private readonly useGlobal: boolean = false) {
 		if (!ManagedApi.namespace) {
 			ManagedApi.namespace = getNamespace(ManagedApi.ClsNamespace);
 
@@ -109,7 +139,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 				ManagedApi.namespace = createNamespace(ManagedApi.ClsNamespace);
 			}
 		}
-		
+
 		this.classes = [];
 
 		this.jsonValidator = new JsonSchemaValidator();
@@ -122,8 +152,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			throw new Error('addHandlerClass may only be used if ManagedApi is initialized with `useGlobal` = false');
 		}
 
-		this.dependencies.registerDependency(
-			ApiDependency.WithConstructor(constructor));
+		this.dependencies.registerDependency(ApiDependency.WithConstructor(constructor));
 
 		this.classes.push({
 			constructor,
@@ -133,7 +162,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	/**
 	 * Iniitalizes all API factories
-	 * 
+	 *
 	 * TODO: Move to a helper class
 	 */
 	protected initHandlers() {
@@ -141,11 +170,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			// Get the list of registered classes
 			const globalClasses = ManagedApiInternal.GetRegisteredApiClassDefinitions()
 				// Only get the ones that have handlers defined on them
-				.filter(c => c.handlers.size > 0)
+				.filter((c) => c.handlers.size > 0);
 
 			for (const c of globalClasses) {
-				this.dependencies.registerDependency(
-					ApiDependency.WithConstructor(c.constructor));
+				this.dependencies.registerDependency(ApiDependency.WithConstructor(c.constructor));
 
 				this.classes.push(c);
 			}
@@ -170,13 +198,17 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					const handlerArgs = ManagedApiInternal.GetApiHandlerParams(handlerClass.constructor, definition.handlerKey);
 					handlerMethodCollection.set(route, {
 						parent: instance,
-						wrappedHandler: this.getWrappedHandler({
-							...definition,
-							processors: ManagedApiInternal.GetApiHandlerProcessors(definition.handler),
-						}, handlerArgs, instance),
+						wrappedHandler: this.getWrappedHandler(
+							{
+								...definition,
+								processors: ManagedApiInternal.GetApiHandlerProcessors(definition.handler),
+							},
+							handlerArgs,
+							instance,
+						),
 						handlerArgs,
 						routeTokens,
-						...definition
+						...definition,
 					});
 				}
 			}
@@ -184,30 +216,37 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 		return handlers;
 	}
-	
+
 	public static GetRouteTokens(route: string) {
 		return p2r.parse(route);
 	}
 
-	private getWrappedHandler(def: IApiDefinitionWithProcessors<TransportParamsType>, handlerArgs: IApiParamDefinition[], instance: object): WrappedApiHandler<TransportParamsType> {
+	private getWrappedHandler(
+		def: IApiDefinitionWithProcessors<TransportParamsType>,
+		handlerArgs: IApiParamDefinition[],
+		instance: object,
+	): WrappedApiHandler<TransportParamsType> {
 		return (invocationParams) => {
 			return ManagedApi.namespace.runPromise(async () => {
 				try {
 					const context: IApiInvocationContextPostInvoke<TransportParamsType> = {
-						...await this.preProcessInvocationParams({
-							apiDefinition: def,
-							invocationParams,
-						}, def.processors),
+						...(await this.preProcessInvocationParams(
+							{
+								apiDefinition: def,
+								invocationParams,
+							},
+							def.processors,
+						)),
 						result: {
 							statusCode: def.responseCodes?.[0] ?? DefaultApiResponseCode,
 							body: null,
 							headers: {},
 							streamMode: StreamCoercionMode.None,
-						}
+						},
 					};
 					ManagedApi.namespace.set(ManagedApi.ContextNamespace, context);
 					context.result.body = await this.invokeHandler(def, handlerArgs, instance, context.invocationParams);
-					const {result} = await this.postProcessInvocationResult(context, def.processors);
+					const { result } = await this.postProcessInvocationResult(context, def.processors);
 					return result;
 				} catch (e) {
 					return this.getErrorResponseForException(e);
@@ -233,14 +272,17 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					statusCode: 500,
 					body: '',
 					headers: {},
-				}
+				};
 			}
 		} else {
 			throw e;
 		}
 	}
 
-	protected async preProcessInvocationParams(context: IApiInvocationContext<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationContext<TransportParamsType>> {
+	protected async preProcessInvocationParams(
+		context: IApiInvocationContext<TransportParamsType>,
+		processors: IApiProcessors<TransportParamsType>,
+	): Promise<IApiInvocationContext<TransportParamsType>> {
 		for (const processor of processors[ApiProcessorTime.StagePreInvoke]) {
 			context.invocationParams = await processor.processor(context.invocationParams);
 		}
@@ -258,7 +300,10 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return context;
 	}
 
-	protected async postProcessInvocationResult(context: IApiInvocationContextPostInvoke<TransportParamsType>, processors: IApiProcessors<TransportParamsType>): Promise<IApiInvocationContextPostInvoke<TransportParamsType>> {
+	protected async postProcessInvocationResult(
+		context: IApiInvocationContextPostInvoke<TransportParamsType>,
+		processors: IApiProcessors<TransportParamsType>,
+	): Promise<IApiInvocationContextPostInvoke<TransportParamsType>> {
 		for (const processor of processors[ApiProcessorTime.StagePostInvoke]) {
 			context.result = await processor.processor(context.result);
 		}
@@ -293,59 +338,67 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		return Boolean(ManagedApi.getExecutionContext<object>());
 	}
 
-	private async invokeHandler(def: IApiDefinition, handlerArgs: IApiParamDefinition[], instance: object, invocationParams: IApiInvocationParams<TransportParamsType>) {
+	private async invokeHandler(
+		def: IApiDefinition,
+		handlerArgs: IApiParamDefinition[],
+		instance: object,
+		invocationParams: IApiInvocationParams<TransportParamsType>,
+	) {
 		// Resolve handler arguments
 		let useCallback: PromiseCallbackHelper<any>;
-		let output: any = null, overrideOutput = false;
-		const args = await Promise.all(handlerArgs.map(async (def) => {
-			// Callback arg is special
-			if (def.type === ApiParamType.Callback) {
-				if (useCallback) {
-					throw new Error('Only a single callback parameter may be defined on a handler');
-				}
-	
-				useCallback = new PromiseCallbackHelper();
-				return await useCallback.getCallbackFunc();
-			}
+		let output: any = null,
+			overrideOutput = false;
+		const args = await Promise.all(
+			handlerArgs.map(async (def) => {
+				// Callback arg is special
+				if (def.type === ApiParamType.Callback) {
+					if (useCallback) {
+						throw new Error('Only a single callback parameter may be defined on a handler');
+					}
 
-			// Parse the contents of the argument and validate
-			const parsed = await this.getHandlerArg(def, invocationParams);
-			if (def.type === ApiParamType.Out && def.overrideOutput) {
-				if (overrideOutput) {
-					throw new Error('Cannot override output in multiple args');
+					useCallback = new PromiseCallbackHelper();
+					return await useCallback.getCallbackFunc();
 				}
 
-				overrideOutput = true;
-				output = parsed;
-			}
+				// Parse the contents of the argument and validate
+				const parsed = await this.getHandlerArg(def, invocationParams);
+				if (def.type === ApiParamType.Out && def.overrideOutput) {
+					if (overrideOutput) {
+						throw new Error('Cannot override output in multiple args');
+					}
 
-			if (!def.args || (typeof parsed === 'undefined' && def.args.optional)) {
-				return parsed;
-			}
+					overrideOutput = true;
+					output = parsed;
+				}
 
-			this.validateEnumParam(def.args, parsed);
-			if (def.args.validationFunc) {
-				this.applyValidationFunction(def.args, parsed);
-			}
-			if (def.args.regexp) {
-				this.validateRegExpParam(def.args, parsed);
-			}
-			if (def.args.typedef?.type === 'number') {
-				this.validateNumberParam(def.args, parsed);
-			}
-			if (def.args.validationFunc) {
-				try {
-					def.args.validationFunc(def.args.name, parsed);
-				} catch (e) {
-					if (this.isHttpErrorLike(e)) {
-						throw e;
-					} else {
-						throw new HttpParamInvalidError(def.args.name);
+				if (!def.args || (typeof parsed === 'undefined' && def.args.optional)) {
+					return parsed;
+				}
+
+				this.validateEnumParam(def.args, parsed);
+				if (def.args.validationFunc) {
+					this.applyValidationFunction(def.args, parsed);
+				}
+				if (def.args.regexp) {
+					this.validateRegExpParam(def.args, parsed);
+				}
+				if (def.args.typedef?.type === 'number') {
+					this.validateNumberParam(def.args, parsed);
+				}
+				if (def.args.validationFunc) {
+					try {
+						def.args.validationFunc(def.args.name, parsed);
+					} catch (e) {
+						if (this.isHttpErrorLike(e)) {
+							throw e;
+						} else {
+							throw new HttpParamInvalidError(def.args.name);
+						}
 					}
 				}
-			}
-			return parsed;
-		}));
+				return parsed;
+			}),
+		);
 
 		let executionResult: any;
 		if (useCallback) {
@@ -360,25 +413,22 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 		return executionResult;
 	}
-	
-	private applyValidationFunction({name, validationFunc}: __ApiParamArgs, parsed: any) {
+
+	private applyValidationFunction({ name, validationFunc }: __ApiParamArgs, parsed: any) {
 		if (validationFunc) {
 			validationFunc(name, parsed);
 		}
 	}
-	
-	protected validateNumberParam({typedef, name, numberMin, numberMax}: __ApiParamArgs, parsed: any) {
+
+	protected validateNumberParam({ typedef, name, numberMin, numberMax }: __ApiParamArgs, parsed: any) {
 		if (typedef?.type === 'number') {
-			if (
-				(typeof numberMin === 'number' && parsed < numberMin)
-				|| (typeof numberMax === 'number' && parsed > numberMax)
-			) {
+			if ((typeof numberMin === 'number' && parsed < numberMin) || (typeof numberMax === 'number' && parsed > numberMax)) {
 				throw new HttpNumberParamOutOfBoundsError(name, numberMin, numberMax);
 			}
 		}
 	}
 
-	protected validateEnumParam({typedef, name, optional}: __ApiParamArgs, parsed: any) {
+	protected validateEnumParam({ typedef, name, optional }: __ApiParamArgs, parsed: any) {
 		if (typeof parsed === 'undefined' && optional) {
 			return;
 		}
@@ -386,7 +436,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		if (typedef?.type === 'number' || typedef?.type === 'string' || typedef?.type === 'enum') {
 			if (typedef.schema) {
 				if ('enum' in typedef.schema && (<Array<string>>typedef.schema.enum).indexOf(parsed) === -1) {
-					throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum)
+					throw new HttpEnumParamInvalidValueError(name, typedef.schema.enum);
 				}
 
 				if ('const' in typedef.schema && typeof typedef.schema.const !== 'undefined' && typedef.schema.const !== parsed) {
@@ -410,9 +460,72 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			}
 		}
 	}
-	
+
 	private async getHandlerArg(def: IApiParamDefinition, invocationParams: IApiInvocationParams<TransportParamsType>) {
-		const {args} = def;
+		const { args } = def;
+
+		if (def.isDestructuredObject) {
+			const obj: Record<string, any> = args.initializer?.() ?? {};
+			if (typeof obj !== 'object') {
+				throw new Error('Destructured object initializer must return an object');
+			}
+
+			const typedef = args.typedef;
+			if (typedef.type !== 'object') {
+				throw new Error('Destructured object must be of type object');
+			}
+
+			if (!typedef.schema) {
+				throw new Error('Destructured object must have a schema');
+			}
+
+			let schema = typedef.schema;
+			if (schema.$ref) {
+				const ref = schema.$ref.split('/');
+				const def = schema.definitions[ref[ref.length - 1]];
+				if (!def) {
+					throw new Error(`Invalid type definition: schema reference '${schema.$ref}' not found`);
+				}
+
+				schema = {
+					...schema,
+					...def,
+				};
+			}
+
+			if (!schema.properties) {
+				throw new Error('Destructured object must have a schema with properties');
+			}
+
+			const properties = (args as __ApiParamArgs_DestructuredObject).properties;
+			for (const arg of properties) {
+				obj[arg.name] = await this.getHandlerArg(
+					{
+						...def,
+						isDestructuredObject: false,
+						args: {
+							initializer: obj[arg.name] ? () => obj[arg.name] : undefined,
+							...arg,
+						},
+					},
+					invocationParams,
+				);
+			}
+
+			const result = this.jsonValidator.validate(obj, typedef.schema);
+			if (!result.valid) {
+				if (result.errors.length === 0) {
+					throw new HttpQueryParamInvalidTypeError(args.name, typedef.type);
+				} else {
+					// TODO: Create a multiple error format
+					const err = result.errors[0];
+					throw new HttpQueryParamValidationError(err.property, err.message);
+				}
+			}
+
+			return obj;
+		}
+
 		if (def.type === ApiParamType.Query) {
 			const isDefined = typeof invocationParams.queryParams[args.name] === 'string';
 			if (!isDefined && args.typedef.type !== 'boolean') {
@@ -466,7 +579,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			// Arg was defined, process it
 			return this.getApiParam(args, isDefined, invocationParams.headers[headerName]);
 		} else if (def.type === ApiParamType.Body || def.type === ApiParamType.RawBody) {
-			const {bodyContents} = invocationParams;
+			const { bodyContents } = invocationParams;
 			if (!bodyContents) {
 				if (args.initializer) {
 					return args.initializer();
@@ -510,7 +623,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						if (typeof contents === 'object') {
 							break;
 						}
-						
+
 					case 'string':
 					case 'number':
 					case 'boolean':
@@ -525,7 +638,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						throw new Error('Not implemented');
 				}
 			}
-			
+
 			this.validateBodyContents(args, contents);
 			return contents;
 		} else if (def.type === ApiParamType.Transport) {
@@ -575,14 +688,14 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		if (!bodyContents.contentsString) {
 			bodyContents.contentsString = await bodyContents.readStreamToStringAsync();
 		}
-		
+
 		switch (bodyContents.streamContentsMimeType) {
 			case ApiMimeType.ApplicationJson:
 				return JSON.parse(bodyContents.contentsString!);
 
 			case ApiMimeType.Text:
 				return bodyContents.contentsString!;
-			
+
 			// TODO: Add a way to register mime type parsers so that you can BYO xml
 
 			default:
@@ -616,65 +729,101 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	private getApiParam(args: __ApiParamArgs, isDefined: boolean, strVal: string | Buffer | string[], contentsMime?: string) {
 		switch (args.typedef.type) {
 			case 'any':
-			case 'string':
-				{
-					if (typeof strVal === 'string') {
-						return strVal;
-					} else if (Array.isArray(strVal)) {
-						return strVal[0];
-					} else if (strVal instanceof Buffer) {
-						return strVal.toString();
-					}
-					
-					throw new HttpQueryParamInvalidTypeError(args.name, 'string');
+			case 'string': {
+				if (typeof strVal === 'string') {
+					return strVal;
+				} else if (Array.isArray(strVal)) {
+					return strVal[0];
+				} else if (strVal instanceof Buffer) {
+					return strVal.toString();
 				}
 
-			case 'number':
-				{
-					if (Array.isArray(strVal)) {
-						strVal = strVal[0];
-					} else if (strVal instanceof Buffer) {
-						strVal = strVal.toString();
+				throw new HttpQueryParamInvalidTypeError(args.name, 'string');
+			}
+
+			case 'number': {
+				if (Array.isArray(strVal)) {
+					strVal = strVal[0];
+				} else if (strVal instanceof Buffer) {
+					strVal = strVal.toString();
+				}
+
+				const parsed = Number(strVal);
+				if (isNaN(parsed)) {
+					throw new HttpQueryParamInvalidTypeError(args.name, 'number');
+				}
+
+				return parsed;
+			}
+
+			case 'boolean': {
+				if (isDefined) {
+					switch ((typeof strVal === 'string' ? strVal : strVal.toString()).toLowerCase()) {
+						case '0':
+						case 'false':
+							return false;
 					}
 
-					const parsed = Number(strVal);
-					if (isNaN(parsed)) {
-						throw new HttpQueryParamInvalidTypeError(args.name, 'number');
-					}
+					return true;
+				} else if (args.initializer) {
+					return args.initializer();
+				}
 
-					return parsed;
-				};
+				return false;
+			}
 
-			case 'boolean':
-				{
-					if (isDefined) {
-						switch ((typeof strVal === 'string' ? strVal : strVal.toString()).toLowerCase()) {
-							case '0':
-							case 'false':
-								return false;
+			case 'array': {
+				// TODO: Check the type of the array elements
+				if (typeof strVal === 'string') {
+					return [strVal];
+				} else if (Array.isArray(strVal)) {
+					return strVal;
+				} else if (strVal instanceof Buffer) {
+					return [strVal.toString()];
+				}
+
+				throw new HttpQueryParamInvalidTypeError(args.name, 'array');
+			}
+
+			case 'object': {
+				let objVal: any = strVal;
+				switch (args.typedef.schema?.type) {
+					case 'object':
+						try {
+							objVal = JSON.parse(strVal.toString());
+						} catch (e) {
+							throw new HttpQueryParamInvalidTypeError(args.name, 'object');
 						}
+						
+						break;
 
-						return true;
-					} else if (args.initializer) {
-						return args.initializer();
-					}
-					
-					return false;
-				};
+					case 'number':
+						objVal = Number(strVal);
 
-			case 'array':
-				{
-					// TODO: Check the type of the array elements
-					if (typeof strVal === 'string') {
-						return [strVal];
-					} else if (Array.isArray(strVal)) {
-						return strVal;
-					} else if (strVal instanceof Buffer) {
-						return [strVal.toString()];
-					}
-					
-					throw new HttpQueryParamInvalidTypeError(args.name, 'array');
+						if (isNaN(objVal)) {
+							throw new HttpQueryParamInvalidTypeError(args.name, 'number');
+						}
+						break;
+
+					case 'booolean': 
+					case 'bool':
+						objVal = Boolean(strVal);
+						break;
 				}
+
+				const result = this.jsonValidator.validate(objVal, args.typedef.schema);
+				if (!result.valid) {
+					if (result.errors.length === 0) {
+						throw new HttpQueryParamInvalidTypeError(args.name, args.typedef.type);
+					} else {
+						// TODO: Create a multiple error format
+						const err = result.errors[0];
+						throw new HttpQueryParamValidationError(err.property, err.message);
+					}
+				}
+
+				return objVal;
+			}
 
 			default:
 				throw new Error('Not implemented');
@@ -683,7 +832,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	/**
 	 * Instantiates a class instance of a handler, doing any dependency injection if needed
-	 * @param handlerClass 
+	 * @param handlerClass
 	 */
 	private instanstiateHandlerClass(handlerClass: IApiClassDefinition): object {
 		const instance = this.dependencies.instantiateDependency(handlerClass.constructor);
@@ -692,9 +841,9 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 	/**
 	 * Registers a dependency.
-	 * 
+	 *
 	 * Dependencies are injected by type. If you'd like to register many dependencies for a type, specify a unique `name` for each dependency.
-	 * 
+	 *
 	 * Must be called before initialization to be applied.
 	 * @param dep The dependency to fill
 	 * @param instance An instance of the dependency to be used or a function that returns an instance of the dependency.
@@ -702,13 +851,9 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	public addDependency<C extends object = {}>(dep: ClassConstructor<C>, instance?: C | Func0<C>): void {
 		// TODO: Dependency scopes
 		if (instance) {
-			this.dependencies.registerDependency(
-				ApiDependency.WithFunc(
-					dep,
-					typeof instance === 'function' ? <Func0<C>>instance : () => instance));
+			this.dependencies.registerDependency(ApiDependency.WithFunc(dep, typeof instance === 'function' ? <Func0<C>>instance : () => instance));
 		} else {
-			this.dependencies.registerDependency(
-				ApiDependency.WithConstructor(dep));
+			this.dependencies.registerDependency(ApiDependency.WithConstructor(dep));
 		}
 	}
 
@@ -725,12 +870,12 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 		return headers[name];
 	}
-	
+
 	/**
 	 * Gets the value of a header in the current request
 	 * @param name The name of the header to get. Case insensitive.
 	 */
-	 public static getHeader(name: string): string | string[] | undefined {
+	public static getHeader(name: string): string | string[] | undefined {
 		const context = this.getExecutionContext();
 		const headers = context.invocationParams.headers;
 		if (!headers) {
@@ -746,7 +891,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * @param value The value of the header to set
 	 */
 	public abstract setHeader(name: string, value: string | number): void;
-	
+
 	/**
 	 * Sets the HTTP status code for the response
 	 * @param status The HTTP status code to return in the request
@@ -782,7 +927,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 				this.hooks.get(hookName).push(hookfunction);
 				break;
-			
+
 			default:
 				throw new Error(`Invalid hook name: ${hookName}`);
 		}

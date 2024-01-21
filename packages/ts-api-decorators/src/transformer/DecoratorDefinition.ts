@@ -1,5 +1,5 @@
 import * as ts from 'typescript';
-import { InternalTypeDefinition } from '../apiManagement/InternalTypes';
+import { InternalTypeDefinition, InternalTypeDefinitionRestriction } from '../apiManagement/InternalTypes';
 import { ITransformerMetadata, IMetadataDescriptor } from './TransformerMetadata';
 import { ITransformContext } from './ITransformContext';
 import { ApiParamType, ApiRawBodyParamType } from '../apiManagement/ApiDefinition';
@@ -49,36 +49,41 @@ export interface IDecoratorMagicFuncAssignment {
 export interface IParameterDecoratorDefinition extends IDecoratorDefinitionBase {
 	decoratorType: DecoratorType.MethodParameter | DecoratorType.ConstructorParameter;
 	parameterType: ApiParamType;
-
+	
 	/**
 	 * If the parameterType is `Transport`, the transport type id
-	 */
+	*/
 	transportTypeId?: string;
-
+	
 	/**
 	 * If the parameterType is `Custom`, the param id
-	 */
+	*/
 	paramId?: string;
-
+	
 	/**
 	 * If the parameterType is `RawBody`, the type of raw body
-	 */
+	*/
 	bodyType?: ApiRawBodyParamType;
-
+	
 	/**
 	 * If set, parameter type must match at least one of the type restrictions
-	 */
-	parameterTypeRestrictions?: InternalTypeDefinition[];
-
+	*/
+	parameterTypeRestrictions?: InternalTypeDefinitionRestriction[];
+	
 	/**
 	 * If true, the library will not output typeref or typedef metadata
-	 */
+	*/
 	skipOutputTypeDefinitions?: boolean;
-
+	
 	/** 
 	 * If true, this parameter overrides the return value of the function
-	 */
+	*/
 	overrideOutput?: boolean;
+
+	/**
+	 * Whether this parameter is expressed in the query as a destructured object
+	 */
+	isDestructuredObject?: any;
 }
 
 export interface IClassPropertyDecoratorDefinition extends IDecoratorDefinitionBase {

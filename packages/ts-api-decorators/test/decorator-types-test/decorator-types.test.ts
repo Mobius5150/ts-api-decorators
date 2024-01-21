@@ -268,7 +268,7 @@ describe('transformer', () => {
 		loadBasicTree();
 
 		// Find the node for this handler
-		const handlerNode = tree.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloSchema');
+		const handlerNode = tree!.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloSchema');
 
 		// Assert that the handler looks right
 		assertRealInclude(handlerNode,
@@ -279,6 +279,97 @@ describe('transformer', () => {
 			]),
 			undefined, { funcmode: 'matcher' }
 		);
+	});
+
+
+	it('should parse destructured object parameters', async () => {
+		loadBasicTree();
+
+		// Find the node for this handler
+		const handlerNode = tree!.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloDestructuredObjectQueryParam');
+
+		// Assert that the handler looks right
+		assertRealInclude(handlerNode,
+			// greetWithStringParamValidation()
+			treeHandlerMethodNode(ApiMethod.GET, '/helloDestructuredObjectQueryParam', [
+				treeHandlerParameterNode({
+					type: ApiParamType.Query,
+					parameterIndex: 0,
+					propertyKey: 'obj',
+					args: {
+						name: 'obj',
+						typedef: {
+							type: 'object',
+						},
+						properties: [
+							{
+								name: 'name',
+								optional: false,
+							},
+							{
+								name: 'times',
+								optional: false,
+							},
+							{
+								name: 'optional',
+								optional: true,
+							}
+						]
+					},
+				}),
+			],
+			[
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, { type: "string" }),
+			]),
+			undefined, { funcmode: 'matcher' }
+		);
+	});
+
+	it('should parse destructured object parameters defaults', async () => {
+		loadBasicTree();
+
+		// Find the node for this handler
+		const handlerNode = tree!.children.find(c => c.type === HandlerTreeNodeType.Handler && c.route === '/helloDestructuredObjectQueryParamWithDefaults');
+
+		// Assert that the handler looks right
+		assertRealInclude(handlerNode,
+			// greetWithStringParamValidation()
+			treeHandlerMethodNode(ApiMethod.GET, '/helloDestructuredObjectQueryParamWithDefaults', [
+				treeHandlerParameterNode({
+					type: ApiParamType.Query,
+					parameterIndex: 0,
+					propertyKey: 'obj',
+					isDestructuredObject: true,
+					args: {
+						name: 'obj',
+						typedef: {
+							type: 'object',
+						},
+						properties: [
+							{
+								name: 'name',
+								optional: false,
+							},
+							{
+								name: 'times',
+								optional: false,
+							},
+							{
+								name: 'optional',
+								optional: true,
+							}
+						]
+					},
+				}),
+			],
+			[
+				treeNodeMetadata(BuiltinMetadata.ReturnSchema, { type: "string" }),
+			]),
+			undefined, { funcmode: 'matcher' }
+		);
+
+		const initializer = handlerNode?.children[0].metadata.find(m => m.key === BuiltinMetadata.Initializer.key);
+		assert.isObject(initializer?.value);
 	});
 
 	it('should perform deep string parameter validation', async () => {

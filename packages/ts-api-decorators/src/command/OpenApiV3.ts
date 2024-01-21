@@ -513,6 +513,10 @@ export class OpenApiV3Extractor implements IExtractor {
 					if (pdef.items.length === 1) {
 						pdef.items = pdef.items[0];
 					}
+				} else if (!Array.isArray(pdef.items) && Array.isArray(pdef.items.type)) {
+					pdef.items = {
+						anyOf: pdef.items.type as any,
+					}
 				}
 			} else if (typeof pdef.type === 'string') {
                 if (this.removableTypes.indexOf(pdef.type) !== -1) {

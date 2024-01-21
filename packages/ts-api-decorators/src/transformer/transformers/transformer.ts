@@ -5,7 +5,8 @@ import {
 	ApiQueryParam,
 	ApiQueryParamString,
 	ApiQueryParamNumber,
-	GetQueryParamDecorator
+	GetQueryParamDecorator,
+	ApiQueryParamDestructuredObject
 } from '../../decorators/QueryParams';
 import { ApiBodyParam, ApiBodyParamNumber, ApiBodyParamString, GetBodyParamDecorator, ApiBodyParamStream, ApiBodyParamRawString, } from '../../decorators/BodyParams';
 import { TJSDefaultOptions } from '../../Util/TJSGeneratorUtil';
@@ -122,6 +123,7 @@ export function registerDefaultDecorators(resolver: IDecoratorResolver) {
         GetQueryParamDecorator(ApiQueryParam),
         GetQueryParamDecorator(ApiQueryParamString),
         GetQueryParamDecorator(ApiQueryParamNumber),
+        GetQueryParamDecorator(ApiQueryParamDestructuredObject),
 
         GetBodyParamDecorator(ApiBodyParam),
         GetBodyParamDecorator(ApiBodyParamString),
