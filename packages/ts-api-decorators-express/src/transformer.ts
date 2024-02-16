@@ -20,5 +20,5 @@ export function getTransformerArguments(): ITransformerArguments {
 }
 
 export default function azFuncTransformer(program: ts.Program): ts.TransformerFactory<ts.SourceFile> {
-	return transformer(program, getTransformerArguments());
+	return transformer(program,  getTransformerArguments());
 }
