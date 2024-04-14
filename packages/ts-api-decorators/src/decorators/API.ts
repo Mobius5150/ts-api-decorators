@@ -10,6 +10,7 @@ import { ClassDecorator } from "../transformer/ClassDecorator";
 import { HandlerCollectionDecorator } from '../transformer/HandlerCollectionDecorator';
 import { ClassConstructor } from '../Util/ClassConstructors';
 import { DefaultApiResponseCode } from '../Constants';
+import { ClassPropertyDecorator } from '../transformer/ClassPropertyDecorator';
 
 export type ApiMethodDecoratorReturnType<T, K = (...args: any[]) => T> = (
 	target: object,
@@ -103,6 +104,39 @@ abstract class ApiMethodDecorators {
 					},
 				}),
 			target.constructor);
+		}
+	}
+
+	public static TypeSchemaDecorator<T extends object>(): PropertyDecorator;
+	@ApiDecorator(ClassPropertyDecorator, {
+		indexTs: __filename,
+		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		provider: BuiltinMetadata.BuiltinComponent,
+		arguments: [
+			BuiltinArgumentExtractors.DecoratorTypeArgTypeArgument(0),
+			BuiltinArgumentExtractors.SchemaOutputRefOverrideArgument,
+		],
+		metadata: [
+			BuiltinMetadata.ApiMethodWithValue(ApiMethod.GET),
+			BuiltinMetadata.ApiMethodTypeHttp,
+			BuiltinMetadata.GetSchemaReturnSchema,
+		],
+	})
+	public static TypeSchemaDecorator(outTypeDef?: InternalTypeDefinition): PropertyDecorator {
+		return (
+			target: object,
+			propertyKey: string,
+		) => {
+			if (!outTypeDef) {
+				throw new Error('Could not find typedef');
+			}
+
+			if (outTypeDef.type !== 'object') {
+				throw new Error('ApiGetSchemaMethod only supports object types');
+			}
+
+			
+			target[propertyKey] = outTypeDef.schema;
 		}
 	}
 
@@ -232,3 +266,4 @@ export const ApiPutMethod = ApiMethodDecorators.ApiPutMethod;
 export const ApiPostMethod = ApiMethodDecorators.ApiPostMethod;
 export const ApiDeleteMethod = ApiMethodDecorators.ApiDeleteMethod;
 export const ApiGetSchemaMethod = ApiMethodDecorators.ApiGetSchemaMethod;
+export const TypeSchemaDecorator = ApiMethodDecorators.TypeSchemaDecorator;

@@ -18,7 +18,7 @@ import { GetPathParamDecorator, ApiPathParam, ApiPathParamNumber, ApiPathParamSt
 import { GetDependencyParamDecorator, ApiInjectedDependencyParam, ApiInjectedDependency, ApiDependency } from '../../decorators/DependencyParams';
 import { IDecoratorResolver } from '../IDecoratorResolver';
 import { DecoratorResolver } from '../DecoratorResolver';
-import { Api, ApiGetSchemaMethod, GetApiDecorator } from '../../decorators';
+import { Api, ApiGetSchemaMethod, GetApiDecorator, TypeSchemaDecorator } from '../../decorators';
 import { TreeTransformer } from '../TreeTransformer';
 import { IHandlerTreeNodeRoot } from '../HandlerTree';
 import { TransformerOpts } from '../TransformerOpts';
@@ -119,6 +119,7 @@ export function registerDefaultDecorators(resolver: IDecoratorResolver) {
 		GetApiMethodDecorator(ApiPostMethod),
 		GetApiMethodDecorator(ApiDeleteMethod),
 		GetApiMethodDecorator(ApiGetSchemaMethod),
+		GetApiMethodDecorator(TypeSchemaDecorator),
 		
         GetQueryParamDecorator(ApiQueryParam),
         GetQueryParamDecorator(ApiQueryParamString),
