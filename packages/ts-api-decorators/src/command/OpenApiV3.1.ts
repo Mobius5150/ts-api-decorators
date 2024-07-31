@@ -1,6 +1,6 @@
 import { IApiParamDefinition, ApiParamType } from '../apiManagement/ApiDefinition';
 import { IExtractor } from './IExtractor';
-import { OpenAPIV3, IJsonSchema as _IJsonSchema } from 'openapi-types';
+import { OpenAPIV3, IJsonSchema } from 'openapi-types';
 import { getMetadataValue, IMetadataType, getAllMetadataValues, getMetadataValueByDescriptor, BuiltinMetadata } from '../transformer/TransformerMetadata';
 import { OpenApiMetadataType } from '../transformer/OpenApi';
 import * as yaml from 'js-yaml';
@@ -25,7 +25,6 @@ import {
 	HandlerTreeNodeType,
 } from '../transformer/HandlerTree';
 import { ManagedApi, ApiMimeType } from '../apiManagement';
-import { deepEqual } from 'assert';
 
 export interface IOpenApiV3Opts {
 	disableTryInferSchemes?: boolean;
@@ -38,306 +37,23 @@ export interface IOpenApiV3Opts {
 	yamlOpts?: yaml.DumpOptions;
 }
 
-type IJsonSchema = Omit<_IJsonSchema, ''>;
-
-export class NetRefCtx {
-	private map: Map<string, ReassignableString> = new Map();
-	private oldRefs: Set<string> = new Set();
-	public existingOrNewRef(value: string | ReassignableString): ReassignableString {
-		if (value instanceof ReassignableString || typeof value !== 'string') {
-			value = value.valueOf();
-		}
-
-		if (!this.map.has(value)) {
-			this.map.set(value, new ReassignableString(this, value));
-		}
-
-		return this.map.get(value)!;
-	}
-
-	public setRef(oldRef: string, newRef: ReassignableString) {
-		this.map.set(oldRef.valueOf(), newRef);
-		this.oldRefs.add(oldRef);
-	}
-
-	public clearOldRefs() {
-		for (let ref of this.oldRefs) {
-			this.map.delete(ref);
-		}
-
-		this.oldRefs.clear();
-	}
-}
-
-export class ReassignableString extends String {
-	protected internalRef: string;
-	public constructor(private ctx: NetRefCtx | undefined, value: string) {
-		super();
-		let self = this;
-		this.internalRef = (value as any) instanceof ReassignableString ? (value as unknown as ReassignableString).internalRef.valueOf() : value;
-		this.ctx?.setRef(this.internalRef, this);
-
-		return new Proxy(this, {
-			get(target, prop) {
-				if (typeof prop === 'symbol') {
-					return target[prop];
-				}
-
-				if (Number(prop) == (prop as any) && !(prop in target)) {
-					return self.internalRef[prop];
-				}
-
-				return target[prop];
-			},
-		});
-	}
-
-	private handlers: { [evt: string]: ((newVal: ReassignableString) => void)[] } = {};
-	public on(evt: 'change', handler: (newVal: ReassignableString) => void) {
-		if (!this.handlers[evt]) {
-			this.handlers[evt] = [];
-		}
-
-		this.handlers[evt].push(handler);
-	}
-
-	public setValue(newVal: string | ReassignableString) {
-		if (newVal instanceof ReassignableString) {
-			newVal = newVal.internalRef;
-		}
-
-		this.ctx?.setRef(newVal, this);
-		this.internalRef = newVal;
-		if (this.handlers['change']) {
-			for (let handler of this.handlers['change']) {
-				handler(this);
-			}
-		}
-	}
-
-	public toString() {
-		return this.internalRef.valueOf();
-	}
-
-	public strCast() {
-		return this as any as string;
-	}
-
-	public toJSON() {
-		return this.internalRef.valueOf();
-	}
-
-	public valueOf() {
-		return this.internalRef.valueOf();
-	}
-
-	public [Symbol.toPrimitive](hint: string) {
-		return this.internalRef.valueOf();
-	}
-
-	public [Symbol.toStringTag] = 'NetRef';
-
-	public static fromString(ctx: NetRefCtx | undefined, value: string | ReassignableString) {
-		if (value instanceof ReassignableString) {
-			return value;
-		}
-
-		if (!ctx) {
-			return new ReassignableString(undefined, value);
-		}
-
-		return ctx.existingOrNewRef(value);
-	}
-
-	public at(index: number): string | undefined {
-		return this.internalRef[index];
-	}
-
-	public get length() {
-		return this.internalRef.length;
-	}
-
-	public charAt(index: number) {
-		return this.internalRef.charAt(index);
-	}
-
-	public charCodeAt(index: number) {
-		return this.internalRef.charCodeAt(index);
-	}
-
-	public concat(...strings: string[]) {
-		return this.internalRef.concat(...strings);
-	}
-
-	public includes(searchString: string, position?: number) {
-		return this.internalRef.includes(searchString, position);
-	}
-
-	public endsWith(searchString: string, length?: number) {
-		return this.internalRef.endsWith(searchString, length);
-	}
-
-	public indexOf(searchString: string, position?: number) {
-		return this.internalRef.indexOf(searchString, position);
-	}
-
-	public lastIndexOf(searchString: string, position?: number) {
-		return this.internalRef.lastIndexOf(searchString, position);
-	}
-
-	public localeCompare(that: string, locales?: string | string[], options?: Intl.CollatorOptions) {
-		return this.internalRef.localeCompare(that, locales, options);
-	}
-
-	public match(regexp: string | RegExp): RegExpMatchArray | null;
-	public match(matcher: { [Symbol.match](string: string): RegExpMatchArray | null }): RegExpMatchArray | null;
-	public match(regexp: any) {
-		return this.internalRef.match(regexp);
-	}
-
-	public matchAll(regexp: RegExp) {
-		return this.internalRef.matchAll(regexp);
-	}
-
-	public normalize(form?: 'NFC' | 'NFD' | 'NFKC' | 'NFKD') {
-		return this.internalRef.normalize(form);
-	}
-
-	public padEnd(targetLength: number, padString?: string) {
-		return this.internalRef.padEnd(targetLength, padString);
-	}
-
-	public padStart(targetLength: number, padString?: string) {
-		return this.internalRef.padStart(targetLength, padString);
-	}
-
-	public repeat(count: number) {
-		return this.internalRef.repeat(count);
-	}
-
-	// @ts-ignore
-	public replace(...args: any[]) {
-		// @ts-ignore
-		return this.internalRef.replace(...args);
-	}
-
-	public search(regexp: string): number;
-	public search(regexp: RegExp): number;
-	public search(regexp: string | RegExp) {
-		return this.internalRef.search(regexp);
-	}
-
-	public slice(start?: number, end?: number) {
-		return this.internalRef.slice(start, end);
-	}
-
-	public split(separator: string, limit?: number): string[];
-	public split(separator: RegExp, limit?: number): string[];
-	public split(separator: string | RegExp, limit?: number) {
-		return this.internalRef.split(separator, limit);
-	}
-
-	public startsWith(searchString: string, position?: number) {
-		return this.internalRef.startsWith(searchString, position);
-	}
-
-	public substring(start: number, end?: number) {
-		return this.internalRef.substring(start, end);
-	}
-
-	public toLocaleLowerCase(locales?: string | string[]) {
-		return this.internalRef.toLocaleLowerCase(locales);
-	}
-
-	public toLocaleUpperCase(locales?: string | string[]) {
-		return this.internalRef.toLocaleUpperCase(locales);
-	}
-
-	public toLowerCase() {
-		return this.internalRef.toLowerCase();
-	}
-
-	public toUpperCase() {
-		return this.internalRef.toUpperCase();
-	}
-
-	public trim() {
-		return this.internalRef.trim();
-	}
-
-	public trimEnd() {
-		return this.internalRef.trimEnd();
-	}
-
-	public trimStart() {
-		return this.internalRef.trimStart();
-	}
-
-	public [Symbol.iterator]() {
-		return this.internalRef[Symbol.iterator]();
-	}
-}
-
-export function isNetRef(value: any): value is ReassignableString {
-	return typeof value === 'object' && value instanceof ReassignableString;
-}
-
-class ReassignableTemplateString extends ReassignableString {
-	constructor(ctx: NetRefCtx | undefined, public baseString: ReassignableString, public template: string, public replaceStr: string = '{replace}') {
-		super(ctx, baseString as any as string);
-
-		this.on('change', (newVal) => {
-			this.internalRef = this.compileTemplate(newVal);
-		});
-
-		this.internalRef = this.compileTemplate(baseString);
-	}
-
-	private compileTemplate(newVal: ReassignableString): string {
-		return this.template.replace(this.replaceStr, newVal.valueOf());
-	}
-
-	public toString() {
-		return this.internalRef.valueOf();
-	}
-
-	public strCast() {
-		return this as any as string;
-	}
-
-	public toJSON() {
-		return this.internalRef.valueOf();
-	}
-
-	public valueOf() {
-		return this.internalRef.valueOf();
-	}
-
-	public [Symbol.toStringTag] = 'NetRef';
-
-	public [Symbol.toPrimitive](hint: string) {
-		return this.internalRef.valueOf();
-	}
-}
-
-export class OpenApiV3Extractor implements IExtractor {
-	public static readonly SwaggerVersion = '3.0.1';
+export class OpenApiV31Extractor implements IExtractor {
+	public static readonly SwaggerVersion = '3.1.0';
 	private static readonly RouteSeperator = '/';
 	private static readonly MimeTypeText = 'text/plain';
 	private static readonly MimeTypeJson = 'application/json';
 	private static readonly ExcludeMetadataTags = ['private'];
 	private readonly removableTypes = ['undefined', 'null'];
-	private ctx: NetRefCtx = new NetRefCtx();
 
 	private tags = new Map<string, IExtractedTag>();
-	private definitions = new Map<ReassignableString, OpenAPIV3.SchemaObject>();
-	private definitionNameMap = new Map<string, ReassignableString>();
+	private definitions = new Map<string, OpenAPIV3.SchemaObject>();
+	private definitionNameMap = new Map<string, string>();
 
 	constructor(private readonly apiTree: IHandlerTreeNodeRoot, private readonly apiInfo: IProgramInfo, private readonly opts: IOpenApiV3Opts) {}
 
 	public getDocument(): OpenAPIV3.Document {
 		const doc: OpenAPIV3.Document = {
-			openapi: OpenApiV3Extractor.SwaggerVersion,
+			openapi: OpenApiV31Extractor.SwaggerVersion,
 			info: {
 				title: this.apiInfo.title,
 				version: this.apiInfo.version,
@@ -395,33 +111,17 @@ export class OpenApiV3Extractor implements IExtractor {
 	}
 
 	private getComponents(): OpenAPIV3.ComponentsObject {
-		const defKeys = Array.from(this.definitions.keys()).map((k) => k.strCast());
+		const defKeys = Array.from(this.definitions.keys());
 		defKeys.sort();
 		const definitions: OpenAPIV3.ComponentsObject = {
 			schemas: {},
 		};
 
 		defKeys.forEach((defName) => {
-			const defNameWithoutSuffix = defName.toString().replace(/[_0-9]+$/, '');
-			if (defName.valueOf() !== defNameWithoutSuffix && defKeys.includes(defNameWithoutSuffix) && this.deepEqual(defName, defNameWithoutSuffix)) {
-				const defObj: ReassignableString = defName as any;
-				defObj.setValue(defNameWithoutSuffix);
-				return;
-			}
-
-			definitions.schemas[defName] = <OpenAPIV3.SchemaObject>this.definitions.get(defName as any);
+			definitions.schemas[defName] = <OpenAPIV3.SchemaObject>this.definitions.get(defName);
 		});
 
 		return definitions;
-	}
-
-	private deepEqual(defName: string, defNameWithoutSuffix: string) {
-		try {
-			deepEqual(this.definitions.get(defName as any), this.definitions.get(defNameWithoutSuffix as any));
-			return true;
-		} catch {}
-
-		return false;
 	}
 
 	private tryInferSchemes(): string[] | undefined {
@@ -536,13 +236,13 @@ export class OpenApiV3Extractor implements IExtractor {
 
 	private getResponseObject(api: IHandlerTreeNodeHandler): OpenAPIV3.ResponseObject {
 		const schema: InternalTypeDefinition = getMetadataValueByDescriptor(api.metadata, BuiltinMetadata.ReturnSchema);
-		let mimeType = OpenApiV3Extractor.MimeTypeText;
+		let mimeType = OpenApiV31Extractor.MimeTypeText;
 		switch (schema.type) {
 			case 'object':
 			case 'array':
 			case 'intersection':
 			case 'union':
-				mimeType = OpenApiV3Extractor.MimeTypeJson;
+				mimeType = OpenApiV31Extractor.MimeTypeJson;
 				break;
 		}
 
@@ -659,7 +359,7 @@ export class OpenApiV3Extractor implements IExtractor {
 			});
 
 			return {
-				$ref: new ReassignableTemplateString(this.ctx, this.renameDefinition(returnType.typename), `#/components/schemas/{replace}`).strCast(),
+				$ref: `#/components/schemas/${this.renameDefinition(returnType.typename)}`,
 			};
 		}
 
@@ -731,12 +431,12 @@ export class OpenApiV3Extractor implements IExtractor {
 
 			if (definition.includes('.')) {
 				let i = 0;
-				while (this.definitions.has(defName as any)) {
+				while (this.definitions.has(defName)) {
 					defName = `${defName}${++i}`;
 				}
 			}
 
-			this.definitionNameMap.set(definition, new ReassignableString(this.ctx, defName));
+			this.definitionNameMap.set(definition, defName);
 		}
 
 		return this.definitionNameMap.get(definition)!;
@@ -798,7 +498,7 @@ export class OpenApiV3Extractor implements IExtractor {
 
 		let removeProps = [];
 		for (const property of Object.keys(props)) {
-			let pdef: IJsonSchema = props[property];
+			const pdef: IJsonSchema = props[property];
 			if (typeof pdef['$ref'] !== 'undefined') {
 				pdef['$ref'] = this.replaceRefStr(pdef['$ref']);
 				continue;
@@ -817,31 +517,10 @@ export class OpenApiV3Extractor implements IExtractor {
 					if (pdef.items.length === 1) {
 						pdef.items = pdef.items[0];
 					}
-				} else if (Array.isArray(pdef.items)) {
-					pdef.items = this._fixDefinitionPropertiesCollection(pdef.items);
-					if (pdef.items.length === 1) {
-						pdef.items = pdef.items[0];
-					} else {
-						pdef.items = {
-							oneOf: pdef.items,
-						};
-					}
 				} else if (!Array.isArray(pdef.items) && Array.isArray(pdef.items.type)) {
 					pdef.items = {
-						anyOf: pdef.items.type.map((type) => ({ type })),
+						anyOf: pdef.items.type as any,
 					};
-				} else if (!Array.isArray(pdef.items)) {
-					[pdef.items] = this._fixDefinitionPropertiesCollection([pdef.items]);
-				}
-
-				if (pdef.additionalItems) {
-					if (typeof pdef.additionalItems === 'object') {
-						pdef.items = {
-							anyOf: [...(Array.isArray(pdef.items) ? pdef.items : [pdef.items]), pdef.additionalItems],
-						};
-					}
-
-					delete pdef.additionalItems;
 				}
 			} else if (typeof pdef.type === 'string') {
 				if (this.removableTypes.indexOf(pdef.type) !== -1) {
@@ -933,7 +612,7 @@ export class OpenApiV3Extractor implements IExtractor {
 			this.expectedDefinitions.add(refStr);
 		}
 
-		return new ReassignableTemplateString(this.ctx, expected, `#/components/schemas/{replace}`).strCast();
+		return `#/components/schemas/${expected}`;
 	}
 
 	private recordTagObject(t: IExtractedTag): string {
@@ -1159,18 +838,11 @@ export class OpenApiV3Extractor implements IExtractor {
 		return yaml.dump(this.getDocument(), {
 			...this.opts.yamlOpts,
 			skipInvalid: true,
-			replacer(key, value) {
-				if (value instanceof ReassignableString || value instanceof ReassignableTemplateString) {
-					return value.toString();
-				}
-
-				return value;
-			},
 		});
 	}
 }
 
-export class OpenApiV3JsonExtractor extends OpenApiV3Extractor {
+export class OpenApiV3JsonExtractor extends OpenApiV31Extractor {
 	public toString(): string {
 		return JSON.stringify(this.getDocument(), undefined, 4);
 	}

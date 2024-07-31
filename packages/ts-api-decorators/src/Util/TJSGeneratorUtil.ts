@@ -1,9 +1,10 @@
-import * as tjs from "typescript-json-schema";
+import * as tjs from 'typescript-json-schema';
 
 export function TJSDefaultOptions(): tjs.PartialArgs {
-    return {
+	return {
 		uniqueNames: true,
-        required: true,
-        topRef: true,
-    };
+		required: true,
+		topRef: true,
+		excludePrivate: true,
+	};
 }

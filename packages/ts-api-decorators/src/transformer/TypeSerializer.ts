@@ -1,24 +1,36 @@
 import * as ts from 'typescript';
-import * as tjs from "typescript-json-schema";
-import { InternalTypeDefinition, IJsonSchemaWithRefs, InternalTypeUtil, InternalEnumTypeDefinition, IntrinsicTypeDefinitionString, IntrinsicTypeDefinitionNumber } from '../apiManagement/InternalTypes';
-import { isIntrinsicType, isUnionType, isIntersectionType, isSymbolWithId, isBuiltinSymbol, isParameterizedType, isSymbolWithParent, isNodeWithTypeArguments, UnionType, nodeHasElements } from './TransformerUtil';
+import * as tjs from 'typescript-json-schema';
+import {
+	InternalTypeDefinition,
+	IJsonSchemaWithRefs,
+	InternalTypeUtil,
+	InternalEnumTypeDefinition,
+	IntrinsicTypeDefinitionString,
+	IntrinsicTypeDefinitionNumber,
+} from '../apiManagement/InternalTypes';
+import {
+	isIntrinsicType,
+	isUnionType,
+	isIntersectionType,
+	isSymbolWithId,
+	isBuiltinSymbol,
+	isParameterizedType,
+	isSymbolWithParent,
+	isNodeWithTypeArguments,
+	UnionType,
+	nodeHasElements,
+} from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
-import { IJsonSchema } from "openapi-types";
+import { IJsonSchema } from 'openapi-types';
 
 export class TypeSerializer {
 	private static readonly ReferencePreamble = '#/definitions/';
 
-    constructor(
-        protected readonly program: ts.Program,
-        protected readonly generator: tjs.JsonSchemaGenerator,
-        protected readonly typeChecker: ts.TypeChecker,
-    ) {}
+	constructor(protected readonly program: ts.Program, protected readonly generator: tjs.JsonSchemaGenerator, protected readonly typeChecker: ts.TypeChecker) {}
 
-    public getInternalTypeRepresentation(node: ts.TypeNode | undefined, type: ts.Type): InternalTypeDefinition {
+	public getInternalTypeRepresentation(node: ts.TypeNode | undefined, type: ts.Type): InternalTypeDefinition {
 		const base = {
-			...(node && ts.isPropertySignature(node)
-				? { optional: !!node.questionToken }
-				: {})
+			...(node && ts.isPropertySignature(node) ? { optional: !!node.questionToken } : {}),
 		};
 		if (isIntrinsicType(type)) {
 			return {
@@ -37,7 +49,7 @@ export class TypeSerializer {
 				case 'Buffer':
 					return {
 						...base,
-						type: 'Buffer'
+						type: 'Buffer',
 					};
 
 				case 'Promise':
@@ -56,17 +68,14 @@ export class TypeSerializer {
 					} else {
 						return {
 							...base,
-							type: 'Promise'
+							type: 'Promise',
 						};
 					}
 			}
 		}
 		if (type.symbol && isSymbolWithId(type.symbol)) {
 			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
-			const symbols = [
-				...this.generator.getSymbols(name),
-				...this.generator.getSymbols(type.symbol.name),
-			];
+			const symbols = [...this.generator.getSymbols(name), ...this.generator.getSymbols(type.symbol.name)];
 
 			if (isSymbolWithParent(type.symbol)) {
 				symbols.push(...this.generator.getSymbols(type.symbol.parent.name));
@@ -74,10 +83,9 @@ export class TypeSerializer {
 
 			for (const symbol of symbols) {
 				if (
-					isSymbolWithId(symbol.symbol) && (
-						symbol.symbol.id === type.symbol.id
-						|| isSymbolWithParent(type.symbol) && isSymbolWithId(type.symbol.parent) && symbol.symbol.id === type.symbol.parent.id
-					)
+					isSymbolWithId(symbol.symbol) &&
+					(symbol.symbol.id === type.symbol.id ||
+						(isSymbolWithParent(type.symbol) && isSymbolWithId(type.symbol.parent) && symbol.symbol.id === type.symbol.parent.id))
 				) {
 					return this.getTypeForSymbolWithId(symbol, base);
 				}
@@ -118,10 +126,10 @@ export class TypeSerializer {
 		if (node && ts.isLiteralTypeNode(node)) {
 			switch (node.literal.kind) {
 				case ts.SyntaxKind.StringLiteral:
-					return <IntrinsicTypeDefinitionString> { type: 'string', schema: { enum: [ node.literal.text ] } };
+					return <IntrinsicTypeDefinitionString>{ type: 'string', schema: { enum: [node.literal.text] } };
 
 				case ts.SyntaxKind.NumericLiteral:
-					return <IntrinsicTypeDefinitionNumber> { type: 'number', schema: { enum: [ Number(node.literal.text) ] } };
+					return <IntrinsicTypeDefinitionNumber>{ type: 'number', schema: { enum: [Number(node.literal.text)] } };
 
 				case ts.SyntaxKind.UndefinedKeyword:
 					return { type: 'void' };
@@ -131,33 +139,35 @@ export class TypeSerializer {
 			}
 		}
 	}
-	
-	private getUnionType(base: { optional?: boolean; }, type: UnionType, node: ts.UnionTypeNode): InternalTypeDefinition {
+
+	private getUnionType(base: { optional?: boolean }, type: UnionType, node: ts.UnionTypeNode): InternalTypeDefinition {
 		const union: InternalTypeDefinition = {
 			...base,
 			type: 'union',
-			types: type.types
-				.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t))
-				.filter(t => !!t),
+			types: type.types.map((t, i) => this.getInternalTypeRepresentation(node.types[i], t)).filter((t) => !!t),
 			typename: type.aliasSymbol ? type.aliasSymbol.escapedName.toString() : undefined,
 			uniqueTypename: type.aliasSymbol ? type.aliasSymbol.name : undefined,
 		};
 
-		if (union.types && union.types.every(t => (t.type === 'string' || t.type === 'number') && t.schema && 'enum' in t.schema && Array.isArray(t.schema?.enum))) {
+		if (
+			union.types &&
+			union.types.every((t) => (t.type === 'string' || t.type === 'number') && t.schema && 'enum' in t.schema && Array.isArray(t.schema?.enum))
+		) {
 			// This union can be collapsed to an enum
 			let type = 'enum';
-			if (union.types.every(t => t.type === 'string')) {
+			if (union.types.every((t) => t.type === 'string')) {
 				type = 'string';
-			} else if (union.types.every(t => t.type === 'number')) {
+			} else if (union.types.every((t) => t.type === 'number')) {
 				type = 'number';
 			}
-			return <InternalEnumTypeDefinition> {
+			return <InternalEnumTypeDefinition>{
 				...base,
 				type,
 				schema: {
 					enum: union.types.reduce(
-						(p, c: IntrinsicTypeDefinitionString | IntrinsicTypeDefinitionNumber) =>
-							p.concat('enum' in c.schema ? c.schema.enum : []), []),
+						(p, c: IntrinsicTypeDefinitionString | IntrinsicTypeDefinitionNumber) => p.concat('enum' in c.schema ? c.schema.enum : []),
+						[],
+					),
 				},
 				typename: union.typename,
 				uniqueTypename: union.uniqueTypename,
@@ -167,7 +177,7 @@ export class TypeSerializer {
 		return union;
 	}
 
-	private getTypeForSymbolWithId(symbol: any, base: { optional?: boolean; }) {
+	private getTypeForSymbolWithId(symbol: any, base: { optional?: boolean }) {
 		let schema = this.generator.getSchemaForSymbol(symbol.name, true);
 		let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;
 		if (schema.$ref && schema.definitions) {
@@ -179,7 +189,7 @@ export class TypeSerializer {
 			}
 			if (def.type !== InternalTypeUtil.TypeAnyObject.type) {
 				if (def.enum) {
-					type = (def.type && !Array.isArray(def.type)) ? def.type : InternalTypeUtil.TypeEnum.type;
+					type = def.type && !Array.isArray(def.type) ? def.type : InternalTypeUtil.TypeEnum.type;
 					schema = {
 						...def,
 						...schema,
@@ -216,25 +226,26 @@ export class TypeSerializer {
 		}
 
 		this.getRefsRecursive(def, schema.definitions, refs);
-		refs.forEach(v => newSchema.definitions[v] = schema.definitions[v]);
+		refs.forEach((v) => (newSchema.definitions[v] = schema.definitions[v]));
 
 		return newSchema;
 	}
 
 	private getRefsRecursive(obj: { $ref?: string }, definitions: tjs.Definition['definitions'], refs: string[]): void {
-		Object.keys(obj).filter(k => typeof obj[k] === 'object')
-			.map(k => this.getRefsRecursive(obj[k], definitions, refs));
+		Object.keys(obj)
+			.filter((k) => typeof obj[k] === 'object')
+			.map((k) => this.getRefsRecursive(obj[k], definitions, refs));
 		if (obj.$ref) {
 			const ref = this.getRefShortName(obj.$ref);
 
 			if (refs.indexOf(ref) !== -1) {
 				return;
 			}
-			
+
 			refs.push(ref);
 			const definition = definitions[ref];
 			if (definition) {
-				this.getRefsRecursive(<any>definition, definitions, refs)
+				this.getRefsRecursive(<any>definition, definitions, refs);
 			}
 		}
 	}
@@ -252,11 +263,9 @@ export class TypeSerializer {
 			throw new Error('Reference did not have a $ref field');
 		}
 
-		let def = 
-			this.generator.ReffedDefinitions[reference.$ref]
-			|| this.generator.ReffedDefinitions[reference.$ref.substr(
-				TypeSerializer.ReferencePreamble.length)];
-		
+		let def =
+			this.generator.ReffedDefinitions[reference.$ref] || this.generator.ReffedDefinitions[reference.$ref.substr(TypeSerializer.ReferencePreamble.length)];
+
 		if (!def) {
 			throw new Error('Reference not found: ' + reference.$ref);
 		}
@@ -277,12 +286,10 @@ export class TypeSerializer {
 				return ts.factory.createBigIntLiteral(val.toString());
 			case 'object':
 				if (Array.isArray(val)) {
-					return ts.factory.createArrayLiteralExpression(val.map(v => this.valueToLiteral(v)));
-				}
-				else if (val instanceof ExpressionWrapper) {
+					return ts.factory.createArrayLiteralExpression(val.map((v) => this.valueToLiteral(v)));
+				} else if (val instanceof ExpressionWrapper) {
 					return val.node;
-				}
-				else {
+				} else {
 					return this.objectToLiteral(val);
 				}
 			case 'undefined':
@@ -290,20 +297,22 @@ export class TypeSerializer {
 			default:
 				throw new Error(`Unknown type serialization path: ${typeof val}`);
 		}
-    }
-    
+	}
+
 	public objectToLiteral(val: object): ts.ObjectLiteralExpression {
 		return ts.factory.createObjectLiteralExpression(
-			Object.keys(val).map(k => {
+			Object.keys(val).map((k) => {
 				let propName: string | ts.StringLiteral = k;
 				if (/[^a-zA-Z0-9_]/.test(<string>k)) {
 					propName = ts.factory.createStringLiteral(k);
 				}
 
-				return ts.factory.createPropertyAssignment(propName, this.valueToLiteral(<any>val[<any>k]))
-			}), false);
+				return ts.factory.createPropertyAssignment(propName, this.valueToLiteral(<any>val[<any>k]));
+			}),
+			false,
+		);
 	}
-	
+
 	public compileExpressionToNumericConstant(expression: ts.Expression): number {
 		const compiled = this.compileExpressionToConstant(expression);
 		if (typeof compiled === 'number' || typeof compiled === 'bigint') {
@@ -344,16 +353,17 @@ export class TypeSerializer {
 		}
 
 		if (nodeHasElements(expression)) {
-			return expression.elements.map(c => this.arrayNodeToConstant(c)).filter(c => Boolean(c));
+			return expression.elements.map((c) => this.arrayNodeToConstant(c)).filter((c) => Boolean(c));
 		}
 
 		try {
-			return expression.getChildren().map(c => this.arrayNodeToConstant(c)).filter(c => Boolean(c));
-		} catch (e) {
+			return expression
+				.getChildren()
+				.map((c) => this.arrayNodeToConstant(c))
+				.filter((c) => Boolean(c));
+		} catch (e) {}
 
-		}
-
-		return expression.forEachChild(undefined, (children) => children.map(c => this.arrayNodeToConstant(c))).filter(c => Boolean(c));
+		return expression.forEachChild(undefined, (children) => children.map((c) => this.arrayNodeToConstant(c))).filter((c) => Boolean(c));
 	}
 
 	public jsonSchemaToInternalTypeDefinition(schema: IJsonSchema): InternalTypeDefinition {
@@ -368,7 +378,7 @@ export class TypeSerializer {
 				};
 		}
 	}
-	
+
 	private arrayNodeToConstant(c: ts.Node) {
 		if (!ts.isLiteralExpression(c)) {
 			if (ts.isToken(c)) {
@@ -389,6 +399,7 @@ export class TypeSerializer {
 		if (ts.isLiteralExpression(expression)) {
 			switch (expression.kind) {
 				case ts.SyntaxKind.StringLiteral:
+				case ts.SyntaxKind.NoSubstitutionTemplateLiteral:
 					return expression.text;
 
 				case ts.SyntaxKind.TrueKeyword:
