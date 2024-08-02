@@ -1,4 +1,4 @@
-import { Api, ApiGetMethod, ApiBodyParam, ApiQueryParam } from "../../../src";
+import { Api, ApiGetMethod, ApiBodyParam, ApiQueryParam } from '../../../src';
 
 enum MyStringEnum {
 	A = 'a',
@@ -13,23 +13,22 @@ enum MyNumberEnum {
 @Api
 export default class MyApi {
 	@ApiGetMethod('/helloStringEnum')
-	greetStringEnum(
-		@ApiQueryParam() enumParam: MyStringEnum,
-	) {
+	greetStringEnum(@ApiQueryParam() enumParam: MyStringEnum) {
 		return enumParam;
 	}
 
 	@ApiGetMethod<string>('/helloNumberEnum')
-	greetNumberEnum(
-		@ApiQueryParam() enumParam: MyNumberEnum,
-	): string {
+	greetNumberEnum(@ApiQueryParam() enumParam: MyNumberEnum): string {
 		return enumParam.toString();
 	}
 
-	 @ApiGetMethod<string>('/helloNumberEnumInline')
-	 greetNumberEnumInline(
-		 @ApiQueryParam() enumParam: 2 | 3,
-	 ): string {
-		 return enumParam.toString();
-	 }
+	@ApiGetMethod<string>('/helloNumberEnumInline')
+	greetNumberEnumInline(@ApiQueryParam() enumParam: 2 | 3): string {
+		return enumParam.toString();
+	}
+
+	@ApiGetMethod<string>('/helloStringNumberEnumInline')
+	greetStringNumberEnumInline(@ApiQueryParam() enumParam: 'str' | 3): string {
+		return enumParam.toString();
+	}
 }

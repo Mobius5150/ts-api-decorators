@@ -653,9 +653,7 @@ export class OpenApiV3Extractor implements IExtractor {
 
 		if (returnType.typename) {
 			this.addDefinitions({
-				[returnType.typename]: {
-					enum: returnType.schema.enum,
-				},
+				[returnType.typename]: this.createEnumType(returnType.schema.enum) as any,
 			});
 
 			return {
@@ -682,16 +680,42 @@ export class OpenApiV3Extractor implements IExtractor {
 
 		const enumType: OpenAPIV3.SchemaObject = {
 			type: 'string',
-			anyOf: [],
+			oneOf: [],
 		};
 		types.forEach((values, type: 'string' | 'number') => {
-			enumType.anyOf.push({
+			enumType.oneOf.push({
 				type: type,
 				enum: values,
 			});
 		});
 
 		return enumType;
+	}
+
+	private createEnumType(values: Array<string | number | boolean>): OpenAPIV3.SchemaObject {
+		const enumTypes = new Set(values.map((v) => typeof v));
+		if (enumTypes.size === 1) {
+			return {
+				type: typeof values[0] as 'string' | 'number' | 'boolean',
+				enum: values,
+			};
+		} else {
+			return {
+				type: undefined,
+				enum: undefined,
+				oneOf: values.map((val) => {
+					return {
+						type: typeof val as 'string' | 'number' | 'boolean',
+						const: val,
+					};
+				}),
+			};
+		}
+
+		return {
+			type: 'string',
+			enum: values,
+		};
 	}
 
 	private getInternalSchemaToOutputSchema(schema: IJsonSchemaWithRefs): OpenAPIV3.SchemaObject | OpenAPIV3.ReferenceObject {
@@ -758,10 +782,17 @@ export class OpenApiV3Extractor implements IExtractor {
 
 		if (redef.properties) {
 			redef.properties = this._fixDefinitionPropertiesCollection(redef.properties);
+			if (this.getKeyCount(redef.properties) === 0) {
+				delete redef.properties;
+			}
 		}
 
 		if (redef.definitions) {
 			redef.definitions = this._fixDefinitionPropertiesCollection(redef.definitions);
+		}
+
+		if (redef.enum) {
+			Object.assign(redef, this.createEnumType(redef.enum));
 		}
 
 		if (typeof redef.additionalProperties === 'object') {
@@ -788,7 +819,36 @@ export class OpenApiV3Extractor implements IExtractor {
 			delete redef.additionalProperties;
 		}
 
-		return <OpenAPIV3.SchemaObject>redef;
+		if (this.getKeyCount(redef) === 0) {
+			return {
+				type: 'object',
+				description: 'Empty object',
+				additionalProperties: this.opts.outputAdditionalPropertiesTrue || undefined,
+			};
+		}
+
+		return <OpenAPIV3.SchemaObject>this.convertProperties(redef);
+	}
+
+	getKeyCount(obj: object): number {
+		return Object.entries(obj).reduce((acc, [key, value]) => acc + (key && value !== undefined ? 1 : 0), 0);
+	}
+
+	private convertProperties(orig: IJsonSchema): OpenAPIV3.SchemaObject {
+		const redefed = <OpenAPIV3.SchemaObject>orig;
+		if (redefed.properties) {
+			redefed.properties = Object.fromEntries(
+				Object.entries(redefed.properties).map(([key, value]) => {
+					if (!value || (value as any).$ref) {
+						return [key, value];
+					}
+
+					return [key, this.fixDefinitionProperties(value as IJsonSchema)];
+				}),
+			);
+		}
+
+		return redefed;
 	}
 
 	private _fixDefinitionPropertiesCollection<T extends { [name: string]: IJsonSchema } | Array<IJsonSchema>>(props: T): T {
@@ -799,6 +859,9 @@ export class OpenApiV3Extractor implements IExtractor {
 		let removeProps = [];
 		for (const property of Object.keys(props)) {
 			let pdef: IJsonSchema = props[property];
+			if (!pdef) {
+				continue;
+			}
 			if (typeof pdef['$ref'] !== 'undefined') {
 				pdef['$ref'] = this.replaceRefStr(pdef['$ref']);
 				continue;
@@ -853,7 +916,7 @@ export class OpenApiV3Extractor implements IExtractor {
 					delete pdef.const;
 				}
 			} else if (typeof pdef.type !== 'undefined') {
-				let newTypes = pdef.type.filter((t) => this.removableTypes.indexOf(t) === -1);
+				let newTypes = Array.from(new Set(pdef.type.filter((t) => this.removableTypes.indexOf(t) === -1)));
 				if (newTypes.length === 0) {
 					removeProps.push(property);
 				} else if (newTypes.length === 1) {
@@ -870,8 +933,12 @@ export class OpenApiV3Extractor implements IExtractor {
 					});
 
 					delete pdef.type;
-					// (<OpenAPIV3.ArraySchemaObject>pdef).nullable = true;
 				}
+			} else if (this.getKeyCount(pdef) === 0) {
+				pdef = {
+					type: 'object',
+					additionalProperties: this.opts.outputAdditionalPropertiesTrue || undefined,
+				};
 			}
 
 			if (typeof pdef.additionalProperties === 'object' && Array.isArray(pdef.additionalProperties.type)) {
@@ -1159,6 +1226,7 @@ export class OpenApiV3Extractor implements IExtractor {
 		return yaml.dump(this.getDocument(), {
 			...this.opts.yamlOpts,
 			skipInvalid: true,
+			schema: yaml.JSON_SCHEMA,
 			replacer(key, value) {
 				if (value instanceof ReassignableString || value instanceof ReassignableTemplateString) {
 					return value.toString();
