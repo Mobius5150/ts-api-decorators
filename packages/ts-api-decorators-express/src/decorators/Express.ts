@@ -1,23 +1,26 @@
-import { ManagedApiInternal, Api, ApiMethodDecoratorReturnType } from "ts-api-decorators";
-import { ApiParamType } from "ts-api-decorators/dist/apiManagement/ApiDefinition";
-import { __ApiParamArgs, InternalTypeUtil } from "ts-api-decorators/dist/apiManagement/InternalTypes";
-import { ApiDecorator, DecoratorParentNameDependency, ApiMethodDecoratorGetFunction, DecoratorPeerDependency } from "ts-api-decorators/dist/decorators/DecoratorUtil";
-import { HandlerMethodParameterDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator";
-import { ExpressMetadata } from "../metadata/ExpressMetadata";
-import { HandlerMethodModifierDecorator } from "ts-api-decorators/dist/transformer/HandlerMethodModifierDecorator";
+import { ManagedApiInternal, Api, ApiMethodDecoratorReturnType } from 'ts-api-decorators';
+import { ApiParamType } from 'ts-api-decorators/dist/apiManagement/ApiDefinition';
+import { __ApiParamArgs, InternalTypeUtil } from 'ts-api-decorators/dist/apiManagement/InternalTypes';
+import {
+	ApiDecorator,
+	DecoratorParentNameDependency,
+	ApiMethodDecoratorGetFunction,
+	DecoratorPeerDependency,
+} from 'ts-api-decorators/dist/decorators/DecoratorUtil';
+import { HandlerMethodParameterDecorator } from 'ts-api-decorators/dist/transformer/HandlerMethodParameterDecorator';
+import { ExpressMetadata } from '../metadata/ExpressMetadata';
+import { HandlerMethodModifierDecorator } from 'ts-api-decorators/dist/transformer/HandlerMethodModifierDecorator';
 import * as Express from 'express';
-import { ExpressArgumentExtractors } from "../metadata/ExpressArgumentExtractors";
-import { ExpressMiddlewareArgument } from "../apiManagement/ApiTypes";
+import { ExpressArgumentExtractors } from '../metadata/ExpressArgumentExtractors';
+import { ExpressMiddlewareArgument } from '../apiManagement/ApiTypes';
 
 abstract class ExpressParams {
 	public static ExpressApiRequestParam(): ParameterDecorator;
 	@ApiDecorator(HandlerMethodParameterDecorator, {
 		indexTs: __filename,
-		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		dependencies: [DecoratorParentNameDependency(Api.name)],
 		parameterType: ApiParamType.Transport,
-		parameterTypeRestrictions: [
-			InternalTypeUtil.TypeAnyObject,
-		],
+		parameterTypeRestrictions: [InternalTypeUtil.TypeAnyObject],
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeRequestParam,
@@ -35,18 +38,17 @@ abstract class ExpressParams {
 					type: ApiParamType.Transport,
 					transportTypeId: ExpressMetadata.TransportTypeRequestParam,
 				},
-				target.constructor);
-		}
+				target.constructor,
+			);
+		};
 	}
 
 	public static ExpressApiResponseParam(): ParameterDecorator;
 	@ApiDecorator(HandlerMethodParameterDecorator, {
 		indexTs: __filename,
-		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		dependencies: [DecoratorParentNameDependency(Api.name)],
 		parameterType: ApiParamType.Transport,
-		parameterTypeRestrictions: [
-			InternalTypeUtil.TypeAnyObject,
-		],
+		parameterTypeRestrictions: [InternalTypeUtil.TypeAnyObject],
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeResponseParam,
@@ -64,18 +66,17 @@ abstract class ExpressParams {
 					type: ApiParamType.Transport,
 					transportTypeId: ExpressMetadata.TransportTypeResponseParam,
 				},
-				target.constructor);
-		}
+				target.constructor,
+			);
+		};
 	}
 
 	public static ExpressApiRequestUserParam(): ParameterDecorator;
 	@ApiDecorator(HandlerMethodParameterDecorator, {
 		indexTs: __filename,
-		dependencies: [ DecoratorParentNameDependency(Api.name) ],
+		dependencies: [DecoratorParentNameDependency(Api.name)],
 		parameterType: ApiParamType.Transport,
-		parameterTypeRestrictions: [
-			InternalTypeUtil.TypeAny,
-		],
+		parameterTypeRestrictions: [InternalTypeUtil.TypeAny],
 		provider: ExpressMetadata.Component,
 		arguments: [],
 		transportTypeId: ExpressMetadata.TransportTypeRequestUserParam,
@@ -93,8 +94,41 @@ abstract class ExpressParams {
 					type: ApiParamType.Transport,
 					transportTypeId: ExpressMetadata.TransportTypeRequestUserParam,
 				},
-				target.constructor);
-		}
+				target.constructor,
+			);
+		};
+	}
+
+	/**
+	 * Provides an `AbortSignal` object from the request that will
+	 * signal if the request is aborted (e.g. the client disconnects).
+	 */
+	public static ApiAbortSignalParam(): ParameterDecorator;
+	@ApiDecorator(HandlerMethodParameterDecorator, {
+		indexTs: __filename,
+		dependencies: [DecoratorParentNameDependency(Api.name)],
+		parameterType: ApiParamType.Transport,
+		parameterTypeRestrictions: [InternalTypeUtil.TypeAny],
+		provider: ExpressMetadata.Component,
+		arguments: [],
+		transportTypeId: ExpressMetadata.TransportTypeRequestAbortSignalParam,
+		skipOutputTypeDefinitions: true,
+		transformArgumentsToObject: true,
+	})
+	public static ApiAbortSignalParam(a?: any): ParameterDecorator {
+		return (target: Object, propertyKey: string | symbol, parameterIndex: number) => {
+			const args = <__ApiParamArgs>a;
+			ManagedApiInternal.AddApiHandlerParamMetadataToObject(
+				{
+					args,
+					parameterIndex,
+					propertyKey,
+					type: ApiParamType.Transport,
+					transportTypeId: ExpressMetadata.TransportTypeRequestAbortSignalParam,
+				},
+				target.constructor,
+			);
+		};
 	}
 }
 
@@ -112,18 +146,11 @@ class ExpressModifiers {
 			// TODO peer dependency
 		],
 		provider: ExpressMetadata.Component,
-		arguments: [
-			ExpressArgumentExtractors.MiddlewareArgument,
-			ExpressArgumentExtractors.OptionalWrapPromiseArgument,
-		],
+		arguments: [ExpressArgumentExtractors.MiddlewareArgument, ExpressArgumentExtractors.OptionalWrapPromiseArgument],
 		transformArgumentsToObject: false,
 	})
 	public static ExpressApiMiddleware(middleware: Express.Handler, wrapPromise: boolean = false): ApiMethodDecoratorReturnType<any> {
-		return (
-			target: object,
-			propertyKey: string,
-			descriptor: TypedPropertyDescriptor<any>
-		) => {
+		return (target: object, propertyKey: string, descriptor: TypedPropertyDescriptor<any>) => {
 			ManagedApiInternal.AddApiModifierMetadataToObject(
 				{
 					propertyKey,
@@ -132,8 +159,10 @@ class ExpressModifiers {
 						wrapPromise,
 					},
 					metadata: ExpressMetadata.MiddlewareArgument,
-				}, target.constructor);
-		}
+				},
+				target.constructor,
+			);
+		};
 	}
 }
 
@@ -144,3 +173,4 @@ export const ExpressApiRequestParam = ExpressParams.ExpressApiRequestParam;
 export const ExpressApiRequestUserParam = ExpressParams.ExpressApiRequestUserParam;
 export const ExpressApiResponseParam = ExpressParams.ExpressApiResponseParam;
 export const ExpressApiMiddleware = ExpressModifiers.ExpressApiMiddleware;
+export const ApiAbortSignalParam = ExpressParams.ApiAbortSignalParam;

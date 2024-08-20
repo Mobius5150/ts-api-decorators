@@ -11,7 +11,8 @@ import {
 	ManagedApiInternal,
 	IApiInvocationResult,
 	IApiInvocationParams,
-	IApiInvocationContextPostInvoke
+	IApiInvocationContextPostInvoke,
+	IResolvedApiInvocationParams,
 } from 'ts-api-decorators';
 import * as Express from 'express';
 import { ExpressMiddlewareArgument } from './ApiTypes';
@@ -24,6 +25,8 @@ import { IApiParamDefinition } from 'ts-api-decorators/dist/apiManagement/ApiDef
 export interface IExpressManagedApiContext {
 	'express.request': Express.Request;
 	'express.response': Express.Response;
+	'express.request.user': any;
+	'express.request.abort': AbortSignal;
 }
 
 export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
@@ -36,7 +39,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 	public coerceStreamsMode(mode: StreamCoercionMode): void {
 		this.streamCoercionMode = mode;
 	}
-	
+
 	public init(): Express.Router {
 		const handlers = this.initHandlers();
 
@@ -71,24 +74,23 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 
 	private getMiddlewareForRoute(route: [string, IApiHandlerInstance<IExpressManagedApiContext>]) {
 		const instance = this;
-		return ManagedApiInternal.GetApiModifierDefinitionsOnObject<ExpressMiddlewareArgument>(route[1].parent.constructor, route[1].handlerKey)
-			.map(d => {
-				if (d.arguments.wrapPromise) {
-					return async function (req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+		return ManagedApiInternal.GetApiModifierDefinitionsOnObject<ExpressMiddlewareArgument>(route[1].parent.constructor, route[1].handlerKey).map((d) => {
+			if (d.arguments.wrapPromise) {
+				return async function (req: Express.Request, res: Express.Response, next: Express.NextFunction) {
+					try {
+						await d.arguments.middleware.apply(this, arguments);
+					} catch (e) {
 						try {
-							await d.arguments.middleware.apply(this, arguments);
-						} catch (e) {
-							try {
-								instance.expressResultHandler(res, instance.getErrorResponseForException(e));
-							} catch (e2) {
-								next(e2);
-							}
+							instance.expressResultHandler(res, instance.getErrorResponseForException(e));
+						} catch (e2) {
+							next(e2);
 						}
 					}
-				}
-				
-				return d.arguments.middleware;
-			});
+				};
+			}
+
+			return d.arguments.middleware;
+		});
 	}
 
 	private getHandlerWrapper(instance: IApiHandlerInstance<IExpressManagedApiContext>) {
@@ -97,34 +99,40 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 				const contentType = req.header(ApiStdHeaderName.ContentType);
 				const contentLength = req.header(ApiStdHeaderName.ContentLength);
 				const parsedContentType = parseApiMimeType(contentType);
-				const invocationParams = {
+				const invocationParams: IApiInvocationParams<IExpressManagedApiContext> = {
 					queryParams: this.getRequestQueryParams(req),
 					pathParams: this.getRequestPathParams(req),
 					headers: this.getRequestHeaderParams(req),
-					bodyContents: (
-						(typeof contentType !== 'undefined' && Number(contentLength) > 0)
-							?
-							{
-								contentsStream: req,
-								// TODO: Add text encoding?
-								readStreamToStringAsync: readStreamToStringUtil(req, parsedContentType.charset),
-								readStreamToStringCb: readStreamToStringUtilCb(req, parsedContentType.charset),
-								streamContentsMimeRaw: contentType,
-								streamContentsMimeType: parsedContentType.mimeType,
-							}
-							: undefined
-					),
+					bodyContents:
+						typeof contentType !== 'undefined' && Number(contentLength) > 0
+							? {
+									contentsStream: req,
+									// TODO: Add text encoding?
+									readStreamToStringAsync: readStreamToStringUtil(req, parsedContentType.charset),
+									readStreamToStringCb: readStreamToStringUtilCb(req, parsedContentType.charset),
+									streamContentsMimeRaw: contentType,
+									streamContentsMimeType: parsedContentType.mimeType,
+							  }
+							: undefined,
 					transportParams: {
 						[ExpressMetadata.TransportTypeRequestParam]: req,
 						[ExpressMetadata.TransportTypeResponseParam]: res,
 						[ExpressMetadata.TransportTypeRequestUserParam]: (<any>req)?.user,
+						[ExpressMetadata.TransportTypeRequestAbortSignalParam]: () => {
+							const abortController = new AbortController();
+							req.once('aborted', () => {
+								abortController.abort();
+							});
+							return abortController.signal;
+						},
 					},
 				};
 
 				// TODO: Need to properly parse the body based on the content length
-				instance.wrappedHandler(invocationParams)
-					.then(result => this.expressResultHandler(res, result))
-					.catch(e => {
+				instance
+					.wrappedHandler(invocationParams)
+					.then((result) => this.expressResultHandler(res, result))
+					.catch((e) => {
 						next(e);
 					});
 			} catch (e) {
@@ -137,7 +145,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 		return Boolean(BaseManagedApi.HasExecutionContext());
 	}
 
-	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IApiInvocationParams<IExpressManagedApiContext>): stream.Writable {
+	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IResolvedApiInvocationParams<IExpressManagedApiContext>): stream.Writable {
 		// Return express.response which implements stream.Writable and saves some intermediary streams
 		return invocationParams.transportParams['express.response'];
 	}
@@ -158,9 +166,9 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 					pipeBody.on('error', function (e) {
 						error = e;
 					});
-					
+
 					let finishPromise = promisifyEvent(pipeBody, 'end');
-					pipeBody.pipe(res, { end: true, });
+					pipeBody.pipe(res, { end: true });
 					await finishPromise;
 					if (error) {
 						throw error;
@@ -234,7 +242,7 @@ export class ManagedApi extends BaseManagedApi<IExpressManagedApiContext> {
 	 * Sets the HTTP status code for the response
 	 * @param status The HTTP status code to return in the request
 	 */
-	 public static setResponseStatus(status: number): void {
+	public static setResponseStatus(status: number): void {
 		const context = this.getExecutionContext();
 		context.result.statusCode = status;
 	}

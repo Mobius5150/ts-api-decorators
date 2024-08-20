@@ -72,8 +72,14 @@ export interface IApiInvocationParams<TransportParamsType extends object = {}> {
 	headers: ApiHeadersDict;
 	bodyContents?: IApiBodyContents;
 	bodyParams?: ApiParamsDict;
+	transportParams: MaybeGetterFunction<TransportParamsType>;
+}
+
+export interface IResolvedApiInvocationParams<TransportParamsType extends object = {}> extends IApiInvocationParams<TransportParamsType> {
 	transportParams: TransportParamsType;
 }
+
+export type MaybeGetterFunction<T extends object> = { [K in keyof T]: T[K] | Func0<T[K]> };
 
 export interface IApiInvocationResult {
 	streamMode: StreamCoercionMode;
@@ -84,7 +90,7 @@ export interface IApiInvocationResult {
 
 export interface IApiInvocationContext<TransportParamsType extends object = {}> {
 	apiDefinition: IApiDefinitionWithProcessors<TransportParamsType>;
-	invocationParams: IApiInvocationParams<TransportParamsType>;
+	invocationParams: IResolvedApiInvocationParams<TransportParamsType>;
 }
 
 export interface IApiInvocationContextPostInvoke<TransportParamsType extends object = {}> extends IApiInvocationContext<TransportParamsType> {
@@ -233,7 +239,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						...(await this.preProcessInvocationParams(
 							{
 								apiDefinition: def,
-								invocationParams,
+								invocationParams: this.getInvocationParams(invocationParams),
 							},
 							def.processors,
 						)),
@@ -254,6 +260,32 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 					ManagedApi.namespace.set(ManagedApi.ContextNamespace, null);
 				}
 			});
+		};
+	}
+
+	private getInvocationParams(invocationParams: IApiInvocationParams<TransportParamsType>): IResolvedApiInvocationParams<TransportParamsType> {
+		const transportParams = <TransportParamsType>{};
+		for (const key in invocationParams.transportParams) {
+			if (typeof key === 'function') {
+				Object.defineProperty(transportParams, key, {
+					enumerable: true,
+					configurable: false,
+					writable: false,
+					get: invocationParams.transportParams[key],
+				});
+			} else {
+				Object.defineProperty(transportParams, key, {
+					enumerable: true,
+					configurable: false,
+					writable: false,
+					value: invocationParams.transportParams[key],
+				});
+			}
+		}
+
+		return {
+			...invocationParams,
+			transportParams,
 		};
 	}
 
@@ -342,7 +374,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		def: IApiDefinition,
 		handlerArgs: IApiParamDefinition[],
 		instance: object,
-		invocationParams: IApiInvocationParams<TransportParamsType>,
+		invocationParams: IResolvedApiInvocationParams<TransportParamsType>,
 	) {
 		// Resolve handler arguments
 		let useCallback: PromiseCallbackHelper<any>;
@@ -461,7 +493,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 		}
 	}
 
-	private async getHandlerArg(def: IApiParamDefinition, invocationParams: IApiInvocationParams<TransportParamsType>) {
+	private async getHandlerArg(def: IApiParamDefinition, invocationParams: IResolvedApiInvocationParams<TransportParamsType>) {
 		const { args } = def;
 
 		if (def.isDestructuredObject) {
@@ -642,7 +674,11 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 			this.validateBodyContents(args, contents);
 			return contents;
 		} else if (def.type === ApiParamType.Transport) {
-			if (invocationParams.transportParams[def.transportTypeId]) {
+			if (def.transportTypeId in invocationParams.transportParams) {
+				if (typeof invocationParams.transportParams[def.transportTypeId] === 'function') {
+					return invocationParams.transportParams[def.transportTypeId]();
+				}
+
 				return invocationParams.transportParams[def.transportTypeId];
 			} else if (args?.initializer) {
 				return args.initializer();
@@ -680,7 +716,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 	 * Gets a writable stream to pipe output data to
 	 * @returns a writable stream
 	 */
-	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IApiInvocationParams<TransportParamsType>): stream.Writable {
+	protected getStreamForOutput(def: IApiParamDefinition, invocationParams: IResolvedApiInvocationParams<TransportParamsType>): stream.Writable {
 		return StreamIntermediary.GetStreamIntermediary(this);
 	}
 
@@ -794,7 +830,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						} catch (e) {
 							throw new HttpQueryParamInvalidTypeError(args.name, 'object');
 						}
-						
+
 						break;
 
 					case 'number':
@@ -805,7 +841,7 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 						}
 						break;
 
-					case 'booolean': 
+					case 'booolean':
 					case 'bool':
 						objVal = Boolean(strVal);
 						break;

@@ -1,5 +1,5 @@
-import { OptionalAsyncFunc1 } from "../../Util/Func";
-import { IApiInvocationParams, IApiInvocationResult } from "../ManagedApi";
+import { OptionalAsyncFunc1 } from '../../Util/Func';
+import { IApiInvocationResult, IResolvedApiInvocationParams } from '../ManagedApi';
 
 export enum ApiProcessorTime {
 	StagePreInvoke = 'preinvoke',
@@ -16,7 +16,7 @@ export interface IApiProcessor<ProcessorParam extends object> {
 	processor: OptionalAsyncFunc1<ProcessorParam, ProcessorParam>;
 }
 
-export interface IApiPreProcessor<T extends object = {}> extends IApiProcessor<IApiInvocationParams<T>> {
+export interface IApiPreProcessor<T extends object = {}> extends IApiProcessor<IResolvedApiInvocationParams<T>> {
 	stage: ApiProcessorTime.StagePreInvoke;
 }
 
