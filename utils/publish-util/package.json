@@ -1,27 +1,27 @@
 {
-  "name": "publish-util",
-  "version": "1.0.0",
-  "description": "A utility for publishing packages",
-  "main": "dist/publish.js",
-  "author": "Mike Blouin",
-  "license": "Apache-2.0",
-  "bin": {
-    "publish-tool": "dist/publish.ts"
-  },
-  "scripts": {
-    "build": "npx tsc",
-    "publish-tool": "npx ts-node src/publish.ts"
-  },
-  "dependencies": {
-    "@types/node": "^20.9.1",
-    "chalk": "^4.x.x",
-    "cli-spinners": "^2.6.1",
-    "commander": "^9.0.0",
-    "ora": "^5.4.x",
-    "types-package-json": "^2.0.39"
-  },
-  "devDependencies": {
-    "ts-node": "^10.7.0",
-    "typescript": "~5.1.0"
-  }
+	"name": "publish-util",
+	"version": "1.0.0",
+	"description": "A utility for publishing packages",
+	"main": "dist/publish.js",
+	"author": "Mike Blouin",
+	"license": "Apache-2.0",
+	"bin": {
+		"publish-tool": "dist/publish.ts"
+	},
+	"scripts": {
+		"build": "npx tsc",
+		"publish-tool": "npx ts-node src/publish.ts"
+	},
+	"dependencies": {
+		"@types/node": "^20.9.1",
+		"chalk": "^4.x.x",
+		"cli-spinners": "^2.6.1",
+		"commander": "^9.0.0",
+		"ora": "^5.4.x",
+		"types-package-json": "^2.0.39"
+	},
+	"devDependencies": {
+		"ts-node": "^10.7.0",
+		"typescript": "~5.2.2"
+	}
 }

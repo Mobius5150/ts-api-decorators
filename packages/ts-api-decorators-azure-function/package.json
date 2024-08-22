@@ -1,43 +1,43 @@
 {
-  "name": "ts-api-decorators-azure-function",
-  "version": "0.1.61",
-  "description": "API Decorators for typescript and Azure Functions",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "scripts": {
-    "build": "tsc && npm run build:copy_templates",
-    "build:copy_templates": "copyfiles -u 1 src/**/*.mustache dist",
-    "test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
-    "prepublishOnly": "npm run build"
-  },
-  "author": "Mike Blouin <ts-api-decorators@michaelblouin.ca> (michaelblouin.ca)",
-  "license": "Apache-2.0",
-  "homepage": "https://github.com/mobius5150/ts-api-decorators",
-  "repository": {
-    "url": "https://github.com/mobius5150/ts-api-decorators"
-  },
-  "dependencies": {
-    "commander": "^4.0.1",
-    "ts-api-decorators": "^0.1.61"
-  },
-  "devDependencies": {
-    "@azure/functions": "^4.1.0",
-    "@azure/storage-blob": "^12.5.0",
-    "@types/bent": "^7.3.0",
-    "@types/chai": "^4.2.0",
-    "@types/mocha": "^5.2.7",
-    "@types/node": "^12.7.2",
-    "@types/rimraf": "^3.0.0",
-    "azure-functions-core-tools": "^4.0.5455",
-    "bent": "^7.3.10",
-    "chai": "^4.2.0",
-    "copyfiles": "^2.1.1",
-    "mocha": "^6.2.0",
-    "rimraf": "^3.0.2",
-    "strip-dirs": "^3.0.0",
-    "supertest": "^6.3.3",
-    "ts-node": "^8.3.0",
-    "typescript": "~5.1.0",
-    "uuid": "^3.4.0"
-  }
+	"name": "ts-api-decorators-azure-function",
+	"version": "0.1.61",
+	"description": "API Decorators for typescript and Azure Functions",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"build": "tsc && npm run build:copy_templates",
+		"build:copy_templates": "copyfiles -u 1 src/**/*.mustache dist",
+		"test": "mocha -r ts-node/register -t 20000 test/**/*.test.ts",
+		"prepublishOnly": "npm run build"
+	},
+	"author": "Mike Blouin <ts-api-decorators@michaelblouin.ca> (michaelblouin.ca)",
+	"license": "Apache-2.0",
+	"homepage": "https://github.com/mobius5150/ts-api-decorators",
+	"repository": {
+		"url": "https://github.com/mobius5150/ts-api-decorators"
+	},
+	"dependencies": {
+		"commander": "^4.0.1",
+		"ts-api-decorators": "^0.1.61"
+	},
+	"devDependencies": {
+		"@azure/functions": "^4.1.0",
+		"@azure/storage-blob": "^12.5.0",
+		"@types/bent": "^7.3.0",
+		"@types/chai": "^4.2.0",
+		"@types/mocha": "^5.2.7",
+		"@types/node": "^12.7.2",
+		"@types/rimraf": "^3.0.0",
+		"azure-functions-core-tools": "^4.0.5455",
+		"bent": "^7.3.10",
+		"chai": "^4.2.0",
+		"copyfiles": "^2.1.1",
+		"mocha": "^6.2.0",
+		"rimraf": "^3.0.2",
+		"strip-dirs": "^3.0.0",
+		"supertest": "^6.3.3",
+		"ts-node": "^8.3.0",
+		"typescript": "~5.2.2",
+		"uuid": "^3.4.0"
+	}
 }

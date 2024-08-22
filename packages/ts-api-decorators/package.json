@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators",
-  "version": "0.2.24",
+  "version": "0.2.25",
   "description": "API Decorators for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -40,7 +40,7 @@
     "strip-dirs": "^3.0.0",
     "swagger-parser": "^8.0.3",
     "swagger-ts-client": "^0.9.6",
-    "typescript-json-schema": "0.62.0"
+    "typescript-json-schema": "^0.65.1"
   },
   "devDependencies": {
     "@types/acorn": "^4.0.5",
@@ -66,6 +66,6 @@
     "stream-mock": "^2.0.5",
     "ts-node": "^8.3.0",
     "ttypescript": "^1.5.15",
-    "typescript": "~5.1.0"
+    "typescript": "^5.2.2"
   }
 }
