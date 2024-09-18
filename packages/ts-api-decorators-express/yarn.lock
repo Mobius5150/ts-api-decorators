@@ -129,10 +129,12 @@
   dependencies:
     undici-types "~5.26.4"
 
-"@types/node@^16.9.2":
-  version "16.18.105"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.105.tgz#7147176852774ec4d6dd626803888adf6b999feb"
-  integrity sha512-w2d0Z9yMk07uH3+Cx0N8lqFyi3yjXZxlbYappPj+AsOlT02OyxyiuNoNHdGt6EuiSm8Wtgp2YV7vWg+GMFrvFA==
+"@types/node@^18.11.9":
+  version "18.19.47"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.47.tgz#18076201ad7dd3445046df6ce9ead5fe5abd9387"
+  integrity sha512-1f7dB3BL/bpd9tnDJrrHb66Y+cVrhxSOTGorRNdHwYTUlTay3HuTDPKo9a/4vX9pMQkhYBcAbL4jQdNlhCFP9A==
+  dependencies:
+    undici-types "~5.26.4"
 
 "@types/qs@*":
   version "6.9.10"
@@ -2338,10 +2340,10 @@ tough-cookie@^2.3.3, tough-cookie@~2.5.0:
     psl "^1.1.28"
     punycode "^2.1.1"
 
-ts-api-decorators@^0.2.24:
-  version "0.2.24"
-  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.2.24.tgz#03ebb139e3d5f4380fefaf2da6f96586b2a03268"
-  integrity sha512-jUaqgGo77ipZuqwz4TNkh+ss98GXJkd+ypDP7Jc6jFm6JGqotswzuW+61D1qP+DsaxPEWcrxaKFV1wf1oA35ig==
+ts-api-decorators@^0.2.25:
+  version "0.2.25"
+  resolved "https://registry.yarnpkg.com/ts-api-decorators/-/ts-api-decorators-0.2.25.tgz#76a782d0ee79c1112df716a178cf4b1fa245a68c"
+  integrity sha512-G0QKNzkmkHKTheWiez5HepaMBe1LWhVEL0zG9xg8JHvwCucCOh1iko3Hyg4UC+BgafBQC+mA/uYahn5MdAIxcA==
   dependencies:
     acorn "^7.0.0"
     acorn-walk "^7.0.0"
@@ -2360,7 +2362,7 @@ ts-api-decorators@^0.2.24:
     strip-dirs "^3.0.0"
     swagger-parser "^8.0.3"
     swagger-ts-client "^0.9.6"
-    typescript-json-schema "0.62.0"
+    typescript-json-schema "^0.65.1"
 
 ts-node@^10.9.1:
   version "10.9.2"
@@ -2456,29 +2458,24 @@ typed-array-length@^1.0.4:
     for-each "^0.3.3"
     is-typed-array "^1.1.9"
 
-typescript-json-schema@0.62.0:
-  version "0.62.0"
-  resolved "https://registry.yarnpkg.com/typescript-json-schema/-/typescript-json-schema-0.62.0.tgz#774b06b0c9d86d7f3580ea9136363a6eafae1470"
-  integrity sha512-qRO6pCgyjKJ230QYdOxDRpdQrBeeino4v5p2rYmSD72Jf4rD3O+cJcROv46sQukm46CLWoeusqvBgKpynEv25g==
+typescript-json-schema@^0.65.1:
+  version "0.65.1"
+  resolved "https://registry.yarnpkg.com/typescript-json-schema/-/typescript-json-schema-0.65.1.tgz#24840812f69b220b75d86ed87e220b3b3345db2c"
+  integrity sha512-tuGH7ff2jPaUYi6as3lHyHcKpSmXIqN7/mu50x3HlYn0EHzLpmt3nplZ7EuhUkO0eqDRc9GqWNkfjgBPIS9kxg==
   dependencies:
     "@types/json-schema" "^7.0.9"
-    "@types/node" "^16.9.2"
+    "@types/node" "^18.11.9"
     glob "^7.1.7"
     path-equal "^1.2.5"
     safe-stable-stringify "^2.2.0"
     ts-node "^10.9.1"
-    typescript "~5.1.0"
+    typescript "~5.5.0"
     yargs "^17.1.1"
 
-typescript@^5.2.2:
+typescript@^5.2.2, typescript@~5.5.0:
   version "5.5.4"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.5.4.tgz#d9852d6c82bad2d2eda4fd74a5762a8f5909e9ba"
   integrity sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==
-
-typescript@~5.1.0:
-  version "5.1.6"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-5.1.6.tgz#02f8ac202b6dad2c0dd5e0913745b47a37998274"
-  integrity sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==
 
 uglify-js@^3.1.4:
   version "3.19.2"

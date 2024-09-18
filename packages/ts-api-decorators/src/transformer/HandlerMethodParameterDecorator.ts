@@ -8,6 +8,7 @@ import { Decorator, DecoratorNodeType } from './Decorator';
 import { ExpressionWrapper, ParamArgsInitializer } from './ExpressionWrapper';
 import { CompilationError } from '../Util/CompilationError';
 import { IApiParamDefinition } from '../apiManagement/ApiDefinition';
+import { TypeSerializer } from './TypeSerializer';
 
 export class HandlerMethodParameterDecorator
 	extends Decorator<ts.ParameterDeclaration, IParameterDecoratorDefinition>
@@ -171,7 +172,6 @@ export class HandlerMethodParameterDecorator
 		}
 	}
 
-
 	private getNodeDestructuredPropertiesMetadata(node: ts.ParameterDeclaration, decorator: ts.Decorator, context: ITransformContext): ITransformerMetadata {
 		if (!this.isDestructuredObject) {
 			return;
@@ -208,11 +208,10 @@ export class HandlerMethodParameterDecorator
 			throw new CompilationError(`Invalid type for decorator '${this.magicFunctionName}': ${internalType.type}`, node);
 		}
 
-
 		let schema = internalType.schema;
 		if (schema.$ref) {
-			const ref = schema.$ref.split('/');
-			const def = schema.definitions[ref[ref.length - 1]];
+			const ref = TypeSerializer.getRefDefName(schema.$ref);
+			const def = schema.definitions[ref];
 			if (!def) {
 				throw new CompilationError(`Invalid type definition: schema reference '${schema.$ref}' not found`, node);
 			}
@@ -220,14 +219,17 @@ export class HandlerMethodParameterDecorator
 			schema = {
 				...schema,
 				...def,
-			}
+			};
 		}
 
 		if (schema?.type !== 'object') {
 			throw new CompilationError('Invalid type definition: expected object', node);
 		}
 		if (!schema?.properties) {
-			throw new CompilationError(`Could not determine property types for destructured object decorator '${this.magicFunctionName}': ${internalType.type}`, node);
+			throw new CompilationError(
+				`Could not determine property types for destructured object decorator '${this.magicFunctionName}': ${internalType.type}`,
+				node,
+			);
 		}
 
 		const value: __ApiParamArgs[] = Object.entries(schema.properties).map(([n, p]) => {

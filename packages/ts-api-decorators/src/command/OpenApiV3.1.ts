@@ -427,7 +427,7 @@ export class OpenApiV31Extractor implements IExtractor {
 
 	private renameDefinition(definition: string) {
 		if (!this.definitionNameMap.has(definition)) {
-			let defName = definition.includes('.') ? definition.substring(0, definition.lastIndexOf('.')) : definition;
+			let defName = definition.includes('.') ? definition.match(/(?:\.|^|\/)(\w+)\.[a-zA-Z0-9_-]+$/)?.[1] : definition;
 
 			if (definition.includes('.')) {
 				let i = 0;

@@ -751,7 +751,23 @@ export class OpenApiV3Extractor implements IExtractor {
 
 	private renameDefinition(definition: string) {
 		if (!this.definitionNameMap.has(definition)) {
-			let defName = definition.includes('.') ? definition.substring(0, definition.lastIndexOf('.')) : definition;
+			function replaceNested(input) {
+				if (typeof input !== 'string') {
+					return input;
+				}
+
+				const match = input.match(/<.*(?:\.|^|\/)([^.\/{}]+\.?[a-zA-Z0-9_-]*)>/);
+				if (!match) {
+					return input;
+				}
+
+				return input.replace(match[0], `<${replaceNested(match[1])}>`);
+			}
+
+			let defName = definition.includes('.') ? replaceNested(definition).match(/(?:\.|^|\/)([^./{}]+)(?:\.[a-zA-Z0-9_-]+)?$/)?.[1] : definition;
+			if (defName.startsWith('#/definitions/')) {
+				defName = defName.substr('#/definitions/'.length);
+			}
 
 			if (definition.includes('.')) {
 				let i = 0;
@@ -991,13 +1007,13 @@ export class OpenApiV3Extractor implements IExtractor {
 	}
 
 	private replaceRefStr(refStr: string): string {
-		if (refStr.includes('/')) {
-			refStr = refStr.substring(refStr.lastIndexOf('/') + 1);
-		}
-
 		const expected = this.renameDefinition(refStr);
 		if (!this.definitions.has(expected)) {
 			this.expectedDefinitions.add(refStr);
+		}
+
+		if (expected.startsWith('#/components/schemas/')) {
+			return expected.strCast();
 		}
 
 		return new ReassignableTemplateString(this.ctx, expected, `#/components/schemas/{replace}`).strCast();

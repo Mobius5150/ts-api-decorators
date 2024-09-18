@@ -43,6 +43,7 @@ import { StreamCoercionMode, StreamCoercer } from '../Util/StreamCoercer';
 import { StreamIntermediary } from '../Util/StreamIntermediary';
 import * as stream from 'stream';
 import { DefaultApiResponseCode } from '../Constants';
+import { TypeSerializer } from '../transformer/TypeSerializer';
 
 export type ApiParamsDict = { [param: string]: string };
 export type ApiBodyParamsDict = { [param: string]: ApiParamsDict };
@@ -513,8 +514,8 @@ export abstract class ManagedApi<TransportParamsType extends object> {
 
 			let schema = typedef.schema;
 			if (schema.$ref) {
-				const ref = schema.$ref.split('/');
-				const def = schema.definitions[ref[ref.length - 1]];
+				const ref = TypeSerializer.getRefDefName(schema.$ref);
+				const def = schema.definitions[ref];
 				if (!def) {
 					throw new Error(`Invalid type definition: schema reference '${schema.$ref}' not found`);
 				}

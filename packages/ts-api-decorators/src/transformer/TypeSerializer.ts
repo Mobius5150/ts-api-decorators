@@ -19,6 +19,7 @@ import {
 	isNodeWithTypeArguments,
 	UnionType,
 	nodeHasElements,
+	SymbolWithId,
 } from './TransformerUtil';
 import { ExpressionWrapper } from './ExpressionWrapper';
 import { IJsonSchema } from 'openapi-types';
@@ -74,21 +75,13 @@ export class TypeSerializer {
 			}
 		}
 		if (type.symbol && isSymbolWithId(type.symbol)) {
-			const name = this.typeChecker.getFullyQualifiedName(type.symbol);
-			const symbols = [...this.generator.getSymbols(name), ...this.generator.getSymbols(type.symbol.name)];
-
-			if (isSymbolWithParent(type.symbol)) {
-				symbols.push(...this.generator.getSymbols(type.symbol.parent.name));
+			for (const match of this.iterateSymbolTypes(type.symbol, base)) {
+				return match;
 			}
-
-			for (const symbol of symbols) {
-				if (
-					isSymbolWithId(symbol.symbol) &&
-					(symbol.symbol.id === type.symbol.id ||
-						(isSymbolWithParent(type.symbol) && isSymbolWithId(type.symbol.parent) && symbol.symbol.id === type.symbol.parent.id))
-				) {
-					return this.getTypeForSymbolWithId(symbol, base);
-				}
+		}
+		if (type.aliasSymbol && isSymbolWithId(type.aliasSymbol)) {
+			for (const match of this.iterateSymbolTypes(type.aliasSymbol, base)) {
+				return match;
 			}
 		}
 		if (node && ts.isUnionTypeNode(node) && isUnionType(node, type)) {
@@ -116,7 +109,11 @@ export class TypeSerializer {
 					continue;
 				}
 				if (decl.type && ts.isTypeNode(decl.type)) {
-					return this.getInternalTypeRepresentation(decl.type, this.typeChecker.getTypeFromTypeNode(decl.type));
+					const nextNode = decl.type;
+					const nextType = this.typeChecker.getTypeFromTypeNode(nextNode);
+					if (nextNode !== node || nextType !== type) {
+						return this.getInternalTypeRepresentation(decl.type, this.typeChecker.getTypeFromTypeNode(decl.type));
+					}
 				}
 			}
 		}
@@ -136,6 +133,24 @@ export class TypeSerializer {
 
 				default:
 					throw new Error(`Cannot convert literal type: ${node.literal.kind}`);
+			}
+		}
+	}
+
+	private *iterateSymbolTypes(symbol: SymbolWithId, base: { optional?: boolean }) {
+		const name = this.typeChecker.getFullyQualifiedName(symbol);
+		const symbols = [...this.generator.getSymbols(name), ...this.generator.getSymbols(symbol.name)];
+
+		if (isSymbolWithParent(symbol)) {
+			symbols.push(...this.generator.getSymbols(symbol.parent.name));
+		}
+
+		for (const sym of symbols) {
+			if (
+				isSymbolWithId(sym.symbol) &&
+				(sym.symbol.id === symbol.id || (isSymbolWithParent(symbol) && isSymbolWithId(symbol.parent) && sym.symbol.id === symbol.parent.id))
+			) {
+				yield this.getTypeForSymbolWithId(sym, base);
 			}
 		}
 	}
@@ -181,8 +196,7 @@ export class TypeSerializer {
 		let schema = this.generator.getSchemaForSymbol(symbol.name, true);
 		let type: any = schema.type || InternalTypeUtil.TypeAnyObject.type;
 		if (schema.$ref && schema.definitions) {
-			const refDefParts = schema.$ref.split('/');
-			const refDefName = refDefParts[refDefParts.length - 1];
+			const refDefName = TypeSerializer.getRefDefName(schema.$ref);
 			const def = schema.definitions[refDefName];
 			if (typeof def === 'boolean') {
 				throw new Error('Boolean definition: ' + refDefName);
@@ -195,8 +209,11 @@ export class TypeSerializer {
 						...schema,
 					};
 				} else {
-					type = def.type;
-					schema = def;
+					type = def.type ?? type;
+					schema = {
+						definitions: schema.definitions,
+						...def,
+					};
 				}
 			}
 		}
@@ -219,7 +236,7 @@ export class TypeSerializer {
 			...schema,
 			definitions: {},
 		};
-		const refs: string[] = [this.getRefShortName(schema.$ref)];
+		const refs: string[] = [TypeSerializer.getRefDefName(schema.$ref)];
 		const def = schema.definitions[refs[0]];
 		if (typeof def === 'boolean') {
 			throw new Error('Boolean definition: ' + schema.$ref);
@@ -236,7 +253,7 @@ export class TypeSerializer {
 			.filter((k) => typeof obj[k] === 'object')
 			.map((k) => this.getRefsRecursive(obj[k], definitions, refs));
 		if (obj.$ref) {
-			const ref = this.getRefShortName(obj.$ref);
+			const ref = TypeSerializer.getRefDefName(obj.$ref);
 
 			if (refs.indexOf(ref) !== -1) {
 				return;
@@ -250,12 +267,12 @@ export class TypeSerializer {
 		}
 	}
 
-	private getRefShortName(ref?: string) {
-		ref = ref.substring('#/definitions/'.length);
-		if (ref.indexOf('/')) {
-			ref = ref.split('/')[0];
+	public static getRefDefName(ref?: string, defaultValue?: string) {
+		if (ref.startsWith(TypeSerializer.ReferencePreamble)) {
+			return ref.substring(TypeSerializer.ReferencePreamble.length);
 		}
-		return ref;
+
+		return defaultValue ?? ref;
 	}
 
 	public getReferencedTypeDefinition(reference: IJsonSchemaWithRefs): IJsonSchemaWithRefs {

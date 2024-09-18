@@ -1,6 +1,6 @@
 {
   "name": "ts-api-decorators-express",
-  "version": "0.2.25",
+  "version": "0.2.30",
   "description": "API Decorators for typescript and Express",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
     "url": "https://github.com/mobius5150/ts-api-decorators"
   },
   "dependencies": {
-    "ts-api-decorators": "^0.2.25"
+    "ts-api-decorators": "^0.2.30"
   },
   "devDependencies": {
     "@types/chai": "4.2.0",

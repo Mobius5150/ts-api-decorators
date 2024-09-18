@@ -1,7 +1,8 @@
-import { IJsonSchema } from "openapi-types";
-import { ClassConstructor } from "../Util/ClassConstructors";
-import { CompilationError } from "../Util/CompilationError";
-import ts = require("typescript");
+import { IJsonSchema } from 'openapi-types';
+import { ClassConstructor } from '../Util/ClassConstructors';
+import { CompilationError } from '../Util/CompilationError';
+import ts = require('typescript');
+import { TypeSerializer } from '../transformer/TypeSerializer';
 
 export type ApiParamValidationFunction = (name: string, parsed: any) => void;
 
@@ -25,8 +26,7 @@ export interface __ApiParamArgsFuncs {
 
 export type BuiltinTypeNames = 'Buffer' | 'Promise';
 
-export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {
-}
+export interface __ApiParamArgs extends __ApiParamArgsBase, __ApiParamArgsFuncs {}
 
 export interface __ApiParamArgs_DestructuredObject extends __ApiParamArgs {
 	properties: __ApiParamArgs[];
@@ -41,21 +41,21 @@ export interface IntrinsicNamedType {
 	uniqueTypename?: string;
 }
 
-export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType{
+export interface IntrinsicTypeDefinitionString extends IntrinsicNamedType {
 	type: 'string';
 	validationRegex?: RegExp;
-	schema?: { enum?: string[]; } | { const?: string; };
+	schema?: { enum?: string[] } | { const?: string };
 	typename?: string;
 }
 
-export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType{
+export interface IntrinsicTypeDefinitionNumber extends IntrinsicNamedType {
 	type: 'number';
-	schema?: { enum?: number[]; } | { const?: number; };
+	schema?: { enum?: number[] } | { const?: number };
 	typename?: string;
 }
 
 export type InternalTypeDefinition =
-	IntrinsicTypeDefinition
+	| IntrinsicTypeDefinition
 	| IntrinsicTypeDefinitionString
 	| IntrinsicTypeDefinitionNumber
 	| InternalObjectTypeDefinition
@@ -68,8 +68,9 @@ export type InternalTypeDefinition =
 	| InternalFunctionTypeDefinition
 	| InternalEnumTypeDefinition;
 
-export type InternalTypeDefinitionRestriction<T extends InternalTypeDefinition = InternalTypeDefinition>
-	= T & { assertValid?: (def: T, atNode: ts.Node) => void; };
+export type InternalTypeDefinitionRestriction<T extends InternalTypeDefinition = InternalTypeDefinition> = T & {
+	assertValid?: (def: T, atNode: ts.Node) => void;
+};
 
 export interface InternalFunctionTypeDefinition extends IntrinsicNamedType {
 	type: 'function';
@@ -85,7 +86,7 @@ export interface InternalObjectTypeDefinition extends IntrinsicNamedType {
 	schema?: IJsonSchemaWithRefs;
 }
 
-type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] }
+type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 export interface InternalExternalSchemaTypeDefinition extends IntrinsicNamedType {
 	type: 'external';
 	schema: WithRequired<IJsonSchemaWithRefs, '$schema'>;
@@ -93,7 +94,7 @@ export interface InternalExternalSchemaTypeDefinition extends IntrinsicNamedType
 
 export interface InternalEnumTypeDefinition extends IntrinsicNamedType {
 	type: 'enum';
-	schema?: { enum?: Array<string | number>; };
+	schema?: { enum?: Array<string | number> };
 	typename?: string;
 }
 
@@ -112,7 +113,7 @@ export interface InternalArrayTypeDefinition extends IntrinsicNamedType {
 }
 
 // TODO: The intersection type will probably yield less-than optimal results or longer validation runtime. Should see if it can be collapased to the single resulting type
-export interface InternalIntersectionTypeDefinition extends IntrinsicNamedType{
+export interface InternalIntersectionTypeDefinition extends IntrinsicNamedType {
 	type: 'intersection';
 	types: InternalTypeDefinition[];
 }
@@ -160,8 +161,8 @@ export abstract class InternalTypeUtil {
 
 			let schema = def.schema;
 			if (schema.$ref) {
-				const ref = schema.$ref.split('/');
-				const def = schema.definitions[ref[ref.length - 1]];
+				const ref = TypeSerializer.getRefDefName(schema.$ref);
+				const def = schema.definitions[ref];
 				if (!def) {
 					throw new CompilationError(`Invalid type definition: schema reference '${schema.$ref}' not found`, node);
 				}
@@ -169,7 +170,7 @@ export abstract class InternalTypeUtil {
 				schema = {
 					...schema,
 					...def,
-				}
+				};
 			}
 
 			if (schema?.type !== 'object') {
@@ -178,12 +179,15 @@ export abstract class InternalTypeUtil {
 
 			for (const [name, property] of Object.entries(schema.properties ?? {})) {
 				const types = typeof property.type === 'string' ? [property.type] : property.type;
-				const badType = types.find(t => !validTypes.includes(t))
+				const badType = types.find((t) => !validTypes.includes(t));
 				if (badType) {
-					throw new CompilationError(`Invalid type definition: unsupported type '${badType}' on object property ${name}. Expected one of ${validTypes.join(', ')}`, node);
+					throw new CompilationError(
+						`Invalid type definition: unsupported type '${badType}' on object property ${name}. Expected one of ${validTypes.join(', ')}`,
+						node,
+					);
 				}
 			}
-		}
+		},
 	};
 
 	public static readonly TypeAnyArray: InternalArrayTypeDefinition = {
